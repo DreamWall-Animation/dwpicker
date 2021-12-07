@@ -1,0 +1,6 @@
+*.pyc
+__pycache__
+*/doc/*.pdf
+.vscode/*
+credentials.json
+**/platform_support.txt
