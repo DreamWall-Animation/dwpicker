@@ -14,8 +14,8 @@ Authors: Lionel Brouyère, Olivier Evers
 - Store picker in maya scene.
 - Advanced picker editor.
 - Does whatever AnimSchool picker does and many more ...
-<center><img  src="https://s10.gifyu.com/images/picker.gif"  alt="drawing"  align="center"  width="250"/> <img  src="https://s10.gifyu.com/images/createbuttons.gif"  alt="drawing"  align="center"  width="400"/>   <img  src="https://s10.gifyu.com/images/transfer.gif"  alt="drawing"  align="center" width="700"/>
-<img  src="https://s10.gifyu.com/images/editor.gif"  alt="drawing"  align="center"  width="370"/>
+<center><img  src="https://raw.githubusercontent.com/DreamWall-Animation/dwpicker/main/screenshots/picker.gif"  alt="drawing"  align="center"  width="250"/> <img  src="https://s10.gifyu.com/images/createbuttons.gif"  alt="drawing"  align="center"  width="400"/>
+<img  src="https://raw.githubusercontent.com/DreamWall-Animation/dwpicker/main/screenshots/editor.gif"  alt="drawing"  align="center"  width="370"/>
 
 
 ### Installation
