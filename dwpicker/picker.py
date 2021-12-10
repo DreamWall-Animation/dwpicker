@@ -109,13 +109,8 @@ class PickerView(QtWidgets.QWidget):
         self.paintcontext.center[1] += size.height()
         self.repaint()
 
-    def keyPressEvent(self, event):
-        self.mode_manager.update(event, pressed=True)
-
-    def keyReleaseEvent(self, event):
-        self.mode_manager.update(event, pressed=False)
-
     def mousePressEvent(self, event):
+        self.setFocus(QtCore.Qt.MouseFocusReason)
         self.shapes.extend(self.drag_shapes)
         cursor = self.paintcontext.absolute_point(event.pos()).toPoint()
         self.clicked_shape = detect_hovered_shape(self.shapes, cursor)
@@ -273,12 +268,22 @@ class ModeManager:
         self.right_click_pressed = False
         self.middle_click_pressed = False
         self.mouse_ghost = None
-        self.ctrl_pressed = False
-        self.shift_pressed = False
-        self.alt_pressed = False
         self.has_shape_hovered = False
         self.dragging = False
         self.anchor = None
+
+    @property
+    def ctrl_pressed(self):
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        return modifiers == (modifiers | QtCore.Qt.ControlModifier)
+    @property
+    def shift_pressed(self):
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        return modifiers == (modifiers | QtCore.Qt.ShiftModifier)
+    @property
+    def alt_pressed(self):
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        return modifiers == (modifiers | QtCore.Qt.AltModifier)
 
     def update(
             self,
@@ -287,12 +292,9 @@ class ModeManager:
             has_shape_hovered=False,
             dragging=False):
 
-        if isinstance(event, QtGui.QMouseEvent):
-            self.dragging = dragging
-            self.has_shape_hovered = has_shape_hovered
-            self.update_mouse(event, pressed)
-        elif isinstance(event, QtGui.QKeyEvent):
-            self.update_keys(event, pressed)
+        self.dragging = dragging
+        self.has_shape_hovered = has_shape_hovered
+        self.update_mouse(event, pressed)
 
     def update_mouse(self, event, pressed):
         if event.button() == QtCore.Qt.LeftButton:
@@ -302,12 +304,6 @@ class ModeManager:
             self.right_click_pressed = pressed
         elif event.button() == QtCore.Qt.MiddleButton:
             self.middle_click_pressed = pressed
-
-    def update_keys(self, event, pressed):
-        if event.key() == QtCore.Qt.Key_Shift:
-            self.shift_pressed = pressed
-        if event.key() == QtCore.Qt.Key_Control:
-            self.ctrl_pressed = pressed
 
     @property
     def mode(self):
