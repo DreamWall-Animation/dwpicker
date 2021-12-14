@@ -69,7 +69,12 @@ class ShapeEditArea(QtWidgets.QWidget):
         hovered_shape = self.get_hovered_shape(cursor)
         self.transform.direction = self.manipulator.get_direction(cursor)
 
-        if hovered_shape and hovered_shape not in self.selection:
+        conditions = (
+            hovered_shape and
+            hovered_shape not in self.selection and
+            not self.transform.direction)
+
+        if conditions:
             self.selection.set([hovered_shape])
             self.update_selection()
 

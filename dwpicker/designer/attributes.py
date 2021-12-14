@@ -136,7 +136,6 @@ class ShapeSettings(QtWidgets.QWidget):
         value = values[0] if len(values) == 1 else '...'
         self.shape.setCurrentText(value)
 
-        print([(option['shape.left'], option['shape.top']) for option in options])
         values = list({int(round((option['shape.left']))) for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.left.setText(value)
