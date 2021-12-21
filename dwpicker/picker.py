@@ -86,6 +86,7 @@ class PickerView(QtWidgets.QWidget):
     def unregister_callbacks(self):
         for callback in self.callbacks:
             om.MMessage.removeCallback(callback)
+            self.callbacks.remove(callback)
 
     def sync_with_maya_selection(self, *_):
         select_shapes_from_selection(self.shapes)

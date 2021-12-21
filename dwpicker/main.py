@@ -200,6 +200,7 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def unregister_callbacks(self):
         for cb in self.callbacks:
             om.MMessage.removeCallback(cb)
+            self.callbacks.remove(cb)
 
     def load_saved_pickers(self, **_):
         self.clear()
