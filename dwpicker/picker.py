@@ -1,5 +1,6 @@
 from functools import partial
 
+from maya import cmds
 import maya.OpenMaya as om
 from PySide2 import QtWidgets, QtGui, QtCore
 
@@ -61,6 +62,7 @@ def detect_hovered_shape(shapes, cursor):
 class PickerView(QtWidgets.QWidget):
     dataChanged = QtCore.Signal()
     addButtonRequested = QtCore.Signal(int, int, int)
+    updateButtonRequested = QtCore.Signal(object)
     deleteButtonRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
@@ -143,8 +145,10 @@ class PickerView(QtWidgets.QWidget):
                 self.clicked_shape.execute(
                     left=self.mode_manager.left_click_pressed,
                     right=self.mode_manager.right_click_pressed)
-            else:
+            elif self.mode_manager.left_click_pressed:
                 self.clicked_shape.select(selection_mode)
+            elif self.mode_manager.right_click_pressed:
+                self.call_context_menu()
 
         self.mode_manager.update(event, pressed=False)
         self.selection_square.release()
@@ -154,17 +158,21 @@ class PickerView(QtWidgets.QWidget):
     def wheelEvent(self, event):
         # To center the zoom on the mouse, we save a reference mouse position
         # and compare the offset after zoom computation.
-        abspoint = self.paintcontext.absolute_point(event.pos())
-        if event.angleDelta().y() > 0:
-            self.paintcontext.zoomin()
+        factor = 10.0 if event.angleDelta().y() > 0 else -10.0
+        self.zoom(factor, event.pos())
+        self.repaint()
+
+    def zoom(self, factor, reference):
+        abspoint = self.paintcontext.absolute_point(reference)
+        if factor > 0:
+            self.paintcontext.zoomin(abs(factor))
         else:
-            self.paintcontext.zoomout()
+            self.paintcontext.zoomout(abs(factor))
         relcursor = self.paintcontext.relative_point(abspoint)
-        vector = relcursor - event.pos()
+        vector = relcursor - reference
         center = self.paintcontext.center
         result = [center[0] - vector.x(), center[1] - vector.y()]
         self.paintcontext.center = result
-        self.repaint()
 
     def mouseMoveEvent(self, event):
         selection_rect = self.selection_square.rect
@@ -188,6 +196,12 @@ class PickerView(QtWidgets.QWidget):
             self.selection_square.handle(event.pos())
             return self.repaint()
 
+        elif self.mode_manager.mode == ModeManager.ZOOMING:
+            offset = self.mode_manager.mouse_offset(event.pos())
+            if offset is not None and self.mode_manager.middle_anchor:
+                factor = offset.y() * 5.0
+                self.zoom(factor, self.mode_manager.middle_anchor)
+
         elif self.mode_manager.mode == ModeManager.NAVIGATION:
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None:
@@ -206,12 +220,20 @@ class PickerView(QtWidgets.QWidget):
 
         method = partial(self.add_button, position, button_type=0)
         self.context_menu.add_single.triggered.connect(method)
+        self.context_menu.add_single.setEnabled(bool(cmds.ls(selection=True)))
 
         method = partial(self.add_button, position, button_type=1)
         self.context_menu.add_multiple.triggered.connect(method)
+        state = len(cmds.ls(selection=True)) > 1
+        self.context_menu.add_multiple.setEnabled(state)
 
         method = partial(self.add_button, position, button_type=2)
         self.context_menu.add_command.triggered.connect(method)
+
+        method = partial(self.updateButtonRequested.emit, self.clicked_shape)
+        self.context_menu.update_button.triggered.connect(method)
+        state = bool(self.clicked_shape) and bool(cmds.ls(selection=True))
+        self.context_menu.update_button.setEnabled(state)
 
         method = self.deleteButtonRequested.emit
         self.context_menu.delete_selected.triggered.connect(method)
@@ -244,12 +266,14 @@ class PickerMenu(QtWidgets.QMenu):
         super(PickerMenu, self).__init__(parent)
         self.add_single = QtWidgets.QAction('Add single button', self)
         self.add_multiple = QtWidgets.QAction('Add multiple buttons', self)
+        self.update_button = QtWidgets.QAction('Update button', self)
         self.add_command = QtWidgets.QAction('Add command', self)
         text = 'Delete selected button(s)'
         self.delete_selected = QtWidgets.QAction(text, self)
 
         self.addAction(self.add_single)
         self.addAction(self.add_multiple)
+        self.addAction(self.update_button)
         self.addSeparator()
         self.addAction(self.add_command)
         self.addSeparator()
@@ -261,6 +285,7 @@ class ModeManager:
     SELECTION = 'selection'
     NAVIGATION = 'navigation'
     DRAGGING = 'dragging'
+    ZOOMING = 'zooming'
 
     def __init__(self):
         self.shapes = []
@@ -271,6 +296,7 @@ class ModeManager:
         self.has_shape_hovered = False
         self.dragging = False
         self.anchor = None
+        self.middle_anchor = None
 
     @property
     def ctrl_pressed(self):
@@ -304,14 +330,17 @@ class ModeManager:
             self.right_click_pressed = pressed
         elif event.button() == QtCore.Qt.MiddleButton:
             self.middle_click_pressed = pressed
+            self.middle_anchor = event.pos() if pressed else None
 
     @property
     def mode(self):
         if self.dragging:
             return ModeManager.DRAGGING
+        elif self.middle_click_pressed and self.alt_pressed:
+            return ModeManager.ZOOMING
         elif self.middle_click_pressed:
             return ModeManager.NAVIGATION
-        elif self.left_click_pressed and not self.has_shape_hovered:
+        elif self.left_click_pressed:
             return ModeManager.SELECTION
         self.mouse_ghost = None
         return ModeManager.FLY_OVER

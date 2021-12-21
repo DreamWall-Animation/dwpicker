@@ -71,7 +71,7 @@ class MenuWidget(QtWidgets.QWidget):
 
         icon_ = icon('center.png')
         self.editcenter = QtWidgets.QAction(icon_, '', self)
-        self.editcenter.setToolTip('Edit center')
+        self.editcenter.setToolTip('Edit the picker focus center')
         self.editcenter.setCheckable(True)
         self.editcenter.triggered.connect(self.edit_center_toggled)
         validator = QtGui.QIntValidator()

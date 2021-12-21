@@ -84,6 +84,9 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         self.tab = QtWidgets.QTabWidget()
         self.tab.setTabsClosable(True)
+        self.tab.setMovable(True)
+        self.tab.tabBar().tabMoved.connect(self.tab_moved)
+        self.tab.tabBar().tabBarDoubleClicked.connect(self.change_title)
         self.tab.tabCloseRequested.connect(self.close_tab)
 
         self.quick_options = QuickOptions()
@@ -123,6 +126,17 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.layout.addWidget(self.quick_options)
 
         self.load_ui_states()
+
+    def tab_moved(self, newindex, oldindex):
+        lists = (
+            self.editors,
+            self.generals,
+            self.pickers,
+            self.filenames,
+            self.modified_states)
+
+        for l in lists:
+            l.insert(newindex, l.pop(oldindex))
 
     def keyPressEvent(self, event):
         picker = self.tab.currentWidget()
@@ -285,6 +299,7 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         picker = PickerView()
         picker.register_callbacks()
         picker.addButtonRequested.connect(self.add_button)
+        picker.updateButtonRequested.connect(self.update_button)
         picker.deleteButtonRequested.connect(self.delete_buttons)
         method = partial(self.data_changed_from_picker, picker)
         picker.dataChanged.connect(method)
@@ -305,15 +320,16 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         picker.reset()
 
     def call_open(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(
             None, "Open a picker...",
             cmds.optionVar(query=LAST_OPEN_DIRECTORY),
             filter="Dreamwall Picker (*.json)")[0]
-        if not filename:
+        if not filenames:
             return
-        save_optionvar(LAST_OPEN_DIRECTORY, os.path.dirname(filename))
-        self.add_picker_from_file(filename)
-        self.filenames.append(filename)
+        save_optionvar(LAST_OPEN_DIRECTORY, os.path.dirname(filenames[0]))
+        for filename in filenames:
+            self.add_picker_from_file(filename)
+            self.filenames.append(filename)
         self.store_local_pickers_data()
 
     def call_save(self, index=None):
@@ -367,25 +383,26 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         return True
 
     def call_import(self):
-        src = QtWidgets.QFileDialog.getOpenFileName(
+        sources = QtWidgets.QFileDialog.getOpenFileNames(
             None, "Import a picker...",
             cmds.optionVar(query=LAST_IMPORT_DIRECTORY),
             filter="Anim School Picker (*.pkr)")[0]
-        if not src:
+        if not sources:
             return
 
         dst = QtWidgets.QFileDialog.getExistingDirectory(
             None,
             "Conversion destination",
-            os.path.dirname(src),
+            os.path.dirname(sources[0]),
             options=QtWidgets.QFileDialog.ShowDirsOnly)
         if not dst:
             return
 
-        save_optionvar(LAST_IMPORT_DIRECTORY, os.path.dirname(src))
-        filename = animschool.convert(src, dst)
-        self.add_picker_from_file(filename)
-        self.filenames.append(filename)
+        save_optionvar(LAST_IMPORT_DIRECTORY, os.path.dirname(sources[0]))
+        for src in sources:
+            filename = animschool.convert(src, dst)
+            self.add_picker_from_file(filename)
+            self.filenames.append(filename)
 
     def call_new(self):
         self.add_picker({
@@ -472,6 +489,12 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         data['shape.width'] = width
         self.add_shape_to_current_picker(Shape(data))
 
+    def update_button(self, shape):
+        picker = self.tab.currentWidget()
+        shape.set_targets(cmds.ls(selection=True))
+        self.data_changed_from_picker(picker)
+
+
     def delete_buttons(self):
         picker = self.tab.currentWidget()
         selected_shapes = [s for s in picker.shapes if s.selected]
@@ -513,8 +536,8 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             self.editors[index].set_picker_data(data)
         self.data_changed_from_editor(data, self.pickers[index])
 
-    def change_title(self):
-        index = self.tab.currentIndex()
+    def change_title(self, index=None):
+        index = index if index is not None else self.tab.currentIndex()
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(

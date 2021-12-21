@@ -47,12 +47,12 @@ class PaintContext():
             rect.width() * self.zoom,
             rect.height() * self.zoom)
 
-    def zoomin(self):
-        self.zoom += self.zoom / 10.0
+    def zoomin(self, factor=10.0):
+        self.zoom += self.zoom / factor
         self.zoom = min(self.zoom, 5.0)
 
-    def zoomout(self):
-        self.zoom -= self.zoom / 10.0
+    def zoomout(self, factor=10.0):
+        self.zoom -= self.zoom / factor
         self.zoom = max(self.zoom, .1)
 
     def reset(self):
