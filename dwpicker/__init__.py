@@ -34,9 +34,10 @@ def close():
 @contextmanager
 def disable():
     '''
-    This context manager is providen to decorated user code loop on maya
-    selection edits. This can leadperformance issue.
-    Apply that context ensure a safe context to run that code.
+    This context manager temporarily disable the picker callbacks.
+    This is usefull to decorate code which change the maya selection multiple
+    times. This can lead constant refresh of the picker and lead performance
+    issue. This should fix it.
     '''
     try:
         if _dwpicker:
