@@ -180,7 +180,7 @@ class IntEdit(NumEdit):
     def value(self):
         if self.text() == '':
             return None
-        return int(self.text())
+        return int(float(self.text()))
 
 
 
