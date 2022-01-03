@@ -137,7 +137,7 @@ class PickerView(QtWidgets.QWidget):
         elif self.mode_manager.mode == ModeManager.SELECTION:
             select_targets(self.shapes, selection_mode=selection_mode)
 
-        elif not self.clicked_shape:
+        if not self.clicked_shape:
             if self.mode_manager.right_click_pressed:
                 self.call_context_menu()
 
