@@ -175,7 +175,7 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         if result == QtWidgets.QMessageBox.Close:
             return
 
-        for i in range(self.tab.count(), -1, -1):
+        for i in range(self.tab.count()-1, -1, -1):
             self.save_tab(i)
 
         save_opened_filenames(self.filenames)
@@ -202,7 +202,7 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             om.MMessage.removeCallback(cb)
             self.callbacks.remove(cb)
 
-    def load_saved_pickers(self, **_):
+    def load_saved_pickers(self, *_, **__):
         self.clear()
         pickers = load_local_picker_data()
         for picker in pickers:
@@ -246,11 +246,11 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             self.add_picker_from_file(filename)
 
     def close_tabs(self, *_):
-        for i in range(self.tab.count()):
+        for i in range(self.tab.count()-1, -1, -1):
             self.close_tab(i)
 
     def clear(self):
-        for i in range(self.tab.count()):
+        for i in range(self.tab.count()-1, -1, -1):
             self.close_tab(i, force=True)
 
     def close_tab(self, index, force=False):
