@@ -48,10 +48,14 @@ class PaintContext():
             rect.height() * self.zoom)
 
     def zoomin(self, factor=10.0):
+        if not factor: # Avoid 0 division error
+            return
         self.zoom += self.zoom / factor
         self.zoom = min(self.zoom, 5.0)
 
     def zoomout(self, factor=10.0):
+        if not factor: # Avoid 0 division error
+            return
         self.zoom -= self.zoom / factor
         self.zoom = max(self.zoom, .1)
 
