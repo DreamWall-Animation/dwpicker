@@ -45,7 +45,7 @@ def list_picker_holder_nodes():
     This mignt happed if a node node is imported (creating a namespace or a
     incrementation).
     """
-    return [n for n in [node.split(".")[0] for node in cmds.ls(LS_EXP)]]
+    return [node.split(".")[0] for node in cmds.ls(LS_EXP)]
 
 
 def clean_stray_picker_holder_nodes():

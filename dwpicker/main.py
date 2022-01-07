@@ -334,14 +334,14 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def call_save(self, index=None):
-        index = index or self.tab.currentIndex()
+        index = index = index if index is not None else self.tab.currentIndex()()
         filename = self.filenames[index]
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        index = index or self.tab.currentIndex()
+        index = index = index if index is not None else self.tab.currentIndex()()
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -413,11 +413,11 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = index or self.tab.currentIndex()
+        index = index if index is not None else self.tab.currentIndex()
         picker = self.tab.widget(index)
         return {
             'version': __version__,
-            'general': self.generals[self.tab.currentIndex()],
+            'general': self.generals[index],
             'shapes': [shape.options for shape in picker.shapes]}
 
     def call_edit(self):
@@ -495,7 +495,6 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         shape.set_targets(cmds.ls(selection=True))
         self.data_changed_from_picker(picker)
 
-
     def delete_buttons(self):
         picker = self.tab.currentWidget()
         selected_shapes = [s for s in picker.shapes if s.selected]
@@ -546,9 +545,10 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         if not operate:
             return
+
         self.generals[index]['name'] = title
-        self.tab.setTabText(self.tab.currentIndex(), title)
-        self.set_modified_state(index, True)
+        self.tab.setTabText(index, title)
+        self.data_changed_from_picker(self.tab.widget(index))
 
     def change_namespace(self):
         dialog = NamespaceDialog()
