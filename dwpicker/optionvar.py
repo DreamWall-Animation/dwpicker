@@ -66,10 +66,7 @@ def ensure_optionvars_exists():
 
 
 def save_optionvar(optionvar, value):
-    types = {
-        int: 'intValue', float: 'floatValue',
-        str: 'stringValue', unicode: 'stringValue'}
-    kwargs = {types.get(type(value)): [optionvar, value]}
+    kwargs = {TYPES.get(type(value)): [optionvar, value]}
     cmds.optionVar(**kwargs)
 
 
