@@ -1,4 +1,5 @@
 import os
+import sys
 from maya import cmds
 
 
@@ -44,6 +45,17 @@ OPTIONVARS = {
     SNAP_GRID_X: 10,
     SNAP_GRID_Y: 10,
 }
+
+
+TYPES = {
+    int: 'intValue',
+    float: 'floatValue',
+    str: 'stringValue'}
+
+
+# Ensure backward compatibility.
+if sys.version_info[0] == 2:
+    TYPES[unicode] = 'stringValue'
 
 
 def ensure_optionvars_exists():
