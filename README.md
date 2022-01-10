@@ -8,6 +8,7 @@ Authors: Lionel Brouyère, Olivier Evers
 > A menus, markmenu and hotbox designer cross DCC.
 > https://github.com/luckylyk/hotbox_designer
 
+
 ### Features
 - Easy and fast picker creation.
 - Import AnimSchool pickers done before 2022.
@@ -34,3 +35,9 @@ place the "dwpicker" folder into the maya script folder
 import dwpicker
 dwpicker.show()
 ```
+
+  
+### Support
+Preferably, post an issue on the github page.\
+If you don't hold an github account, you can send a mail to `brouyere |a| dreamwall.be`.\
+Please start you mail subject by ***[dwpicker]***. (Note that the replying delay can be longer using that way).
