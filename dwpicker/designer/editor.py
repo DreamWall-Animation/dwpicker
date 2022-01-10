@@ -292,7 +292,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.options = self.options
         shapes = [Shape(options) for options in picker_data['shapes']]
         self.shape_editor.shapes = shapes
-        self.shape_editor.manipulator.rect = None
+        self.shape_editor.manipulator.set_rect(None)
         self.shape_editor.repaint()
         if reset_stacks is True:
             self.undo_manager.reset_stacks()

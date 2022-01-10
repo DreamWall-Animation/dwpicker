@@ -82,7 +82,7 @@ class Manipulator():
         return rects
 
     def set_rect(self, rect):
-        self.rect = rect
+        self._rect = rect
         self.update_geometries()
 
     def update_geometries(self):
