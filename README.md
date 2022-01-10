@@ -3,8 +3,6 @@
 
 Animation picker for Audodesk Maya 2017 (or higher)
 
-(/!\ Maya 2022 python 3 is not tested yet (milestone set for january 14th 2022))
-
 Authors: Lionel Brouyère, Olivier Evers
 > This tool is a fork of Hotbox Designer (Lionel Brouyère).
 > A menus, markmenu and hotbox designer cross DCC.
