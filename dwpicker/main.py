@@ -87,7 +87,8 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.tab.setMovable(True)
         self.tab.tabBar().tabMoved.connect(self.tab_moved)
         self.tab.tabBar().tabBarDoubleClicked.connect(self.change_title)
-        self.tab.tabCloseRequested.connect(self.close_tab)
+        method = partial(self.close_tab, store=True)
+        self.tab.tabCloseRequested.connect(method)
 
         self.quick_options = QuickOptions()
 
@@ -137,6 +138,8 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         for l in lists:
             l.insert(newindex, l.pop(oldindex))
+
+        self.store_local_pickers_data()
 
     def keyPressEvent(self, event):
         picker = self.tab.currentWidget()
@@ -248,12 +251,13 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def close_tabs(self, *_):
         for i in range(self.tab.count()-1, -1, -1):
             self.close_tab(i)
+        self.store_local_pickers_data()
 
     def clear(self):
         for i in range(self.tab.count()-1, -1, -1):
             self.close_tab(i, force=True)
 
-    def close_tab(self, index, force=False):
+    def close_tab(self, index, force=False, store=False):
         conditions = (
             self.modified_states[index]
             and force is False
@@ -272,6 +276,8 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.undo_managers.pop(index)
         self.filenames.pop(index)
         self.tab.removeTab(index)
+        if store:
+            self.store_local_pickers_data()
 
     def load_ui_states(self):
         value = bool(cmds.optionVar(query=AUTO_FOCUS_ENABLE))
