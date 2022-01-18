@@ -18,7 +18,8 @@ HALIGNS = {
 HERE = os.path.dirname(__file__)
 ERROR_IMPORT_MSG = (
 "ERROR: Dwpicker: DwPicker is not found in Python paths.\\n"
-"    - Please use sys.path.append('<dwpicker forlder>') before open the scene.")
+"    - Please use sys.path.append('<dwpicker forlder>') and relaunch it.\\n"
+"    - Or add '<picker folder>' to environment variable PYTHONPATH")
 
 RESTORE_CMD = (
 """
