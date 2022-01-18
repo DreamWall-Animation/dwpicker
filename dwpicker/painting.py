@@ -1,4 +1,7 @@
 from PySide2 import QtCore, QtGui
+from maya import cmds
+
+from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.geometry import grow_rect
 
@@ -50,18 +53,23 @@ class PaintContext():
     def zoomin(self, factor=10.0):
         if not factor: # Avoid 0 division error
             return
-        self.zoom += self.zoom / factor
+        self.zoom += self.zoom / factor_sensitivity(factor)
         self.zoom = min(self.zoom, 5.0)
 
     def zoomout(self, factor=10.0):
         if not factor: # Avoid 0 division error
             return
-        self.zoom -= self.zoom / factor
+        self.zoom -= self.zoom / factor_sensitivity(factor)
         self.zoom = max(self.zoom, .1)
 
     def reset(self):
         self.center = [0, 0]
         self.zoom = 1
+
+
+def factor_sensitivity(factor):
+    sensitivity = (cmds.optionVar(query=ZOOM_SENSITIVITY) / 50.0)
+    return factor * sensitivity
 
 
 def draw_editor(painter, rect, snap=None, paintcontext=None):

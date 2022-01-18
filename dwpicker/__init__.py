@@ -1,6 +1,7 @@
 
-from dwpicker.main import DwPicker
+from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
+from dwpicker.qtutils import remove_workspace_control
 from contextlib import contextmanager
 
 
@@ -12,7 +13,12 @@ def show():
     global _dwpicker
     if not _dwpicker:
         _dwpicker = DwPicker()
-    _dwpicker.show(dockable=True)
+    try:
+        _dwpicker.show(dockable=True)
+    except RuntimeError:
+        # Workspace control already exists, UI restore as probably failed.
+        remove_workspace_control(WINDOW_CONTROL_NAME)
+        _dwpicker.show(dockable=True)
     _dwpicker.register_callbacks()
     _dwpicker.load_saved_pickers()
 

@@ -6,10 +6,26 @@ from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
 from dwpicker.geometry import split_line
+from dwpicker.optionvar import ZOOM_BUTTON
 from dwpicker.painting import PaintContext
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode)
+
+
+def _namespace(node):
+    basename = node.split("|")[-1]
+    if ":" not in node:
+        return None
+    return basename.split(":")[0]
+
+
+def detect_picker_namespace(shapes):
+    targets = {target for shape in shapes for target in shape.targets()}
+    namespaces = {ns for ns in [_namespace(t) for t in targets] if ns}
+    if len(namespaces) != 1:
+        return None
+    return list(namespaces)[0]
 
 
 def align_shapes_on_line(shapes, point1, point2):
@@ -129,6 +145,13 @@ class PickerView(QtWidgets.QWidget):
         ctrl = self.mode_manager.ctrl_pressed
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
         cursor = self.paintcontext.absolute_point(event.pos()).toPoint()
+        zoom = self.mode_manager.zoom_button_pressed
+        if zoom and self.mode_manager.alt_pressed:
+            self.mode_manager.update(event, pressed=False)
+            self.selection_square.release()
+            self.clicked_shape = None
+            self.repaint()
+            return
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
             self.drag_shapes = []
@@ -148,7 +171,6 @@ class PickerView(QtWidgets.QWidget):
                     right=self.mode_manager.right_click_pressed)
             elif self.mode_manager.left_click_pressed:
                 self.clicked_shape.select(selection_mode)
-            elif self.mode_manager.right_click_pressed:
                 self.call_context_menu()
 
         self.mode_manager.update(event, pressed=False)
@@ -199,9 +221,9 @@ class PickerView(QtWidgets.QWidget):
 
         elif self.mode_manager.mode == ModeManager.ZOOMING:
             offset = self.mode_manager.mouse_offset(event.pos())
-            if offset is not None and self.mode_manager.middle_anchor:
+            if offset is not None and self.mode_manager.zoom_anchor:
                 factor = offset.y() * 5.0
-                self.zoom(factor, self.mode_manager.middle_anchor)
+                self.zoom(factor, self.mode_manager.zoom_anchor)
 
         elif self.mode_manager.mode == ModeManager.NAVIGATION:
             offset = self.mode_manager.mouse_offset(event.pos())
@@ -297,7 +319,7 @@ class ModeManager:
         self.has_shape_hovered = False
         self.dragging = False
         self.anchor = None
-        self.middle_anchor = None
+        self.zoom_anchor = None
 
     @property
     def ctrl_pressed(self):
@@ -331,13 +353,14 @@ class ModeManager:
             self.right_click_pressed = pressed
         elif event.button() == QtCore.Qt.MiddleButton:
             self.middle_click_pressed = pressed
-            self.middle_anchor = event.pos() if pressed else None
+        if self.zoom_button_pressed:
+            self.zoom_anchor = event.pos() if pressed else None
 
     @property
     def mode(self):
         if self.dragging:
             return ModeManager.DRAGGING
-        elif self.middle_click_pressed and self.alt_pressed:
+        elif self.zoom_button_pressed and self.alt_pressed:
             return ModeManager.ZOOMING
         elif self.middle_click_pressed:
             return ModeManager.NAVIGATION
@@ -350,3 +373,11 @@ class ModeManager:
         result = position - self.mouse_ghost if self.mouse_ghost else None
         self.mouse_ghost = position
         return result or None
+
+    @property
+    def zoom_button_pressed(self):
+        button = cmds.optionVar(query=ZOOM_BUTTON)
+        return any((
+            button == 'left' and self.left_click_pressed,
+            button == 'middle' and self.middle_click_pressed,
+            button == 'right' and self.right_click_pressed))

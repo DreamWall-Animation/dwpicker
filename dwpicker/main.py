@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from functools import partial
+import inspect
 import os
 import json
+import sys
 import webbrowser
 
 from PySide2 import QtWidgets, QtCore, QtGui
 
 from maya import cmds
 import maya.OpenMaya as om
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
@@ -18,10 +19,12 @@ from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
     AUTO_FOCUS_ENABLE, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, OPENED_FILES, save_optionvar,
-    append_recent_filename, save_opened_filenames)
-from dwpicker.picker import PickerView
-from dwpicker.qtutils import set_shortcut, icon
+    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
+    OPENED_FILES, save_optionvar, append_recent_filename,
+    save_window_coordinates, save_opened_filenames, load_window_coordinates)
+from dwpicker.picker import PickerView, detect_picker_namespace
+from dwpicker.preference import PreferencesWindow
+from dwpicker.qtutils import set_shortcut, icon, DockableBase
 from dwpicker.quick import QuickOptions
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
@@ -56,6 +59,7 @@ https://github.com/luckylyk/hotbox_designer
 """.format(
     version=".".join(str(n) for n in __version__),
     release=RELEASE_DATE)
+WINDOW_CONTROL_NAME = "dwPickerWindow"
 
 
 def build_multiple_shapes(targets, override):
@@ -67,9 +71,9 @@ def build_multiple_shapes(targets, override):
     return [Shape(shape) for shape in shapes]
 
 
-class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        super(DwPicker, self).__init__(parent=parent)
+class DwPicker(DockableBase, QtWidgets.QWidget):
+    def __init__(self):
+        super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
         set_shortcut("F", self, self.reset)
 
@@ -81,12 +85,35 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.pickers = []
         self.filenames = []
         self.modified_states = []
+        self.preferences_window = PreferencesWindow(
+            callback=self.load_ui_states, parent=self)
+
+        self.namespace_label = QtWidgets.QLabel("Namespace: ")
+        self.namespace_combo = QtWidgets.QComboBox()
+        self.namespace_combo.setFixedWidth(235)
+        self.namespace_combo.currentIndexChanged.connect(self.change_namespace)
+        self.namespace_refresh = QtWidgets.QPushButton("")
+        self.namespace_refresh.setIcon(icon("reload.png"))
+        self.namespace_refresh.setFixedSize(17, 17)
+        self.namespace_refresh.setIconSize(QtCore.QSize(15, 15))
+        self.namespace_refresh.released.connect(self.update_namespaces)
+        self.namespace_widget = QtWidgets.QWidget()
+        self.namespace_layout = QtWidgets.QHBoxLayout(self.namespace_widget)
+        self.namespace_layout.setContentsMargins(10, 2, 2, 2)
+        self.namespace_layout.setSpacing(0)
+        self.namespace_layout.addWidget(self.namespace_label)
+        self.namespace_layout.addSpacing(4)
+        self.namespace_layout.addWidget(self.namespace_combo)
+        self.namespace_layout.addSpacing(2)
+        self.namespace_layout.addWidget(self.namespace_refresh)
+        self.namespace_layout.addStretch(1)
 
         self.tab = QtWidgets.QTabWidget()
         self.tab.setTabsClosable(True)
         self.tab.setMovable(True)
         self.tab.tabBar().tabMoved.connect(self.tab_moved)
         self.tab.tabBar().tabBarDoubleClicked.connect(self.change_title)
+        self.tab.currentChanged.connect(self.tab_index_changed)
         method = partial(self.close_tab, store=True)
         self.tab.tabCloseRequested.connect(method)
 
@@ -109,11 +136,10 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.menubar.redo.setShortcut('CTRL+Y')
         self.menubar.advanced_edit.triggered.connect(self.call_edit)
         self.menubar.advanced_edit.setShortcut('CTRL+E')
-        self.menubar.auto_focus.triggered.connect(self.save_ui_states)
-        self.menubar.display_quick.toggled.connect(self.quick_options.setVisible)
-        self.menubar.display_quick.triggered.connect(self.save_ui_states)
+        self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
-        self.menubar.change_namespace.triggered.connect(self.change_namespace)
+        method = partial(self.change_namespace, dialog=True)
+        self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
         self.menubar.tools.triggered.connect(self.call_tools)
         self.menubar.dw.triggered.connect(self.call_dreamwall)
@@ -123,10 +149,33 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.layout.setMenuBar(self.menubar)
+        self.layout.addWidget(self.namespace_widget)
         self.layout.addWidget(self.tab)
         self.layout.addWidget(self.quick_options)
 
         self.load_ui_states()
+
+    def update_namespaces(self, *_):
+        namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
+        self.namespace_combo.blockSignals(True)
+        self.namespace_combo.clear()
+        self.namespace_combo.addItem("*Root*")
+        self.namespace_combo.addItems(namespaces)
+        self.namespace_combo.blockSignals(False)
+
+    def tab_index_changed(self, index):
+        picker = self.pickers[index]
+        if not picker:
+            return
+        namespace = detect_picker_namespace(picker.shapes)
+        self.namespace_combo.blockSignals(True)
+        if self.namespace_combo.findText(namespace) == -1 and namespace:
+            self.namespace_combo.addItem(namespace)
+        if namespace:
+            self.namespace_combo.setCurrentText(namespace)
+        else:
+            self.namespace_combo.setCurrentIndex(0)
+        self.namespace_combo.blockSignals(False)
 
     def tab_moved(self, newindex, oldindex):
         lists = (
@@ -157,7 +206,7 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         cmds.setFocus("MayaWindow")
 
     def enterEvent(self, _):
-        if self.menubar.auto_focus.isChecked():
+        if cmds.optionVar(query=AUTO_FOCUS_ENABLE):
             cmds.setFocus(self.objectName())
 
     def dockCloseEventTriggered(self):
@@ -185,20 +234,20 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         return super(DwPicker, self).dockCloseEventTriggered()
 
     def register_callbacks(self):
-        event = om.MSceneMessage.kBeforeNew
-        cb = om.MSceneMessage.addCallback(event, self.close_tabs)
-        self.callbacks.append(cb)
-        event = om.MSceneMessage.kAfterOpen
-        cb = om.MSceneMessage.addCallback(event, self.load_saved_pickers)
-        self.callbacks.append(cb)
-        events = (
-            om.MSceneMessage.kAfterImport,
-            om.MSceneMessage.kAfterCreateReference)
+        callbacks = {
+            om.MSceneMessage.kBeforeNew: [
+                self.close_tabs, self.update_namespaces],
+            om.MSceneMessage.kAfterOpen: [
+                self.load_saved_pickers, self.update_namespaces],
+            om.MSceneMessage.kAfterImport: [
+                self.load_saved_pickers, self.update_namespaces],
+            om.MSceneMessage.kAfterCreateReference: [
+                self.load_saved_pickers, self.update_namespaces]}
 
-        for event in events:
-            method = self.load_saved_pickers
-            cb = om.MSceneMessage.addCallback(event, method)
-            self.callbacks.append(cb)
+        for event, methods in callbacks.items():
+            for method in methods:
+                callback = om.MSceneMessage.addCallback(event, method)
+                self.callbacks.append(callback)
 
     def unregister_callbacks(self):
         for cb in self.callbacks:
@@ -280,17 +329,11 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             self.store_local_pickers_data()
 
     def load_ui_states(self):
-        value = bool(cmds.optionVar(query=AUTO_FOCUS_ENABLE))
-        self.menubar.auto_focus.setChecked(value)
         value = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
-        self.menubar.display_quick.setChecked(value)
         self.quick_options.setVisible(value)
-
-    def save_ui_states(self):
-        value = self.menubar.auto_focus.isChecked()
-        save_optionvar(AUTO_FOCUS_ENABLE, int(value))
-        value = self.menubar.display_quick.isChecked()
-        save_optionvar(DISPLAY_QUICK_OPTIONS, int(value))
+        value = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
+        self.namespace_widget.setVisible(value)
+        self.update_namespaces()
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
@@ -338,6 +381,9 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             self.add_picker_from_file(filename)
             self.filenames.append(filename)
         self.store_local_pickers_data()
+
+    def call_preferences(self):
+        self.preferences_window.show()
 
     def call_save(self, index=None):
         index = index = index if index is not None else self.tab.currentIndex()()
@@ -556,14 +602,18 @@ class DwPicker(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.tab.setTabText(index, title)
         self.data_changed_from_picker(self.tab.widget(index))
 
-    def change_namespace(self):
-        dialog = NamespaceDialog()
-        result = dialog.exec_()
-
-        if result != QtWidgets.QDialog.Accepted:
-            return
-
-        namespace = dialog.namespace
+    def change_namespace(self, dialog=False):
+        print("CHANGE NAMESPACE")
+        if dialog:
+            dialog = NamespaceDialog()
+            result = dialog.exec_()
+            if result != QtWidgets.QDialog.Accepted:
+                return
+            namespace = dialog.namespace
+        else:
+            index = self.namespace_combo.currentIndex()
+            text = self.namespace_combo.currentText()
+            namespace = text if index else ":"
         picker = self.tab.currentWidget()
         for shape in picker.shapes:
             if not shape.targets():
@@ -606,10 +656,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.redo = QtWidgets.QAction('Redo', self)
 
         self.advanced_edit = QtWidgets.QAction('Advanced &editing', self)
-        self.auto_focus = QtWidgets.QAction('Auto-focus', self)
-        self.auto_focus.setCheckable(True)
-        self.display_quick = QtWidgets.QAction('Display quick options', self)
-        self.display_quick.setCheckable(True)
+        self.preferences = QtWidgets.QAction('Preferences', self)
         self.change_title = QtWidgets.QAction('Change picker title', self)
         self.change_namespace = QtWidgets.QAction('Change namespace', self)
         self.add_background = QtWidgets.QAction('Add background item', self)
@@ -633,8 +680,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.redo)
         self.edit.addSeparator()
         self.edit.addAction(self.advanced_edit)
-        self.edit.addAction(self.auto_focus)
-        self.edit.addAction(self.display_quick)
+        self.edit.addAction(self.preferences)
         self.edit.addSeparator()
         self.edit.addAction(self.change_title)
         self.edit.addSeparator()
