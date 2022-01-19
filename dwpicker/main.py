@@ -603,7 +603,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_picker(self.tab.widget(index))
 
     def change_namespace(self, dialog=False):
-        print("CHANGE NAMESPACE")
         if dialog:
             dialog = NamespaceDialog()
             result = dialog.exec_()

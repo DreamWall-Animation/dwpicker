@@ -23,10 +23,6 @@ SHAPES_FILTER_INDEX = 'dwpicker_designer_shape_filter_index'
 SNAP_ITEMS = 'dwpicker_designer_snap_items'
 SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
-WIN_HEIGHT = 'dwpicker_picker_win_height'
-WIN_POS_X = 'dwpicker_picker_pos_x'
-WIN_POS_Y = 'dwpicker_picker_pos_y'
-WIN_WIDTH = 'dwpicker_picker_win_height'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
@@ -52,10 +48,6 @@ OPTIONVARS = {
     SNAP_ITEMS: 0,
     SNAP_GRID_X: 10,
     SNAP_GRID_Y: 10,
-    WIN_HEIGHT: 800,
-    WIN_POS_X: 300,
-    WIN_POS_Y: 300,
-    WIN_WIDTH: 500,
     ZOOM_BUTTON: 'middle',
     ZOOM_SENSITIVITY: 50
 }
@@ -110,19 +102,3 @@ def append_recent_filename(filename):
         stored_filenames = stored_filenames[:9]
     stored_filenames.insert(0, filename)
     cmds.optionVar(stringValue=[RECENT_FILES, ';'.join(stored_filenames)])
-
-
-def save_window_coordinates(x, y, width, height):
-    print("save_window_coordinates",x, y, width, height)
-    save_optionvar(WIN_POS_X, x)
-    save_optionvar(WIN_POS_Y, y)
-    save_optionvar(WIN_WIDTH, width)
-    save_optionvar(WIN_HEIGHT, height)
-
-
-def load_window_coordinates():
-    return (
-        cmds.optionVar(query=WIN_POS_X),
-        cmds.optionVar(query=WIN_POS_Y),
-        cmds.optionVar(query=WIN_WIDTH),
-        cmds.optionVar(query=WIN_HEIGHT))
