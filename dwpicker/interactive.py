@@ -12,6 +12,12 @@ from dwpicker.languages import execute_code
 from dwpicker.selection import select_targets
 
 
+EXCECUTION_WARNING = (
+"""Code execution failed for shape: "{name}"
+{error}.
+""")
+
+
 class SelectionSquare():
     def __init__(self):
         self.rect = None
@@ -151,7 +157,11 @@ class Shape():
             return
         code = self.options['action.{}.command'.format(side)]
         language = self.options['action.{}.language'.format(side)]
-        execute_code(language, code)
+        try:
+            execute_code(language, code)
+        except Exception as e:
+            print(EXCECUTION_WARNING.format(
+                name=self.options['text.content'], error=e))
 
     def select(self, selection_mode='replace'):
         select_targets([self], selection_mode=selection_mode)

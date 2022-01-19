@@ -146,6 +146,11 @@ class PickerView(QtWidgets.QWidget):
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
         cursor = self.paintcontext.absolute_point(event.pos()).toPoint()
         zoom = self.mode_manager.zoom_button_pressed
+        interact = (
+            self.clicked_shape and
+            self.clicked_shape is detect_hovered_shape(self.shapes, cursor) and
+            self.clicked_shape.is_interactive())
+
         if zoom and self.mode_manager.alt_pressed:
             self.mode_manager.update(event, pressed=False)
             self.selection_square.release()
@@ -157,7 +162,7 @@ class PickerView(QtWidgets.QWidget):
             self.drag_shapes = []
             self.dataChanged.emit()
 
-        elif self.mode_manager.mode == ModeManager.SELECTION:
+        elif self.mode_manager.mode == ModeManager.SELECTION and not interact:
             select_targets(self.shapes, selection_mode=selection_mode)
 
         if not self.clicked_shape:
@@ -165,12 +170,13 @@ class PickerView(QtWidgets.QWidget):
                 self.call_context_menu()
 
         elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
-            if self.clicked_shape.is_interactive():
+            if interact:
                 self.clicked_shape.execute(
                     left=self.mode_manager.left_click_pressed,
                     right=self.mode_manager.right_click_pressed)
             elif self.mode_manager.left_click_pressed:
                 self.clicked_shape.select(selection_mode)
+            elif self.mode_manager.right_click_pressed:
                 self.call_context_menu()
 
         self.mode_manager.update(event, pressed=False)

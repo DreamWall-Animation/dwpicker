@@ -56,6 +56,9 @@ def remove_workspace_control(control_name):
 
 class DockableBase(MayaQWidgetDockableMixin):
     """
+    Code from https://kainev.com/qt-for-maya-dockable-windows
+    Thanks for this !
+
     Convenience class for creating dockable Maya windows.
     """
 
