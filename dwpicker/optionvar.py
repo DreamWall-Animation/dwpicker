@@ -3,7 +3,7 @@ import sys
 from maya import cmds
 
 
-AUTO_FOCUS_ENABLE = 'dwpicker_auto_focus_enable'
+AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
 DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
 DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
@@ -23,12 +23,13 @@ SHAPES_FILTER_INDEX = 'dwpicker_designer_shape_filter_index'
 SNAP_ITEMS = 'dwpicker_designer_snap_items'
 SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
+SYNCHRONYZE_SELECTION = 'dwpicker_synchronize_selection'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
 
 OPTIONVARS = {
-    AUTO_FOCUS_ENABLE: 0,
+    AUTO_FOCUS_BEHAVIOR: 'pickertomaya', # other options as ['bilateral', 'off']
     BG_LOCKED: 1,
     DISPLAY_QUICK_OPTIONS: 1,
     DEFAULT_TEXT_COLOR: '000000',
@@ -48,7 +49,8 @@ OPTIONVARS = {
     SNAP_ITEMS: 0,
     SNAP_GRID_X: 10,
     SNAP_GRID_Y: 10,
-    ZOOM_BUTTON: 'middle',
+    SYNCHRONYZE_SELECTION: 1,
+    ZOOM_BUTTON: 'middle', # other values are : ['left', 'right']
     ZOOM_SENSITIVITY: 50
 }
 

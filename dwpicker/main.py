@@ -18,10 +18,10 @@ from dwpicker.dialog import (
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
-    AUTO_FOCUS_ENABLE, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
+    AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
     LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
     OPENED_FILES, save_optionvar, append_recent_filename,
-    save_window_coordinates, save_opened_filenames, load_window_coordinates)
+    save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -203,10 +203,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker.keyReleaseEvent(event)
 
     def leaveEvent(self, _):
+        mode = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
+        if mode == 'off':
+            return
         cmds.setFocus("MayaWindow")
 
     def enterEvent(self, _):
-        if cmds.optionVar(query=AUTO_FOCUS_ENABLE):
+        mode = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
+        if mode == 'bilateral':
             cmds.setFocus(self.objectName())
 
     def dockCloseEventTriggered(self):

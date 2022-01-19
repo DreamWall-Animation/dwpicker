@@ -6,7 +6,7 @@ from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
 from dwpicker.geometry import split_line
-from dwpicker.optionvar import ZOOM_BUTTON
+from dwpicker.optionvar import SYNCHRONYZE_SELECTION, ZOOM_BUTTON
 from dwpicker.painting import PaintContext
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
@@ -105,6 +105,8 @@ class PickerView(QtWidgets.QWidget):
             self.callbacks.remove(callback)
 
     def sync_with_maya_selection(self, *_):
+        if not cmds.optionVar(query=SYNCHRONYZE_SELECTION):
+            return
         select_shapes_from_selection(self.shapes)
         self.repaint()
 
