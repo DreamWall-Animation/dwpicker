@@ -34,9 +34,9 @@ from dwpicker.templates import BUTTON, PICKER, BACKGROUND
 from dwpicker.undo import UndoManager
 
 
-__version__ = 0, 0, 5
+__version__ = 0, 1, 0
 WINDOW_TITLE = "DreamWall - Picker"
-RELEASE_DATE = 'January 10th 2022'
+RELEASE_DATE = 'January 20th 2022'
 DW_WEBSITE = 'https://fr.dreamwall.be/'
 DW_GITHUB = 'https://github.com/DreamWall-Animation'
 ABOUT = """\
