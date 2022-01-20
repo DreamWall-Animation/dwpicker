@@ -3,7 +3,8 @@ from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS,
-    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY, ZOOM_BUTTON)
+    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
+    ZOOM_SENSITIVITY, ZOOM_BUTTON)
 
 
 MAX_SENSITIVITY = 200
@@ -38,6 +39,12 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.focus_layout = QtWidgets.QFormLayout(self.focus_group)
         self.focus_layout.addRow("Behavior", self.auto_focus)
 
+        msg = "Prompt search and replace after mirror"
+        self.search_on_mirror = QtWidgets.QCheckBox(msg)
+        self.advanced_group = QtWidgets.QGroupBox("Advanced editor")
+        self.advanced_layout = QtWidgets.QVBoxLayout(self.advanced_group)
+        self.advanced_layout.addWidget(self.search_on_mirror)
+
         self.zoom_sensitivity = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.zoom_sensitivity.setMaximum(MAX_SENSITIVITY)
         self.zoom_sensitivity.setMinimum(1)
@@ -54,6 +61,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.addWidget(self.ui_group)
         self.layout.addWidget(self.focus_group)
+        self.layout.addWidget(self.advanced_group)
         self.layout.addWidget(self.zoom_group)
 
         self.load_ui_states()
@@ -62,6 +70,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.quick_options.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
+        self.search_on_mirror.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
 
@@ -75,6 +84,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
+        value = cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR)
+        self.search_on_mirror.setChecked(state)
 
         value = MAX_SENSITIVITY - cmds.optionVar(query=ZOOM_SENSITIVITY)
         self.zoom_sensitivity.setSliderPosition(value)
@@ -89,6 +100,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(SYNCHRONYZE_SELECTION, int(self.sychronize.isChecked()))
         value = AUTO_FOCUSES[self.auto_focus.currentText()]
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
+        value = int(self.search_on_mirror.isChecked())
+        save_optionvar(TRIGGER_REPLACE_ON_MIRROR, value)
         save_optionvar(ZOOM_BUTTON, self.zoom_button.currentText())
         value = MAX_SENSITIVITY - int(self.zoom_sensitivity.value()) + 1
         save_optionvar(ZOOM_SENSITIVITY, value)

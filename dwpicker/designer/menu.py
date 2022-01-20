@@ -31,12 +31,15 @@ class MenuWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
+
         self.delete = QtWidgets.QAction(icon('delete.png'), '', self)
         self.delete.setToolTip('Delete selection')
         self.delete.triggered.connect(self.deleteRequested.emit)
+
         self.copy = QtWidgets.QAction(icon('copy.png'), '', self)
         self.copy.setToolTip('Copy selection')
         self.copy.triggered.connect(self.copyRequested.emit)
+
         self.paste = QtWidgets.QAction(icon('paste.png'), '', self)
         self.paste.setToolTip('Paste')
         self.paste.triggered.connect(self.pasteRequested.emit)

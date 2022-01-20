@@ -9,7 +9,7 @@ from dwpicker.arrayutils import (
 from dwpicker.dialog import SearchAndReplaceDialog
 from dwpicker.interactive import Shape
 from dwpicker.geometry import get_combined_rects, rect_symmetry
-from dwpicker.optionvar import BG_LOCKED
+from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.qtutils import set_shortcut
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
@@ -306,13 +306,17 @@ class PickerEditor(QtWidgets.QWidget):
                 horizontal=horizontal)
             shape.synchronize_rect()
         self.shape_editor.repaint()
-        self.set_data_modified()
+        if not cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR):
+            self.set_data_modified()
+            return
+        if not self.search_and_replace():
+            self.set_data_modified()
 
     def search_and_replace(self):
         dialog = SearchAndReplaceDialog()
         result = dialog.exec_()
         if result != QtWidgets.QDialog.Accepted:
-            return
+            return False
 
         if dialog.filter == 0: # Search on all shapes.
             shapes = self.shape_editor.shapes
@@ -341,3 +345,4 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.set_data_modified()
         self.shape_editor.repaint()
+        return True
