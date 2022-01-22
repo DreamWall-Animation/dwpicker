@@ -1,3 +1,4 @@
+import maya.cmds as cmds
 from functools import partial
 from PySide2 import QtCore, QtWidgets
 
