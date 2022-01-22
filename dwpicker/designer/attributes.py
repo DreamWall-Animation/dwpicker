@@ -1,3 +1,4 @@
+import maya.cmds as cmds
 from functools import partial
 from PySide2 import QtCore, QtWidgets
 
@@ -380,6 +381,23 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Selection'))
         self.layout.addRow('Targets', self._targets)
+        
+        # ------------------------------------------------------------
+        # THIS IS A NEW TOOL
+        self._addItem = QtWidgets.QPushButton('Add')
+        self._removeItem = QtWidgets.QPushButton('Remove')
+        self._replaceItem = QtWidgets.QPushButton('Replace')
+        self.horLayout = QtWidgets.QHBoxLayout()
+        self.itemList = [self._addItem, self._removeItem, self._replaceItem]
+        for item in self.itemList:
+            self.horLayout.addWidget(item)
+        self.layout.addRow('Add Selected', self.horLayout)
+
+        self._addItem.clicked.connect(self.addItemFunction)
+        self._removeItem.clicked.connect(self.removeItemFunction)
+        self._replaceItem.clicked.connect(self.replaceItemFunction)
+        # ------------------------------------------------------------
+        
         self.layout.addRow(Title('Left click'))
         self.layout.addRow('Has command', self._lactive)
         self.layout.addRow('Language', self._llanguage)
@@ -393,6 +411,59 @@ class ActionSettings(QtWidgets.QWidget):
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
+    
+    # ------------------------------------------------------------
+    # NEW FUNCTIONS
+    def objectSelectedOnScene(self):
+        objSelected = cmds.ls(sl = True, fl = True)
+        return objSelected
+
+    def targetListItems(self):
+        # get items from the QLineEdit of targets
+        getTargets = str(self._targets.text())
+        try:
+            targetsList = getTargets.split(', ')
+        except ValueError:
+            targetsList = []
+
+        return targetsList
+
+    def addItemFunction(self):
+        objSel = self.objectSelectedOnScene()
+        if not objSel: return
+
+        targetsList = self.targetListItems()
+
+        # get from the selected ones, the items which do not exist in the targets
+        editTargetsList = [item for item in objSel if item not in targetsList]
+        # merged List
+        if targetsList == ['']:
+            targetsList = []
+        mergeLists = targetsList + editTargetsList
+
+        strMergedList = ', '.join(mergeLists)
+
+        self._targets.setText(strMergedList)
+        self._targets.setFocus()
+
+    def removeItemFunction(self):
+        objSel = self.objectSelectedOnScene()
+        if not objSel: return
+
+        targetsList = self.targetListItems()
+
+        # only get the items in the targetsList not in the objects selected
+        editTargetsList = [item for item in targetsList if item not in objSel]
+        self._targets.setText(', '.join(editTargetsList))
+        self._targets.setFocus()
+
+    def replaceItemFunction(self):
+        objSel = self.objectSelectedOnScene()
+        if not objSel: return
+        editTargetsList = [item for item in objSel]
+        self._targets.setText(', '.join(editTargetsList))
+        self._targets.setFocus()
+    # ------------------------------------------------------------
 
     def targets_changed(self):
         if not self._targets.text():
