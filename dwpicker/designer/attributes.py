@@ -462,14 +462,6 @@ class ActionSettings(QtWidgets.QWidget):
         editTargetsList = [item for item in objSel]
         self._targets.setText(', '.join(editTargetsList))
         self._targets.setFocus()
-
-    def targets_changed(self):
-        if not self._targets.text():
-            self.optionSet.emit('action.targets', [])
-            return
-        values = [t.strip(" ") for t in self._targets.text().split(",")]
-        self.optionSet.emit('action.targets', values)
-
     # ------------------------------------------------------------
 
     def targets_changed(self):
