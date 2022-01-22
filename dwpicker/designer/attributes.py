@@ -375,29 +375,26 @@ class ActionSettings(QtWidgets.QWidget):
         self._rsave = QtWidgets.QPushButton('save command')
         self._rsave.released.connect(partial(self.save_command, 'right'))
 
+        self._add_targets = QtWidgets.QPushButton('Add')
+        self._remove_targets = QtWidgets.QPushButton('Remove')
+        self._replace_targets = QtWidgets.QPushButton('Replace')
+        self._targets_layout = QtWidgets.QHBoxLayout()
+        self._targets_layout.addWidget(self._add_targets)
+        self._targets_layout.addWidget(self._remove_targets)
+        self._targets_layout.addWidget(self._replace_targets)
+
+        self._add_targets.clicked.connect(self.call_add_targets)
+        self._remove_targets.clicked.connect(self.call_remove_targets)
+        self._replace_targets.clicked.connect(self.call_replace_targets)
+
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Selection'))
         self.layout.addRow('Targets', self._targets)
-        
-        # ------------------------------------------------------------
-        # THIS IS A NEW TOOL
-        self._addItem = QtWidgets.QPushButton('Add')
-        self._removeItem = QtWidgets.QPushButton('Remove')
-        self._replaceItem = QtWidgets.QPushButton('Replace')
-        self.horLayout = QtWidgets.QHBoxLayout()
-        self.itemList = [self._addItem, self._removeItem, self._replaceItem]
-        for item in self.itemList:
-            self.horLayout.addWidget(item)
-        self.layout.addRow('Add Selected', self.horLayout)
+        self.layout.addRow('Add Selected', self._targets_layout)
 
-        self._addItem.clicked.connect(self.addItemFunction)
-        self._removeItem.clicked.connect(self.removeItemFunction)
-        self._replaceItem.clicked.connect(self.replaceItemFunction)
-        # ------------------------------------------------------------
-        
         self.layout.addRow(Title('Left click'))
         self.layout.addRow('Has command', self._lactive)
         self.layout.addRow('Language', self._llanguage)
@@ -411,59 +408,40 @@ class ActionSettings(QtWidgets.QWidget):
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
-    
-    # ------------------------------------------------------------
-    # NEW FUNCTIONS
-    def objectSelectedOnScene(self):
-        objSelected = cmds.ls(sl = True, fl = True)
-        return objSelected
 
-    def targetListItems(self):
-        # get items from the QLineEdit of targets
-        getTargets = str(self._targets.text())
+    def targets(self):
+        targets = str(self._targets.text())
         try:
-            targetsList = getTargets.split(', ')
+            return [t.strip(" ") for t in targets.split(',')]
         except ValueError:
-            targetsList = []
+            return []
 
-        return targetsList
-
-    def addItemFunction(self):
-        objSel = self.objectSelectedOnScene()
-        if not objSel: return
-
-        targetsList = self.targetListItems()
-
-        # get from the selected ones, the items which do not exist in the targets
-        editTargetsList = [item for item in objSel if item not in targetsList]
-        # merged List
-        if targetsList == ['']:
-            targetsList = []
-        mergeLists = targetsList + editTargetsList
-
-        strMergedList = ', '.join(mergeLists)
-
-        self._targets.setText(strMergedList)
+    def call_add_targets(self):
+        selection = cmds.ls(selection=True, flatten=True)
+        if not selection:
+            return
+        targets = self.targets()
+        edits = [item for item in selection if item not in targets]
+        targets = targets if targets != [''] else []
+        self._targets.setText(', '.join(targets + edits))
         self._targets.setFocus()
 
-    def removeItemFunction(self):
-        objSel = self.objectSelectedOnScene()
-        if not objSel: return
+    def call_remove_targets(self):
+        selection = cmds.ls(selection=True, flatten=True)
+        if not selection:
+            return
 
-        targetsList = self.targetListItems()
-
-        # only get the items in the targetsList not in the objects selected
-        editTargetsList = [item for item in targetsList if item not in objSel]
-        self._targets.setText(', '.join(editTargetsList))
+        targets = [item for item in self.targets() if item not in selection]
+        self._targets.setText(', '.join(targets))
         self._targets.setFocus()
 
-    def replaceItemFunction(self):
-        objSel = self.objectSelectedOnScene()
-        if not objSel: return
-        editTargetsList = [item for item in objSel]
-        self._targets.setText(', '.join(editTargetsList))
+    def call_replace_targets(self):
+        selection = cmds.ls(selection=True, flatten=True)
+        if not selection:
+            return
+
+        self._targets.setText(', '.join(selection))
         self._targets.setFocus()
-    # ------------------------------------------------------------
 
     def targets_changed(self):
         if not self._targets.text():

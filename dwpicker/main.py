@@ -45,6 +45,7 @@ DreamWall Picker
     Version: {version}
     Release date: {release}
     Authors: Lionel Brouyère, Olivier Evers
+    Contributor(s): Herizoran
 
 Features:
     Animation picker widget.
@@ -268,6 +269,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def store_local_pickers_data(self):
         if not self.tab.count():
             store_local_picker_data([])
+            return
         pickers = [self.picker_data(i) for i in range(self.tab.count())]
         store_local_picker_data(pickers)
 

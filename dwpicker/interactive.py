@@ -160,8 +160,10 @@ class Shape():
         try:
             execute_code(language, code)
         except Exception as e:
+            import traceback
             print(EXCECUTION_WARNING.format(
                 name=self.options['text.content'], error=e))
+            print(traceback.format_exc())
 
     def select(self, selection_mode='replace'):
         select_targets([self], selection_mode=selection_mode)
