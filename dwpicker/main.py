@@ -92,7 +92,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
         self.namespace_combo.setFixedWidth(235)
-        self.namespace_combo.currentIndexChanged.connect(self.change_namespace)
+        method = self.change_namespace_combo
+        self.namespace_combo.currentIndexChanged.connect(method)
         self.namespace_refresh = QtWidgets.QPushButton("")
         self.namespace_refresh.setIcon(icon("reload.png"))
         self.namespace_refresh.setFixedSize(17, 17)
@@ -139,7 +140,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.advanced_edit.setShortcut('CTRL+E')
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
-        method = partial(self.change_namespace, dialog=True)
+        method = self.change_namespace_dialog
         self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
         self.menubar.tools.triggered.connect(self.call_tools)
@@ -165,6 +166,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_combo.blockSignals(False)
 
     def tab_index_changed(self, index):
+        if not self.pickers:
+            return
         picker = self.pickers[index]
         if not picker:
             return
@@ -608,17 +611,21 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.tab.setTabText(index, title)
         self.data_changed_from_picker(self.tab.widget(index))
 
-    def change_namespace(self, dialog=False):
-        if dialog:
-            dialog = NamespaceDialog()
-            result = dialog.exec_()
-            if result != QtWidgets.QDialog.Accepted:
-                return
-            namespace = dialog.namespace
-        else:
-            index = self.namespace_combo.currentIndex()
-            text = self.namespace_combo.currentText()
-            namespace = text if index else ":"
+    def change_namespace_dialog(self):
+        dialog = NamespaceDialog()
+        result = dialog.exec_()
+        if result != QtWidgets.QDialog.Accepted:
+            return
+        namespace = dialog.namespace
+        self.change_namespace(namespace)
+
+    def change_namespace_combo(self):
+        index = self.namespace_combo.currentIndex()
+        text = self.namespace_combo.currentText()
+        namespace = text if index else ":"
+        self.change_namespace(namespace)
+
+    def change_namespace(self, namespace):
         picker = self.tab.currentWidget()
         for shape in picker.shapes:
             if not shape.targets():
