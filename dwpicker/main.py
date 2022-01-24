@@ -439,7 +439,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         save_optionvar(LAST_SAVE_DIRECTORY, os.path.dirname(filename))
         append_recent_filename(filename)
         with open(filename, 'w') as f:
-            json.dump(self.picker_data(index), f)
+            json.dump(self.picker_data(index), f, indent=2)
 
         self.set_modified_state(index, False)
         return True
