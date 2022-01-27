@@ -158,7 +158,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.load_ui_states()
 
     def show(self, *args, **kwargs):
-        super(DwPicker, self).__init__(*args, **kwargs)
+        super(DwPicker, self).show(*args, **kwargs)
         self.register_callbacks()
         self.load_saved_pickers()
 
