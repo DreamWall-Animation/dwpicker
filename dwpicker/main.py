@@ -157,6 +157,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         self.load_ui_states()
 
+    def show(self, *args, **kwargs):
+        super(DwPicker, self).__init__(*args, **kwargs)
+        self.register_callbacks()
+        self.load_saved_pickers()
+
     def update_namespaces(self, *_):
         namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
         self.namespace_combo.blockSignals(True)
@@ -242,6 +247,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         return super(DwPicker, self).dockCloseEventTriggered()
 
     def register_callbacks(self):
+        self.unregister_callbacks()
         callbacks = {
             om.MSceneMessage.kBeforeNew: [
                 self.close_tabs, self.update_namespaces],
@@ -256,11 +262,15 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             for method in methods:
                 callback = om.MSceneMessage.addCallback(event, method)
                 self.callbacks.append(callback)
+        for picker in self.pickers:
+            picker.register_callbacks()
 
     def unregister_callbacks(self):
         for cb in self.callbacks:
             om.MMessage.removeCallback(cb)
             self.callbacks.remove(cb)
+        for picker in self.pickers:
+            picker.unregister_callbacks()
 
     def load_saved_pickers(self, *_, **__):
         self.clear()

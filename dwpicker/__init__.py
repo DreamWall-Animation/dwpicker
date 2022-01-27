@@ -19,8 +19,6 @@ def show():
         # Workspace control already exists, UI restore as probably failed.
         remove_workspace_control(WINDOW_CONTROL_NAME)
         _dwpicker.show(dockable=True)
-    _dwpicker.register_callbacks()
-    _dwpicker.load_saved_pickers()
 
 
 def close():
