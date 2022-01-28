@@ -87,7 +87,7 @@ def split_data(content, number_of_bytes=4):
 def bytes_to_string(stringdata):
     return ''.join(
         b.decode('cp1252')
-        for b in unhexlify(stringdata).split(b'\x00')).strip(" ")
+        for b in unhexlify(stringdata).split(b'\x00'))
 
 
 def bytes_to_int(i):
@@ -203,6 +203,7 @@ def parse_animschool_picker(picker_path, verbose=False):
     # Get version
     version, data = split_data(data)
     version = bytes_to_int(version)
+    print("this picker is build with AnimSchool v" + str(version))
 
     # Get title
     title, data = extract_string(data)
