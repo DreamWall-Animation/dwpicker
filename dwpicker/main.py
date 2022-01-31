@@ -485,6 +485,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def picker_data(self, index=None):
         index = index if index is not None else self.tab.currentIndex()
+        if index < 0:
+            return None
         picker = self.tab.widget(index)
         return {
             'version': __version__,

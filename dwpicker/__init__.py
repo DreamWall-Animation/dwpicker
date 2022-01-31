@@ -62,4 +62,4 @@ def disable():
 def current():
     if not _dwpicker:
         return
-    return _dwpicker.picker_data()
+    return _dwpicker.tab.currentWidget()
