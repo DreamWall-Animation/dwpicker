@@ -57,3 +57,9 @@ def disable():
         for i in range(_dwpicker.tab.count()):
             picker = _dwpicker.tab.widget(i)
             picker.register_callbacks()
+
+
+def current():
+    if not _dwpicker:
+        return
+    return _dwpicker.picker_data()
