@@ -63,3 +63,13 @@ def current():
     if not _dwpicker:
         return
     return _dwpicker.tab.currentWidget()
+
+
+def refresh():
+    """
+    Trigger this function to refresh ui if the picker datas has been changed
+    manually inside the scene.
+    """
+    if not _dwpicker:
+        return
+    _dwpicker.load_saved_pickers()
