@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from functools import partial
-import inspect
 import os
 import json
-import sys
 import webbrowser
 
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -78,6 +76,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.setWindowTitle(WINDOW_TITLE)
         set_shortcut("F", self, self.reset)
 
+        self.editable = True
         self.callbacks = []
         self.stored_focus = None
         self.editors = []
@@ -160,7 +159,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def show(self, *args, **kwargs):
         super(DwPicker, self).show(*args, **kwargs)
         self.register_callbacks()
-        self.load_saved_pickers()
 
     def update_namespaces(self, *_):
         namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
@@ -280,9 +278,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         clean_stray_picker_holder_nodes()
 
     def store_local_pickers_data(self):
+        if not self.editable:
+            return
+
         if not self.tab.count():
             store_local_picker_data([])
             return
+
         pickers = [self.picker_data(i) for i in range(self.tab.count())]
         store_local_picker_data(pickers)
 
@@ -303,18 +305,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         elif result == QtWidgets.QMessageBox.Save and not self.call_save(index):
             return False
         return True
-
-    def restore_session(self):
-        self.load_saved_pickers()
-        if self.tab.count():
-            return
-        # No data in the scene, try to set back old session, reopening last
-        # used filenames.
-        filenames = cmds.optionVar(query=OPENED_FILES).split(';')
-        for filename in filenames:
-            if not os.path.exists(filename):
-                continue
-            self.add_picker_from_file(filename)
 
     def close_tabs(self, *_):
         for i in range(self.tab.count()-1, -1, -1):
@@ -356,7 +346,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
-            self.add_picker(json.load(f), filename=filename)
+            print("Add " + filename + " ")
+            import pprint
+            data=json.load(f)
+            pprint.pprint(data["general"])
+            self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 
     def reset(self):
@@ -366,12 +360,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def add_picker(self, data, filename=None, modified_state=False):
         picker = PickerView()
+        picker.editable = self.editable
         picker.register_callbacks()
         picker.addButtonRequested.connect(self.add_button)
         picker.updateButtonRequested.connect(self.update_button)
         picker.deleteButtonRequested.connect(self.delete_buttons)
-        method = partial(self.data_changed_from_picker, picker)
-        picker.dataChanged.connect(method)
+        if self.editable:
+            method = partial(self.data_changed_from_picker, picker)
+            picker.dataChanged.connect(method)
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
         center = [-data['general']['centerx'], -data['general']['centery']]
@@ -405,14 +401,15 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.show()
 
     def call_save(self, index=None):
-        index = index if index is not None else self.tab.currentIndex()
+        index = index or self.tab.currentIndex()
         filename = self.filenames[index]
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        index = index if index is not None else self.tab.currentIndex()
+        print("INDEX", index, self.tab.currentIndex())
+        index = index or self.tab.currentIndex()
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -445,6 +442,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_undo_manager(index)
 
     def save_picker(self, index, filename):
+        print(index)
         self.filenames[index] = filename
         save_optionvar(LAST_SAVE_DIRECTORY, os.path.dirname(filename))
         append_recent_filename(filename)
@@ -484,7 +482,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = index if index is not None else self.tab.currentIndex()
+        index = index or self.tab.currentIndex()
         if index < 0:
             return None
         picker = self.tab.widget(index)
@@ -508,6 +506,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.editors[index] = editor
 
         self.editors[index].show()
+
+    def set_editable(self, state):
+        print("STATE", state)
+        self.editable = state
+        self.menubar.set_editable(state)
+        for picker in self.pickers:
+            picker.editable = state
 
     def set_modified_state(self, index, state):
         """
@@ -610,7 +615,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_editor(data, self.pickers[index])
 
     def change_title(self, index=None):
-        index = index if index is not None else self.tab.currentIndex()
+        if not self.editable:
+            return
+
+        index = index or self.tab.currentIndex()
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(
@@ -720,3 +728,10 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.addMenu(self.file)
         self.addMenu(self.edit)
         self.addMenu(self.help)
+
+    def set_editable(self, state):
+        self.undo.setEnabled(state)
+        self.redo.setEnabled(state)
+        self.change_title.setEnabled(state)
+        self.advanced_edit.setEnabled(state)
+        self.add_background.setEnabled(state)

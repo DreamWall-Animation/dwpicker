@@ -92,9 +92,10 @@ class PickerView(QtWidgets.QWidget):
     updateButtonRequested = QtCore.Signal(object)
     deleteButtonRequested = QtCore.Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, editable=True, parent=None):
         super(PickerView, self).__init__(parent)
         self.callbacks = []
+        self.editable = editable
         self.mode_manager = ModeManager()
         self.paintcontext = PaintContext()
         self.selection_square = SelectionSquare()
@@ -257,6 +258,9 @@ class PickerView(QtWidgets.QWidget):
         return self.rect().center() + point.toPoint()
 
     def call_context_menu(self):
+        if not self.editable:
+            return
+
         self.context_menu = PickerMenu()
         position = get_cursor(self)
 
