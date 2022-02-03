@@ -35,6 +35,17 @@ def align_shapes_on_line(shapes, point1, point2):
         shape.synchronize_rect()
 
 
+def frame_shapes(shapes):
+    offset_x = min(shape.rect.left() for shape in shapes)
+    offset_y = min(shape.rect.top() for shape in shapes)
+    offset = -min([offset_x, 0]), -min([offset_y, 0])
+
+    for shape in shapes:
+        shape.rect.moveLeft(shape.rect.left() + offset[0])
+        shape.rect.moveTop(shape.rect.top() + offset[1])
+        shape.synchronize_rect()
+
+
 def set_shapes_hovered(shapes, cursor, selection_rect=None):
     """
     this function all the given shapes.
