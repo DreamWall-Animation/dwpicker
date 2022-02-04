@@ -425,6 +425,7 @@ class ActionSettings(QtWidgets.QWidget):
         targets = targets if targets != [''] else []
         self._targets.setText(', '.join(targets + edits))
         self._targets.setFocus()
+        self.targets_changed()
 
     def call_remove_targets(self):
         selection = cmds.ls(selection=True, flatten=True)
@@ -434,6 +435,7 @@ class ActionSettings(QtWidgets.QWidget):
         targets = [item for item in self.targets() if item not in selection]
         self._targets.setText(', '.join(targets))
         self._targets.setFocus()
+        self.targets_changed()
 
     def call_replace_targets(self):
         selection = cmds.ls(selection=True, flatten=True)
@@ -442,6 +444,7 @@ class ActionSettings(QtWidgets.QWidget):
 
         self._targets.setText(', '.join(selection))
         self._targets.setFocus()
+        self.targets_changed()
 
     def targets_changed(self):
         if not self._targets.text():

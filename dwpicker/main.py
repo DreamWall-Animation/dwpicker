@@ -508,7 +508,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.editors[index].show()
 
     def set_editable(self, state):
-        print("STATE", state)
         self.editable = state
         self.menubar.set_editable(state)
         for picker in self.pickers:
