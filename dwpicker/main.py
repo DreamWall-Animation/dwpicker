@@ -482,7 +482,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = index or self.tab.currentIndex()
+        index = index if index is not None else self.tab.currentIndex()
         if index < 0:
             return None
         picker = self.tab.widget(index)
