@@ -1,4 +1,5 @@
 from functools import partial
+import pprint
 
 from maya import cmds
 import maya.OpenMaya as om
@@ -32,17 +33,6 @@ def align_shapes_on_line(shapes, point1, point2):
     centers = split_line(point1, point2, len(shapes))
     for center, shape in zip(centers, shapes):
         shape.rect.moveCenter(center)
-        shape.synchronize_rect()
-
-
-def frame_shapes(shapes):
-    offset_x = min(shape.rect.left() for shape in shapes)
-    offset_y = min(shape.rect.top() for shape in shapes)
-    offset = -min([offset_x, 0]), -min([offset_y, 0])
-
-    for shape in shapes:
-        shape.rect.moveLeft(shape.rect.left() + offset[0])
-        shape.rect.moveTop(shape.rect.top() + offset[1])
         shape.synchronize_rect()
 
 
@@ -92,10 +82,9 @@ class PickerView(QtWidgets.QWidget):
     updateButtonRequested = QtCore.Signal(object)
     deleteButtonRequested = QtCore.Signal()
 
-    def __init__(self, editable=True, parent=None):
+    def __init__(self, parent=None):
         super(PickerView, self).__init__(parent)
         self.callbacks = []
-        self.editable = editable
         self.mode_manager = ModeManager()
         self.paintcontext = PaintContext()
         self.selection_square = SelectionSquare()
@@ -105,6 +94,7 @@ class PickerView(QtWidgets.QWidget):
         self.center = [0, 0]
         self.context_menu = None
         self.drag_shapes = []
+        self.d_focus_presets={}
 
     def register_callbacks(self):
         function = self.sync_with_maya_selection
@@ -128,6 +118,11 @@ class PickerView(QtWidgets.QWidget):
         self.reset()
         self.repaint()
 
+    def setFocusPresets(self,d_presets):
+        self.d_focus_presets=d_presets.copy()
+        print ("Loaded focus presets from file:")
+        pprint.pprint (d_presets)
+
     def reset(self):
         self.paintcontext.reset()
         rect = self.rect()
@@ -135,6 +130,27 @@ class PickerView(QtWidgets.QWidget):
         y = rect.center().y() + self.center[1]
         self.paintcontext.center = [x , y]
         self.repaint()
+
+    def set_preset(self,key):
+        self.d_focus_presets[key]={}
+        self.d_focus_presets[key]['center_x']=self.paintcontext.center[0]
+        self.d_focus_presets[key]['center_y']=self.paintcontext.center[1]
+        self.d_focus_presets[key]['zoomfactor']=self.paintcontext.zoom
+
+    def get_preset_dict(self):
+        return self.d_focus_presets
+
+    def do_zoom_preset(self, key):
+        if key in self.d_focus_presets:
+            temp_x =  self.d_focus_presets[key]['center_x']
+            temp_y =  self.d_focus_presets[key]['center_y']
+            self.paintcontext.center =  [temp_x, temp_y]
+            temp_zoom = self.d_focus_presets[key]['zoomfactor']
+            self.paintcontext.zoom = temp_zoom
+            self.repaint()
+            print ("Do preset found:%s  [z:%f, [%d %d]"%(key,temp_zoom,temp_x, temp_y))
+        else:
+            print ("No preset found:%s"%key)
 
     def resizeEvent(self, event):
         size = (event.size() - event.oldSize()) / 2
@@ -258,9 +274,6 @@ class PickerView(QtWidgets.QWidget):
         return self.rect().center() + point.toPoint()
 
     def call_context_menu(self):
-        if not self.editable:
-            return
-
         self.context_menu = PickerMenu()
         position = get_cursor(self)
 

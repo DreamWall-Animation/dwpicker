@@ -1,6 +1,6 @@
-from functools import partial
-from math import ceil
 
+from functools import partial
+from PySide2 import QtWidgets, QtCore
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
@@ -11,7 +11,6 @@ from dwpicker.dialog import SearchAndReplaceDialog
 from dwpicker.interactive import Shape
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
-from dwpicker.picker import frame_shapes
 from dwpicker.qtutils import set_shortcut
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
@@ -19,17 +18,25 @@ from dwpicker.designer.editarea import ShapeEditArea
 from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
 
+import pickle
+import getpass
+import tempfile
+
+#### temp pickle file
+user= getpass.getuser()
+tempdir = tempfile.gettempdir()
+G_file_name = "%s/picker_%s.pkl"%(tempdir,user)
 
 class PickerEditor(QtWidgets.QWidget):
     pickerDataModified = QtCore.Signal(object)
 
     def __init__(self, picker_data, undo_manager, parent=None):
         super(PickerEditor, self).__init__(parent, QtCore.Qt.Window)
-        title = "Picker editor - " + picker_data['general']['name']
-        self.setWindowTitle(title)
+        self.setWindowTitle("Picker editor")
         self.options = picker_data['general']
         self.clipboard = []
         self.undo_manager = undo_manager
+
 
         self.shape_editor = ShapeEditArea(self.options)
         bg_locked = bool(cmds.optionVar(query=BG_LOCKED))
@@ -42,14 +49,13 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
-        self.menu.centerValuesChanged.connect(self.move_center)
-        self.menu.deleteRequested.connect(self.delete_selection)
-        self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
-        self.menu.frameShapes.connect(self.frame_shapes)
         self.menu.pasteRequested.connect(self.paste)
+        self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
-        self.menu.snapValuesChanged.connect(self.snap_value_changed)
+        self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
+        self.menu.snapValuesChanged.connect(self.snap_value_changed)
+        self.menu.centerValuesChanged.connect(self.move_center)
 
         method = self.shape_editor.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
@@ -109,7 +115,17 @@ class PickerEditor(QtWidgets.QWidget):
         self.clipboard = [
             s.options.copy() for s in self.shape_editor.selection]
 
+        # copy to pickle file
+        open_file = open(G_file_name, "wb")
+        pickle.dump(self.clipboard, open_file)
+        open_file.close()
+
     def paste(self):
+        open_file = open(G_file_name, "rb")
+        loaded_obj = pickle.load(open_file)
+        self.clipboard = loaded_obj
+        open_file.close()
+
         clipboad_copy = [s.copy() for s in self.clipboard]
         shape_datas = self.picker_data()['shapes'][:] + clipboad_copy
         picker_data = {
@@ -225,18 +241,6 @@ class PickerEditor(QtWidgets.QWidget):
         shapes = self.shape_editor.selection
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
-
-    def frame_shapes(self):
-        shapes = self.shape_editor.shapes
-        width = self.options['width']
-        height = self.options['height']
-        frame_shapes(shapes)
-        width = int(ceil(max([max(s.rect.right() for s in shapes), width])))
-        height = int(ceil(max([max(s.rect.bottom() for s in shapes), height])))
-        self.shape_editor.repaint()
-        self.update_manipulator_rect()
-        # This mark data as changed, no need to repeat.
-        self.menu.set_size_values(width, height)
 
     def create_shape(self, template, before=False):
         options = template.copy()

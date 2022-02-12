@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from functools import partial
+import inspect
 import os
 import json
+import sys
 import webbrowser
 
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -20,6 +22,13 @@ from dwpicker.optionvar import (
     LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
     OPENED_FILES, save_optionvar, append_recent_filename,
     save_opened_filenames)
+import dwpicker.picker
+
+#################################################################
+##  Convience for reloading of dwipicker while in development
+#################################################################
+reload (dwpicker.picker)
+#################################################################
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -76,7 +85,21 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.setWindowTitle(WINDOW_TITLE)
         set_shortcut("F", self, self.reset)
 
-        self.editable = True
+        self.zoom_presets_slots={}
+        for item in range(0,10):
+            self.zoom_presets_slots[str(item)] =QtWidgets.QAction(self,str(item),self)
+            self.zoom_presets_slots[str(item)].setData(str(item))
+            #self.slots[slot].setCheckable(True)
+            self.zoom_presets_slots[str(item)].setText(str(item))
+            keyseq="Ctrl+%d"%item
+            self.zoom_presets_slots[str(item)].setShortcut(QtGui.QKeySequence(keyseq))
+            # set preset setup
+            set_shortcut(keyseq, self, self.set_preset)
+            # get preset setup
+            set_shortcut("%d"%item, self, self.get_preset)
+            #self.slots[slot].setActionGroup(group)
+            #self.menuStateSlot.addAction(self.slots[slot])
+
         self.callbacks = []
         self.stored_focus = None
         self.editors = []
@@ -159,6 +182,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def show(self, *args, **kwargs):
         super(DwPicker, self).show(*args, **kwargs)
         self.register_callbacks()
+        self.load_saved_pickers()
 
     def update_namespaces(self, *_):
         namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
@@ -278,20 +302,16 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         clean_stray_picker_holder_nodes()
 
     def store_local_pickers_data(self):
-        if not self.editable:
-            return
-
         if not self.tab.count():
             store_local_picker_data([])
             return
-
         pickers = [self.picker_data(i) for i in range(self.tab.count())]
         store_local_picker_data(pickers)
 
     def save_tab(self, index):
         msg = (
             'Picker contain unsaved modification !\n'
-            'Woud you like to continue ?')
+            'Would you like to continue ?')
         result = QtWidgets.QMessageBox.question(
             None, 'Save ?', msg,
             buttons=(
@@ -305,6 +325,18 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         elif result == QtWidgets.QMessageBox.Save and not self.call_save(index):
             return False
         return True
+
+    def restore_session(self):
+        self.load_saved_pickers()
+        if self.tab.count():
+            return
+        # No data in the scene, try to set back old session, reopening last
+        # used filenames.
+        filenames = cmds.optionVar(query=OPENED_FILES).split(';')
+        for filename in filenames:
+            if not os.path.exists(filename):
+                continue
+            self.add_picker_from_file(filename)
 
     def close_tabs(self, *_):
         for i in range(self.tab.count()-1, -1, -1):
@@ -346,11 +378,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
-            print("Add " + filename + " ")
-            import pprint
-            data=json.load(f)
-            pprint.pprint(data["general"])
-            self.add_picker(data, filename=filename)
+            self.add_picker(json.load(f), filename=filename)
         append_recent_filename(filename)
 
     def reset(self):
@@ -358,20 +386,52 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if picker:
             picker.reset()
 
+    def get_preset(self):
+
+        matched_key = None
+        for item in range(0,10):
+            if self.sender().key() == QtGui.QKeySequence("%d"%item):
+                #print ("%s Matched:"% str(item))
+                matched_key = "%d"%item
+
+        if matched_key:
+            picker = self.tab.currentWidget()
+            if picker:
+                picker.do_zoom_preset(matched_key)
+        else:
+            print ("No matched, not calling any presets")
+
+    def set_preset(self):
+        print (self.sender().key())
+        matched_index = -1
+        for item in range(0,10):
+            if self.sender().key() == QtGui.QKeySequence("Ctrl+%d"%item):
+                print ("Ctrl + %s Matched:"% str(item))
+                matched_index = item
+
+        picker = self.tab.currentWidget()
+        if matched_index !=-1:
+            # if it's not -1, assume value is in range (0,10)
+            if picker:
+                picker.set_preset(str(matched_index))
+
     def add_picker(self, data, filename=None, modified_state=False):
         picker = PickerView()
-        picker.editable = self.editable
         picker.register_callbacks()
         picker.addButtonRequested.connect(self.add_button)
         picker.updateButtonRequested.connect(self.update_button)
         picker.deleteButtonRequested.connect(self.delete_buttons)
-        if self.editable:
-            method = partial(self.data_changed_from_picker, picker)
-            picker.dataChanged.connect(method)
+        method = partial(self.data_changed_from_picker, picker)
+        picker.dataChanged.connect(method)
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
         center = [-data['general']['centerx'], -data['general']['centery']]
         picker.center = center
+
+        # load presets if in json file
+        if 'focus_presets' in data:
+            focus_presets = data['focus_presets']
+            picker.setFocusPresets(focus_presets)
 
         self.generals.append(data['general'])
         self.pickers.append(picker)
@@ -401,15 +461,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.show()
 
     def call_save(self, index=None):
-        index = index or self.tab.currentIndex()
+        index = index if index is not None else self.tab.currentIndex()
         filename = self.filenames[index]
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        print("INDEX", index, self.tab.currentIndex())
-        index = index or self.tab.currentIndex()
+        index = index if index is not None else self.tab.currentIndex()
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -442,7 +501,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_undo_manager(index)
 
     def save_picker(self, index, filename):
-        print(index)
         self.filenames[index] = filename
         save_optionvar(LAST_SAVE_DIRECTORY, os.path.dirname(filename))
         append_recent_filename(filename)
@@ -477,19 +535,20 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def call_new(self):
         self.add_picker({
             'general': PICKER.copy(),
-            'shapes': []})
+            'shapes': [],
+        })
         self.filenames.append(None)
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
         index = index if index is not None else self.tab.currentIndex()
-        if index < 0:
-            return None
         picker = self.tab.widget(index)
         return {
             'version': __version__,
             'general': self.generals[index],
-            'shapes': [shape.options for shape in picker.shapes]}
+            'shapes': [shape.options for shape in picker.shapes],
+            'focus_presets': picker.d_focus_presets,
+        }
 
     def call_edit(self):
         index = self.tab.currentIndex()
@@ -506,12 +565,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.editors[index] = editor
 
         self.editors[index].show()
-
-    def set_editable(self, state):
-        self.editable = state
-        self.menubar.set_editable(state)
-        for picker in self.pickers:
-            picker.editable = state
 
     def set_modified_state(self, index, state):
         """
@@ -614,10 +667,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_editor(data, self.pickers[index])
 
     def change_title(self, index=None):
-        if not self.editable:
-            return
-
-        index = index or self.tab.currentIndex()
+        index = index if index is not None else self.tab.currentIndex()
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(
@@ -727,10 +777,3 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.addMenu(self.file)
         self.addMenu(self.edit)
         self.addMenu(self.help)
-
-    def set_editable(self, state):
-        self.undo.setEnabled(state)
-        self.redo.setEnabled(state)
-        self.change_title.setEnabled(state)
-        self.advanced_edit.setEnabled(state)
-        self.add_background.setEnabled(state)
