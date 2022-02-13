@@ -12,6 +12,8 @@ from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 import maya.OpenMaya as om
 
+import dwpicker.designer.editor
+reload(dwpicker.designer.editor)
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
     warning, question, CommandButtonDialog, NamespaceDialog)
@@ -32,6 +34,8 @@ reload (dwpicker.picker)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
+import dwpicker.quick
+reload(dwpicker.quick)
 from dwpicker.quick import QuickOptions
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,

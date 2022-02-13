@@ -28,6 +28,7 @@ TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
+DW_VAULT_DIR ="n:/projects/guppies/bg06/production/vault/dwpicker_wip"
 
 OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: 'pickertomaya', # other options as ['bilateral', 'off']
@@ -38,9 +39,12 @@ OPTIONVARS = {
     DEFAULT_LABEL: '',
     DEFAULT_WIDTH: 30,
     DEFAULT_HEIGHT: 20,
-    LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
-    LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
-    LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
+    #LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
+    #LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
+    #LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
+    LAST_OPEN_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
+    LAST_SAVE_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
+    LAST_IMPORT_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
     LAST_COMMAND_LANGUAGE: 0, # 0 = python, 1 = mel
     NAMESPACE_TOOLBAR: 0,
     OPENED_FILES: '',
