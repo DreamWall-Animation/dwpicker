@@ -89,6 +89,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.setWindowTitle(WINDOW_TITLE)
         set_shortcut("F", self, self.reset)
 
+
+    
+        # Set 'Ctrl-[n]': (n in [0-9]) key sequence to set binding to current zoom, centre
+        # And set '[n]' key sequence to bind to recall preset that was set
         self.zoom_presets_slots={}
         for item in range(0,10):
             self.zoom_presets_slots[str(item)] =QtWidgets.QAction(self,str(item),self)
@@ -406,7 +410,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             print ("No matched, not calling any presets")
 
     def set_preset(self):
-        print (self.sender().key())
         matched_index = -1
         for item in range(0,10):
             if self.sender().key() == QtGui.QKeySequence("Ctrl+%d"%item):
