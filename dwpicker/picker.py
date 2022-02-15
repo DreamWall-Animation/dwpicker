@@ -120,8 +120,6 @@ class PickerView(QtWidgets.QWidget):
 
     def setFocusPresets(self,d_presets):
         self.d_focus_presets=d_presets.copy()
-        print ("Loaded focus presets from file:")
-        pprint.pprint (d_presets)
 
     def reset(self):
         self.paintcontext.reset()

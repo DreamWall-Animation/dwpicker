@@ -1,5 +1,6 @@
 from PySide2 import QtWidgets, QtGui, QtCore
 from maya import cmds
+from dwpicker.optionvar import USE_MAYA_COLOR_PICKER
 
 from dwpicker.colorwheel import ColorDialog
 from dwpicker.optionvar import (
@@ -66,7 +67,8 @@ class QuickOptions(QtWidgets.QWidget):
             'text.color': self.text_color.name,
             'shape.width': int(self.width.text()) if self.width.text() else 10,
             'shape.height': int(self.height.text()) if self.height.text() else 10,
-            'text.content': self.label.text()}
+            'text.content': self.label.text(),
+            }
 
     @values.setter
     def values(self, values):
@@ -87,6 +89,9 @@ class ColorButton(QtWidgets.QAbstractButton):
         self.released.connect(self.pick_color)
 
     def pick_color(self):
+        use_maya = bool(cmds.optionVar(query=USE_MAYA_COLOR_PICKER))
+
+        print ("Use Maya:%s"%str(use_maya))
         dialog = ColorDialog(self.name)
         result = dialog.exec_()
         if result != QtWidgets.QDialog.Accepted:

@@ -25,6 +25,7 @@ SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
 SYNCHRONYZE_SELECTION = 'dwpicker_synchronize_selection'
 TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
+USE_MAYA_COLOR_PICKER = 'dwpicker_use_maya_color_picker'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
@@ -56,6 +57,7 @@ OPTIONVARS = {
     SNAP_GRID_Y: 10,
     SYNCHRONYZE_SELECTION: 1,
     TRIGGER_REPLACE_ON_MIRROR: 0,
+    USE_MAYA_COLOR_PICKER: 0,
     ZOOM_BUTTON: 'middle', # other values are : ['left', 'right']
     ZOOM_SENSITIVITY: 50
 }
@@ -80,7 +82,7 @@ def ensure_optionvars_exists():
 
 
 def save_optionvar(optionvar, value):
-    kwargs = {TYPES.get(type(value)): [optionvar, value]}
+    kwargs = {TYPES.get(type(value)): [optionvar, value]}    
     cmds.optionVar(**kwargs)
 
 

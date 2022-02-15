@@ -1,13 +1,3 @@
-
-#################################################################
-##  Convience for reloading of dwipicker while in development
-#################################################################
-import dwpicker.main
-reload(dwpicker.main)
-import dwpicker.optionvar
-reload(dwpicker.optionvar)
-#################################################################
-
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.qtutils import remove_workspace_control

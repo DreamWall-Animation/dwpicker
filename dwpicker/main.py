@@ -13,7 +13,6 @@ from maya import cmds
 import maya.OpenMaya as om
 
 import dwpicker.designer.editor
-reload(dwpicker.designer.editor)
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
     warning, question, CommandButtonDialog, NamespaceDialog)
@@ -27,8 +26,6 @@ from dwpicker.optionvar import (
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
-import dwpicker.quick
-reload(dwpicker.quick)
 from dwpicker.quick import QuickOptions
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
@@ -81,16 +78,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
         set_shortcut("F", self, self.reset)
+        set_shortcut("H", self, self.reset)
 
-
-    
         # Set 'Ctrl-[n]': (n in [0-9]) key sequence to set binding to current zoom, centre
         # And set '[n]' key sequence to bind to recall preset that was set
         self.zoom_presets_slots={}
         for item in range(0,10):
             self.zoom_presets_slots[str(item)] =QtWidgets.QAction(self,str(item),self)
             self.zoom_presets_slots[str(item)].setData(str(item))
-            #self.slots[slot].setCheckable(True)
             self.zoom_presets_slots[str(item)].setText(str(item))
             keyseq="Ctrl+%d"%item
             self.zoom_presets_slots[str(item)].setShortcut(QtGui.QKeySequence(keyseq))
@@ -98,8 +93,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             set_shortcut(keyseq, self, self.set_preset)
             # get preset setup
             set_shortcut("%d"%item, self, self.get_preset)
-            #self.slots[slot].setActionGroup(group)
-            #self.menuStateSlot.addAction(self.slots[slot])
 
         self.callbacks = []
         self.stored_focus = None
@@ -402,7 +395,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         else:
             print ("No matched, not calling any presets")
 
-    def set_preset(self):
+    def set_preset(self):        
         matched_index = -1
         for item in range(0,10):
             if self.sender().key() == QtGui.QKeySequence("Ctrl+%d"%item):

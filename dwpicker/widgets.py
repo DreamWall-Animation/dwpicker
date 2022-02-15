@@ -1,7 +1,9 @@
+from maya import cmds
 from PySide2 import QtGui, QtCore, QtWidgets
 from dwpicker.qtutils import icon
 from dwpicker.colorwheel import ColorDialog
 
+from dwpicker.optionvar import USE_MAYA_COLOR_PICKER
 
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
@@ -86,6 +88,8 @@ class ColorEdit(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ColorEdit, self).__init__(parent)
 
+        self.use_default_color_picker=False
+
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
         self.text.focusInEvent = self.focusInEvent
@@ -110,7 +114,41 @@ class ColorEdit(QtWidgets.QWidget):
         self.apply()
         return super(ColorEdit, self).focusOutEvent(event)
 
+    def pick_color_maya(self):
+        # open color picker
+        result = cmds.colorEditor()
+        buffer = result.split()
+        print ("Dialog done, %s"%buffer)
+        # if done picking a color, get the colors values
+        if '1' == buffer[3]:
+            # picked colors become markRGB plus rounded markup
+            rFloat = float(buffer[0])
+            gFloat = float(buffer[1])
+            bFloat = float(buffer[2])
+
+            rPick = int(round(rFloat * 255))
+            gPick = int(round(gFloat * 255))
+            bPick = int(round(bFloat * 255))
+
+            self.text.setText("#"+"".join(['{:02x}'.format(i) for i in [rPick, gPick, bPick]]))
+            self.apply()
+            print ("return %f %f %f"%(rPick,gPick,bPick))
+        else:
+            print ('Editor was dismissed')
+
     def pick_color(self):
+        # check pref's to see which color picker to use:
+        use_maya = cmds.optionVar(query=USE_MAYA_COLOR_PICKER)
+
+        print ("Check: Use Maya:%s"%str(use_maya))
+        self.use_default_color_picker=cmds.optionVar(query=USE_MAYA_COLOR_PICKER)
+
+        if not use_maya:
+            self.pick_color_default()
+        else:
+            self.pick_color_maya()
+
+    def pick_color_default(self):
         color = self.text.text() or None
         dialog = ColorDialog(color)
         result = dialog.exec_()
