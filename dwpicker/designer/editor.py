@@ -1,6 +1,6 @@
+import pprint
 from functools import partial
-from math import ceil
-
+from PySide2 import QtWidgets, QtCore
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
@@ -11,7 +11,6 @@ from dwpicker.dialog import SearchAndReplaceDialog
 from dwpicker.interactive import Shape
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
-from dwpicker.picker import frame_shapes
 from dwpicker.qtutils import set_shortcut
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
@@ -19,17 +18,26 @@ from dwpicker.designer.editarea import ShapeEditArea
 from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
 
+import pickle
+import getpass
+import tempfile
+
+#### temp pickle file
+user= getpass.getuser()
+tempdir = tempfile.gettempdir()
+G_widgets_filename = "%s/picker_%s.pkl"%(tempdir,user)
+G_options_filename = "%s/picker_options_%s.pkl"%(tempdir,user)
 
 class PickerEditor(QtWidgets.QWidget):
     pickerDataModified = QtCore.Signal(object)
 
     def __init__(self, picker_data, undo_manager, parent=None):
         super(PickerEditor, self).__init__(parent, QtCore.Qt.Window)
-        title = "Picker editor - " + picker_data['general']['name']
-        self.setWindowTitle(title)
+        self.setWindowTitle("Picker editor")
         self.options = picker_data['general']
         self.clipboard = []
         self.undo_manager = undo_manager
+
 
         self.shape_editor = ShapeEditArea(self.options)
         bg_locked = bool(cmds.optionVar(query=BG_LOCKED))
@@ -42,14 +50,15 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
-        self.menu.centerValuesChanged.connect(self.move_center)
-        self.menu.deleteRequested.connect(self.delete_selection)
-        self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
-        self.menu.frameShapes.connect(self.frame_shapes)
         self.menu.pasteRequested.connect(self.paste)
+        self.menu.copyAttrsRequested.connect(self.copyAttrs)
+        self.menu.pasteAttrsRequested.connect(self.pasteAttrs)
+        self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
-        self.menu.snapValuesChanged.connect(self.snap_value_changed)
+        self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
+        self.menu.snapValuesChanged.connect(self.snap_value_changed)
+        self.menu.centerValuesChanged.connect(self.move_center)
 
         method = self.shape_editor.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
@@ -105,11 +114,106 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.addWidget(self.menu)
         self.vlayout.addLayout(self.hlayout)
 
+    def copyAttrs(self):
+        cur_shape = None
+        if len(self.shape_editor.selection.shapes)>0:
+            cur_shape = self.shape_editor.selection.shapes[0]
+        else:
+            print ("No selection, return none")
+            return
+        options = cur_shape.options
+        self.clipboard_options = options.copy()
+
+        print ("Copied options from %s"%cur_shape.options['text.content'])
+
+        #print ("options:")
+        #pprint.pprint(options)
+
+        # copy to pickle file
+        open_file = open(G_options_filename, "wb")
+        pickle.dump(self.clipboard_options, open_file)
+        open_file.close()
+
+    def pasteAttrs(self):
+        pass
+        open_file = open(G_options_filename, "rb")
+        loaded_obj = pickle.load(open_file)
+        self.clipboard_options = loaded_obj
+        open_file.close()
+
+        print ("type:%s"%type(self.shape_editor.selection.shapes[0]))
+        print (dir(self.shape_editor.selection.shapes[0]))
+
+        # flags to enable copying of different sections of attributes
+        do_action_section=True
+        do_bgcolor_section=True
+        do_border_section=True
+        do_image_section=True
+        do_shape_section=True
+        do_text_section=True
+
+        for cur_shape in self.shape_editor.selection.shapes:
+        #assign to reference of options
+            print ("Pasting options values to:%s"%cur_shape.options['text.content'])
+
+            if do_action_section:
+                cur_shape.options['action.left']=self.clipboard_options['action.left']
+                cur_shape.options['action.left.command']=self.clipboard_options['action.left.command']
+                cur_shape.options['action.left.language']=self.clipboard_options['action.left.language']
+                cur_shape.options['action.right']=self.clipboard_options['action.right']
+                cur_shape.options['action.right.command']=self.clipboard_options['action.right.command']
+                cur_shape.options['action.right.language']=self.clipboard_options['action.right.language']
+                cur_shape.options['action.targets']=self.clipboard_options['action.targets']
+            if do_bgcolor_section:
+                cur_shape.options['bgcolor.clicked']=self.clipboard_options['bgcolor.clicked']
+                cur_shape.options['bgcolor.hovered']=self.clipboard_options['bgcolor.hovered']
+                cur_shape.options['bgcolor.normal']=self.clipboard_options['bgcolor.normal']
+                cur_shape.options['bgcolor.transparency']=self.clipboard_options['bgcolor.transparency']
+            if do_border_section:
+                cur_shape.options['border']=self.clipboard_options['border']
+                cur_shape.options['bordercolor.clicked']=self.clipboard_options['bordercolor.clicked']
+                cur_shape.options['bordercolor.hovered']=self.clipboard_options['bordercolor.hovered']
+                cur_shape.options['bordercolor.normal']=self.clipboard_options['bordercolor.normal']
+                cur_shape.options['bordercolor.transparency']=self.clipboard_options['bordercolor.transparency']
+                cur_shape.options['borderwidth.clicked']=self.clipboard_options['borderwidth.clicked']
+                cur_shape.options['borderwidth.hovered']=self.clipboard_options['borderwidth.hovered']
+                cur_shape.options['borderwidth.normal']=self.clipboard_options['borderwidth.normal']
+            if do_image_section:
+                cur_shape.options['image.fit']=self.clipboard_options['image.fit']
+                cur_shape.options['image.height']=self.clipboard_options['image.height']
+                cur_shape.options['image.path']=self.clipboard_options['image.path']
+                cur_shape.options['image.width']=self.clipboard_options['image.width']
+            if do_shape_section:
+                cur_shape.options['shape']=self.clipboard_options['shape']
+                cur_shape.options['shape.cornersx']=self.clipboard_options['shape.cornersx']
+                cur_shape.options['shape.cornersy']=self.clipboard_options['shape.cornersy']
+                cur_shape.options['shape.height']=self.clipboard_options['shape.height']
+                cur_shape.options['shape.left']=self.clipboard_options['shape.left']
+                cur_shape.options['shape.top']=self.clipboard_options['shape.top']
+                cur_shape.options['shape.width']=self.clipboard_options['shape.width']
+            if do_text_section:
+                cur_shape.options['text.bold']=self.clipboard_options['text.bold']
+                cur_shape.options['text.color']=self.clipboard_options['text.color']
+    #            cur_shape.options['text.content']=self.clipboard_options['text.content']
+                cur_shape.options['text.halign']=self.clipboard_options['text.halign']
+                cur_shape.options['text.italic']=self.clipboard_options['text.italic']
+                cur_shape.options['text.size']=self.clipboard_options['text.size']
+
     def copy(self):
         self.clipboard = [
             s.options.copy() for s in self.shape_editor.selection]
 
+        # copy to pickle file
+        open_file = open(G_widget_filename, "wb")
+        pickle.dump(self.clipboard, open_file)
+        open_file.close()
+
     def paste(self):
+        open_file = open(G_widget_filename, "rb")
+        loaded_obj = pickle.load(open_file)
+        self.clipboard = loaded_obj
+        open_file.close()
+
         clipboad_copy = [s.copy() for s in self.clipboard]
         shape_datas = self.picker_data()['shapes'][:] + clipboad_copy
         picker_data = {
@@ -181,6 +285,7 @@ class PickerEditor(QtWidgets.QWidget):
     def option_set(self, option, value):
         for shape in self.shape_editor.selection:
             shape.options[option] = value
+            print ("Setting shape:%s option:%s = %s"%(shape,option,value))
         self.shape_editor.repaint()
         self.set_data_modified()
 
@@ -225,18 +330,6 @@ class PickerEditor(QtWidgets.QWidget):
         shapes = self.shape_editor.selection
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
-
-    def frame_shapes(self):
-        shapes = self.shape_editor.shapes
-        width = self.options['width']
-        height = self.options['height']
-        frame_shapes(shapes)
-        width = int(ceil(max([max(s.rect.right() for s in shapes), width])))
-        height = int(ceil(max([max(s.rect.bottom() for s in shapes), height])))
-        self.shape_editor.repaint()
-        self.update_manipulator_rect()
-        # This mark data as changed, no need to repeat.
-        self.menu.set_size_values(width, height)
 
     def create_shape(self, template, before=False):
         options = template.copy()

@@ -1,10 +1,9 @@
-
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS,
     NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
-    ZOOM_SENSITIVITY, ZOOM_BUTTON)
+    USE_MAYA_COLOR_PICKER, ZOOM_SENSITIVITY, ZOOM_BUTTON)
 
 
 MAX_SENSITIVITY = 200
@@ -41,9 +40,12 @@ class PreferencesWindow(QtWidgets.QWidget):
 
         msg = "Prompt search and replace after mirror"
         self.search_on_mirror = QtWidgets.QCheckBox(msg)
+        msg = "Use Maya color picker"
+        self.use_maya_color_picker = QtWidgets.QCheckBox(msg)
         self.advanced_group = QtWidgets.QGroupBox("Advanced editor")
         self.advanced_layout = QtWidgets.QVBoxLayout(self.advanced_group)
         self.advanced_layout.addWidget(self.search_on_mirror)
+        self.advanced_layout.addWidget(self.use_maya_color_picker)
 
         self.zoom_sensitivity = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.zoom_sensitivity.setMaximum(MAX_SENSITIVITY)
@@ -73,6 +75,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.search_on_mirror.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
+        self.use_maya_color_picker.released.connect(self.save_ui_states)
 
     def load_ui_states(self):
         state = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
@@ -84,9 +87,10 @@ class PreferencesWindow(QtWidgets.QWidget):
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
-        value = cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR)
+        state = cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR)
         self.search_on_mirror.setChecked(state)
-
+        state = cmds.optionVar(query=USE_MAYA_COLOR_PICKER)
+        self.use_maya_color_picker.setChecked(state)
         value = MAX_SENSITIVITY - cmds.optionVar(query=ZOOM_SENSITIVITY)
         self.zoom_sensitivity.setSliderPosition(value)
         value = cmds.optionVar(query=ZOOM_BUTTON)
@@ -102,6 +106,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.search_on_mirror.isChecked())
         save_optionvar(TRIGGER_REPLACE_ON_MIRROR, value)
+        value = int(self.use_maya_color_picker.isChecked())
+        save_optionvar(USE_MAYA_COLOR_PICKER, value)
         save_optionvar(ZOOM_BUTTON, self.zoom_button.currentText())
         value = MAX_SENSITIVITY - int(self.zoom_sensitivity.value()) + 1
         save_optionvar(ZOOM_SENSITIVITY, value)

@@ -25,9 +25,11 @@ SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
 SYNCHRONYZE_SELECTION = 'dwpicker_synchronize_selection'
 TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
+USE_MAYA_COLOR_PICKER = 'dwpicker_use_maya_color_picker'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
+DW_VAULT_DIR ="n:/projects/guppies/bg06/production/vault/dwpicker_wip"
 
 OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: 'pickertomaya', # other options as ['bilateral', 'off']
@@ -38,9 +40,12 @@ OPTIONVARS = {
     DEFAULT_LABEL: '',
     DEFAULT_WIDTH: 30,
     DEFAULT_HEIGHT: 20,
-    LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
-    LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
-    LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
+    #LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
+    #LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
+    #LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
+    LAST_OPEN_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
+    LAST_SAVE_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
+    LAST_IMPORT_DIRECTORY: os.path.expanduser(DW_VAULT_DIR),
     LAST_COMMAND_LANGUAGE: 0, # 0 = python, 1 = mel
     NAMESPACE_TOOLBAR: 0,
     OPENED_FILES: '',
@@ -52,6 +57,7 @@ OPTIONVARS = {
     SNAP_GRID_Y: 10,
     SYNCHRONYZE_SELECTION: 1,
     TRIGGER_REPLACE_ON_MIRROR: 0,
+    USE_MAYA_COLOR_PICKER: 0,
     ZOOM_BUTTON: 'middle', # other values are : ['left', 'right']
     ZOOM_SENSITIVITY: 50
 }
@@ -76,7 +82,7 @@ def ensure_optionvars_exists():
 
 
 def save_optionvar(optionvar, value):
-    kwargs = {TYPES.get(type(value)): [optionvar, value]}
+    kwargs = {TYPES.get(type(value)): [optionvar, value]}    
     cmds.optionVar(**kwargs)
 
 

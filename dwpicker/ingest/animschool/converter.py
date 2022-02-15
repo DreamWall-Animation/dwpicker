@@ -10,21 +10,9 @@ def rgb_to_hex(r, g, b):
     return '#{r:02x}{g:02x}{b:02x}'.format(r=r, g=g, b=b)
 
 
-def _label_width(text):
-    width = 0
-    for letter in text:
-        if letter == " ":
-            width += 3
-        elif letter.isupper():
-            width += 7
-        else:
-            width += 6
-    return width
-
-
 def convert_to_picker_button(button):
     if len(button['label']):
-        button['w'] = max((button['w'], _label_width(button['label'])))
+        button['w'] = max((button['w'], len(button['label']) * 7))
     delta = {
         'text.content': button['label'],
         'shape.left': button['x'] - (button['w'] // 2),
