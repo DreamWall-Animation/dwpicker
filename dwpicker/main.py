@@ -22,15 +22,8 @@ from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
     LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    OPENED_FILES, save_optionvar, append_recent_filename,
-    save_opened_filenames)
-import dwpicker.picker
+    save_optionvar, append_recent_filename, save_opened_filenames)
 
-#################################################################
-##  Convience for reloading of dwipicker while in development
-#################################################################
-reload (dwpicker.picker)
-#################################################################
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -559,6 +552,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def call_edit(self):
         index = self.tab.currentIndex()
+        if index < 0:
+            QtWidgets.QMessageBox.warning(self, "Warning", "No picker set")
+            return
         if self.editors[index] is None:
             data = self.picker_data()
             undo_manager = self.undo_managers[index]

@@ -88,6 +88,8 @@ class ColorEdit(QtWidgets.QWidget):
 
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
+        self.text.focusInEvent = self.focusInEvent
+        self.text.focusOutEvent = self.focusOutEvent
         self.button = QtWidgets.QPushButton(icon('picker.png'), '')
         self.button.setFixedSize(21, 21)
         self.button.released.connect(self.pick_color)
