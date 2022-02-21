@@ -242,7 +242,7 @@ class PickerView(QtWidgets.QWidget):
         elif self.mode_manager.mode == ModeManager.ZOOMING:
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None and self.mode_manager.zoom_anchor:
-                factor = offset.y() * 5.0
+                factor = offset.y() + offset.x() * 2.5
                 self.zoom(factor, self.mode_manager.zoom_anchor)
 
         elif self.mode_manager.mode == ModeManager.NAVIGATION:
