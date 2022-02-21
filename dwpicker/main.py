@@ -10,6 +10,8 @@ from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 import maya.OpenMaya as om
 
+from dwpicker.appinfos import VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE
+from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
     warning, question, CommandButtonDialog, NamespaceDialog)
@@ -31,11 +33,6 @@ from dwpicker.templates import BUTTON, PICKER, BACKGROUND
 from dwpicker.undo import UndoManager
 
 
-__version__ = 0, 1, 1
-WINDOW_TITLE = "DreamWall - Picker"
-RELEASE_DATE = 'January 27th 2022'
-DW_WEBSITE = 'https://fr.dreamwall.be/'
-DW_GITHUB = 'https://github.com/DreamWall-Animation'
 ABOUT = """\
 DreamWall Picker
     Licence MIT
@@ -55,8 +52,9 @@ This tool is a fork of Hotbox Designer (Lionel Brouyère).
 A menus, markmenu and hotbox designer cross DCC.
 https://github.com/luckylyk/hotbox_designer
 """.format(
-    version=".".join(str(n) for n in __version__),
+    version=".".join(str(n) for n in VERSION),
     release=RELEASE_DATE)
+WINDOW_TITLE = "DreamWall - Picker"
 WINDOW_CONTROL_NAME = "dwPickerWindow"
 
 
@@ -345,10 +343,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
-            print("Add " + filename + " ")
-            import pprint
-            data=json.load(f)
-            pprint.pprint(data["general"])
+            data=ensure_retro_compatibility(json.load(f))
             self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 
@@ -400,15 +395,17 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.show()
 
     def call_save(self, index=None):
-        index = index or self.tab.currentIndex()
+        print("INDEX:", index)
+        index = self.tab.currentIndex() if index in (None, False) else index
+        print(index)
         filename = self.filenames[index]
+        print(filename)
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        print("INDEX", index, self.tab.currentIndex())
-        index = index or self.tab.currentIndex()
+        index = self.tab.currentIndex() if index in (None, False) else index
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -441,7 +438,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_undo_manager(index)
 
     def save_picker(self, index, filename):
-        print(index)
         self.filenames[index] = filename
         save_optionvar(LAST_SAVE_DIRECTORY, os.path.dirname(filename))
         append_recent_filename(filename)
@@ -477,16 +473,15 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.add_picker({
             'general': PICKER.copy(),
             'shapes': []})
-        self.filenames.append(None)
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = index if index is not None else self.tab.currentIndex()
+        index = self.tab.currentIndex() if index in (None, False) else index
         if index < 0:
             return None
         picker = self.tab.widget(index)
         return {
-            'version': __version__,
+            'version': VERSION,
             'general': self.generals[index],
             'shapes': [shape.options for shape in picker.shapes]}
 
@@ -591,6 +586,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def data_changed_from_picker(self, picker):
         index = self.tab.indexOf(picker)
+        print(index)
         data = self.picker_data(index)
         if self.editors[index]:
             self.editors[index].set_picker_data(data)
@@ -619,7 +615,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if not self.editable:
             return
 
-        index = index or self.tab.currentIndex()
+        index = self.tab.currentIndex() if index in (None, False) else index
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(

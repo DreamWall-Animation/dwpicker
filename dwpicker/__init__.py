@@ -36,8 +36,7 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
         except:
             import traceback
             print("Not able to load: {}".format(filename))
-            print( traceback.format_exc())
-
+            print(traceback.format_exc())
 
 
 def close():

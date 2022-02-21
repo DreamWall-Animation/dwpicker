@@ -1,3 +1,6 @@
+from dwpicker.appinfos import VERSION
+
+
 BUTTON = {
     'shape': 'square',  # or round
     'shape.left': 0.0,
@@ -122,6 +125,7 @@ BACKGROUND = {
 
 PICKER = {
     'name': 'Untitled',
+    'version': VERSION,
     'width': 900,
     'height': 600,
     'centerx': 450,

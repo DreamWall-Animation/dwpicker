@@ -1,5 +1,6 @@
 import json
 from maya import cmds
+from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.selection import maya_namespace
 
 
@@ -34,7 +35,8 @@ def load_local_picker_data():
     pickers = []
     for node in nodes:
         data = cmds.getAttr(node + '.' + PICKER_HOLDER_ATTRIBUTE)
-        pickers.extend(json.loads(data))
+        data = json.loads(data)
+        pickers.extend(ensure_retro_compatibility(p) for p in data)
     return pickers
 
 
