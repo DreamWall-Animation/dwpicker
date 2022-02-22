@@ -17,6 +17,5 @@ def ensure_retro_compatibility(picker_data):
     # version = picker_data['version']
     # if version < (youre version number):
     #     picker_data = your code update
-    print("retro comp: ", picker_data)
     picker_data['version'] = VERSION
     return picker_data

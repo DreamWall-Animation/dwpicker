@@ -395,17 +395,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.show()
 
     def call_save(self, index=None):
-        print("INDEX:", index)
-        index = self.tab.currentIndex() if index in (None, False) else index
-        print(index)
+        index = self.tab.currentIndex() if index is None else index
         filename = self.filenames[index]
-        print(filename)
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        index = self.tab.currentIndex() if index in (None, False) else index
+        index = self.tab.currentIndex() if index is None else index
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -476,7 +473,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = self.tab.currentIndex() if index in (None, False) else index
+        index = self.tab.currentIndex() if index is None else index
         if index < 0:
             return None
         picker = self.tab.widget(index)
@@ -586,7 +583,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def data_changed_from_picker(self, picker):
         index = self.tab.indexOf(picker)
-        print(index)
         data = self.picker_data(index)
         if self.editors[index]:
             self.editors[index].set_picker_data(data)
@@ -614,8 +610,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def change_title(self, index=None):
         if not self.editable:
             return
-
-        index = self.tab.currentIndex() if index in (None, False) else index
+        index = self.tab.currentIndex() if index is None else index
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(
