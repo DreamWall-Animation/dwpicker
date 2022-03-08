@@ -2,9 +2,9 @@
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
-    save_optionvar, AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS,
-    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
-    ZOOM_SENSITIVITY, ZOOM_BUTTON)
+    save_optionvar, AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS,
+    DISPLAY_QUICK_OPTIONS, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
+    TRIGGER_REPLACE_ON_MIRROR, ZOOM_SENSITIVITY, ZOOM_BUTTON)
 
 
 MAX_SENSITIVITY = 200
@@ -25,12 +25,14 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.namespace_toolbar = QtWidgets.QCheckBox(text)
         self.quick_options = QtWidgets.QCheckBox("Display quick options")
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection")
-
+        text = "Check images paths on picker load"
+        self.check_images_paths = QtWidgets.QCheckBox(text)
         self.ui_group = QtWidgets.QGroupBox("Ui")
         self.ui_layout = QtWidgets.QVBoxLayout(self.ui_group)
         self.ui_layout.addWidget(self.namespace_toolbar)
         self.ui_layout.addWidget(self.quick_options)
         self.ui_layout.addWidget(self.sychronize)
+        self.ui_layout.addWidget(self.check_images_paths)
 
         self.auto_focus = QtWidgets.QComboBox()
         self.auto_focus.addItems(list(AUTO_FOCUSES))
@@ -69,6 +71,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.namespace_toolbar.released.connect(self.save_ui_states)
         self.quick_options.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
+        self.check_images_paths.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
@@ -79,6 +82,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.namespace_toolbar.setChecked(state)
         state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
         self.quick_options.setChecked(state)
+        state = bool(cmds.optionVar(query=CHECK_IMAGES_PATHS))
+        self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
         self.sychronize.setChecked(state)
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
@@ -95,6 +100,8 @@ class PreferencesWindow(QtWidgets.QWidget):
     def save_ui_states(self, *_):
         value = int(self.namespace_toolbar.isChecked())
         save_optionvar(NAMESPACE_TOOLBAR, value)
+        value = int(self.check_images_paths.isChecked())
+        save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
         save_optionvar(SYNCHRONYZE_SELECTION, int(self.sychronize.isChecked()))

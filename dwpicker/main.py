@@ -14,7 +14,7 @@ from dwpicker.appinfos import VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE
 from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
-    warning, question, CommandButtonDialog, NamespaceDialog)
+    warning, question, get_image_path, CommandButtonDialog, NamespaceDialog)
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
@@ -25,6 +25,7 @@ from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
 from dwpicker.quick import QuickOptions
+from dwpicker.references import ensure_images_path_exists
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
@@ -271,6 +272,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.clear()
         pickers = load_local_picker_data()
         for picker in pickers:
+            picker = ensure_images_path_exists(picker)
             self.add_picker(picker)
         clean_stray_picker_holder_nodes()
 
@@ -344,6 +346,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
             data=ensure_retro_compatibility(json.load(f))
+            data=ensure_images_path_exists(data)
             self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 
@@ -648,8 +651,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.data_changed_from_picker(picker)
 
     def add_background(self):
-        msg = 'Select image ..'
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, msg)[0]
+        filename = get_image_path(self)
         if not filename:
             return
 

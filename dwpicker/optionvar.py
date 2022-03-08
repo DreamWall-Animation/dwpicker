@@ -5,16 +5,18 @@ from maya import cmds
 
 AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
-DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
-DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
+CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
 DEFAULT_BG_COLOR = 'dwpicker_default_background_color'
 DEFAULT_LABEL = 'dwpicker_default_label_color'
-DEFAULT_WIDTH = 'dwpicker_default_width'
 DEFAULT_HEIGHT = 'dwpicker_default_height'
+DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
+DEFAULT_WIDTH = 'dwpicker_default_width'
+DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
+LAST_COMMAND_LANGUAGE = 'dwpicker_last_command_language_used'
+LAST_IMAGE_DIRECTORY_USED = 'dwpicker_last_directory_used'
+LAST_IMPORT_DIRECTORY = 'dwpicker_last_file_import_directory'
 LAST_OPEN_DIRECTORY = 'dwpicker_last_file_open_directory'
 LAST_SAVE_DIRECTORY = 'dwpicker_last_file_save_directory'
-LAST_IMPORT_DIRECTORY = 'dwpicker_last_file_import_directory'
-LAST_COMMAND_LANGUAGE = 'dwpicker_last_command_language_used'
 OPENED_FILES = 'dwpicker_opened_files'
 NAMESPACE_TOOLBAR = 'dwpicker_display_dwtoolbar'
 RECENT_FILES = 'dwpicker_recent_files'
@@ -32,16 +34,18 @@ ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: 'pickertomaya', # other options as ['bilateral', 'off']
     BG_LOCKED: 1,
-    DISPLAY_QUICK_OPTIONS: 1,
-    DEFAULT_TEXT_COLOR: '000000',
+    CHECK_IMAGES_PATHS: 1,
     DEFAULT_BG_COLOR: '#777777',
-    DEFAULT_LABEL: '',
-    DEFAULT_WIDTH: 30,
     DEFAULT_HEIGHT: 20,
+    DEFAULT_LABEL: '',
+    DEFAULT_TEXT_COLOR: '000000',
+    DEFAULT_WIDTH: 30,
+    DISPLAY_QUICK_OPTIONS: 1,
     LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
     LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
     LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
     LAST_COMMAND_LANGUAGE: 0, # 0 = python, 1 = mel
+    LAST_IMAGE_DIRECTORY_USED: os.path.expanduser("~"),
     NAMESPACE_TOOLBAR: 0,
     OPENED_FILES: '',
     RECENT_FILES: '',

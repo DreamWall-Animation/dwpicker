@@ -1,7 +1,8 @@
 from PySide2 import QtGui, QtCore, QtWidgets
-from dwpicker.qtutils import icon
-from dwpicker.colorwheel import ColorDialog
 
+from dwpicker.colorwheel import ColorDialog
+from dwpicker.dialog import get_image_path
+from dwpicker.qtutils import icon
 
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
@@ -46,8 +47,10 @@ class BrowseEdit(QtWidgets.QWidget):
         self._value = self.value()
 
     def browse(self):
-        dialog = QtWidgets.QFileDialog.getOpenFileName(self, 'select image')
-        self.text.setText(dialog[0])
+        filename = get_image_path(self)
+        if not filename:
+            return
+        self.text.setText(filename)
         self.apply()
 
     def apply(self):

@@ -1,11 +1,12 @@
 from functools import partial
+import os
 
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
 from dwpicker.optionvar import (
     save_optionvar, LAST_COMMAND_LANGUAGE, SEARCH_FIELD_INDEX,
-    SHAPES_FILTER_INDEX)
+    SHAPES_FILTER_INDEX, LAST_IMAGE_DIRECTORY_USED)
 
 
 SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Command', 'Image path'
@@ -21,12 +22,23 @@ def warning(title, message, parent=None):
         QtWidgets.QMessageBox.Ok)
 
 
-def question(title, message, parent=None):
+def question(title, message, buttons=None, parent=None):
+    buttons = buttons or QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
     result = QtWidgets.QMessageBox.question(
-        parent, title, message,
-        QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
-        QtWidgets.QMessageBox.Ok)
+        parent, title, message, buttons, QtWidgets.QMessageBox.Ok)
     return result == QtWidgets.QMessageBox.Ok
+
+
+def get_image_path(parent=None):
+    filename = QtWidgets.QFileDialog.getOpenFileName(
+        parent, "Repath image...",
+        cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED),
+        filter="Images (*.jpg *.gif *.png *.tga)")[0]
+    if not filename:
+        return None
+    directory = os.path.dirname(filename)
+    save_optionvar(LAST_IMAGE_DIRECTORY_USED, directory)
+    return filename
 
 
 class NamespaceDialog(QtWidgets.QDialog):
