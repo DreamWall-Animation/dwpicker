@@ -448,7 +448,7 @@ def get_combined_rects(rects):
     |                     |          |
     |_____________________|__________|
     """
-    if rect is Nones:
+    if not rects:
         return None
     l = min(rect.left() for rect in rects)
     t = min(rect.top() for rect in rects)
