@@ -73,7 +73,15 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def __init__(self):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
-        set_shortcut("F", self, self.reset)
+        shortcut_context = QtCore.Qt.WidgetWithChildrenShortcut
+        set_shortcut("F", self, self.reset, shortcut_context)
+        set_shortcut("CTRL+N", self, self.call_new, shortcut_context)
+        set_shortcut("CTRL+O", self, self.call_open, shortcut_context)
+        set_shortcut("CTRL+S", self, self.call_save, shortcut_context)
+        set_shortcut("CTRL+Q", self, self.close, shortcut_context)
+        set_shortcut("CTRL+Z", self, self.call_undo, shortcut_context)
+        set_shortcut("CTRL+Y", self, self.call_redo, shortcut_context)
+        set_shortcut("CTRL+E", self, self.call_edit, shortcut_context)
 
         self.editable = True
         self.callbacks = []
@@ -119,23 +127,32 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         self.quick_options = QuickOptions()
 
-        self.menubar = DwPickerMenu()
+        self.menubar = DwPickerMenu(parent=self)
         self.menubar.new.triggered.connect(self.call_new)
+        # HACK: Need to implement twice the shortcut to display key sequence
+        # in the menu and keep it active when the view is docked.
         self.menubar.new.setShortcut('CTRL+N')
+        self.menubar.new.setShortcutContext(shortcut_context)
         self.menubar.open.triggered.connect(self.call_open)
         self.menubar.open.setShortcut('CTRL+O')
+        self.menubar.open.setShortcutContext(shortcut_context)
         self.menubar.save.triggered.connect(self.call_save)
         self.menubar.save.setShortcut('CTRL+S')
+        self.menubar.save.setShortcutContext(shortcut_context)
         self.menubar.save_as.triggered.connect(self.call_save_as)
         self.menubar.exit.triggered.connect(self.close)
         self.menubar.exit.setShortcut('CTRL+Q')
+        self.menubar.exit.setShortcutContext(shortcut_context)
         self.menubar.import_.triggered.connect(self.call_import)
         self.menubar.undo.triggered.connect(self.call_undo)
         self.menubar.undo.setShortcut('CTRL+Z')
+        self.menubar.undo.setShortcutContext(shortcut_context)
         self.menubar.redo.triggered.connect(self.call_redo)
         self.menubar.redo.setShortcut('CTRL+Y')
+        self.menubar.redo.setShortcutContext(shortcut_context)
         self.menubar.advanced_edit.triggered.connect(self.call_edit)
         self.menubar.advanced_edit.setShortcut('CTRL+E')
+        self.menubar.advanced_edit.setShortcutContext(shortcut_context)
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
         method = self.change_namespace_dialog
@@ -195,18 +212,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             l.insert(newindex, l.pop(oldindex))
 
         self.store_local_pickers_data()
-
-    def keyPressEvent(self, event):
-        picker = self.tab.currentWidget()
-        if not picker:
-            return
-        picker.keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        picker = self.tab.currentWidget()
-        if not picker:
-            return
-        picker.keyReleaseEvent(event)
 
     def leaveEvent(self, _):
         mode = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
@@ -695,28 +700,28 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 class DwPickerMenu(QtWidgets.QMenuBar):
     def __init__(self, parent=None):
         super(DwPickerMenu, self).__init__(parent)
+        print(parent)
+        self.new = QtWidgets.QAction('&New', parent)
+        self.open = QtWidgets.QAction('&Open', parent)
+        self.import_ = QtWidgets.QAction('&Import', parent)
+        self.save = QtWidgets.QAction('&Save', parent)
+        self.save_as = QtWidgets.QAction('&Save as', parent)
+        self.exit = QtWidgets.QAction('Exit', parent)
 
-        self.new = QtWidgets.QAction('&New', self)
-        self.open = QtWidgets.QAction('&Open', self)
-        self.import_ = QtWidgets.QAction('&Import', self)
-        self.save = QtWidgets.QAction('&Save', self)
-        self.save_as = QtWidgets.QAction('&Save as', self)
-        self.exit = QtWidgets.QAction('Exit', self)
+        self.undo = QtWidgets.QAction('Undo', parent)
+        self.redo = QtWidgets.QAction('Redo', parent)
 
-        self.undo = QtWidgets.QAction('Undo', self)
-        self.redo = QtWidgets.QAction('Redo', self)
+        self.advanced_edit = QtWidgets.QAction('Advanced &editing', parent)
+        self.preferences = QtWidgets.QAction('Preferences', parent)
+        self.change_title = QtWidgets.QAction('Change picker title', parent)
+        self.change_namespace = QtWidgets.QAction('Change namespace', parent)
+        self.add_background = QtWidgets.QAction('Add background item', parent)
 
-        self.advanced_edit = QtWidgets.QAction('Advanced &editing', self)
-        self.preferences = QtWidgets.QAction('Preferences', self)
-        self.change_title = QtWidgets.QAction('Change picker title', self)
-        self.change_namespace = QtWidgets.QAction('Change namespace', self)
-        self.add_background = QtWidgets.QAction('Add background item', self)
+        self.tools = QtWidgets.QAction('Other DreamWall &tools', parent)
+        self.dw = QtWidgets.QAction('&About DreamWall', parent)
+        self.about = QtWidgets.QAction('&About DwPicker', parent)
 
-        self.tools = QtWidgets.QAction('Other DreamWall &tools', self)
-        self.dw = QtWidgets.QAction('&About DreamWall', self)
-        self.about = QtWidgets.QAction('&About DwPicker', self)
-
-        self.file = QtWidgets.QMenu('&File', self)
+        self.file = QtWidgets.QMenu('&File', parent)
         self.file.addAction(self.new)
         self.file.addAction(self.open)
         self.file.addAction(self.import_)
@@ -726,7 +731,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.file.addSeparator()
         self.file.addAction(self.exit)
 
-        self.edit = QtWidgets.QMenu('&Edit', self)
+        self.edit = QtWidgets.QMenu('&Edit', parent)
         self.edit.addAction(self.undo)
         self.edit.addAction(self.redo)
         self.edit.addSeparator()
@@ -738,7 +743,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.change_namespace)
         self.edit.addAction(self.add_background)
 
-        self.help = QtWidgets.QMenu('&Help', self)
+        self.help = QtWidgets.QMenu('&Help', parent)
         self.help.addAction(self.tools)
         self.help.addAction(self.dw)
         self.help.addSeparator()

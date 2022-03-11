@@ -44,8 +44,9 @@ def get_cursor(widget):
     return widget.mapFromGlobal(QtGui.QCursor.pos())
 
 
-def set_shortcut(keysequence, parent, method):
+def set_shortcut(keysequence, parent, method, context=None):
     shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(keysequence), parent)
+    shortcut.setContext(context or QtCore.Qt.WidgetWithChildrenShortcut)
     shortcut.activated.connect(method)
 
 
