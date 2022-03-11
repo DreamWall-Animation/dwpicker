@@ -3,6 +3,10 @@ import sys
 from maya import cmds
 
 
+AUTO_FOCUS_BEHAVIORS = ['off', 'bilateral', 'pickertomaya']
+ZOOM_BUTTONS = ["left", "middle", "right"]
+
+
 AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
 CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
@@ -27,12 +31,13 @@ SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
 SYNCHRONYZE_SELECTION = 'dwpicker_synchronize_selection'
 TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
+USE_ICON_FOR_UNSAVED_TAB = 'dwpicker_use_icon_for_unsaved_tab'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
 
 OPTIONVARS = {
-    AUTO_FOCUS_BEHAVIOR: 'pickertomaya', # other options as ['bilateral', 'off']
+    AUTO_FOCUS_BEHAVIOR: AUTO_FOCUS_BEHAVIORS[-1],
     BG_LOCKED: 1,
     CHECK_IMAGES_PATHS: 1,
     DEFAULT_BG_COLOR: '#777777',
@@ -56,7 +61,8 @@ OPTIONVARS = {
     SNAP_GRID_Y: 10,
     SYNCHRONYZE_SELECTION: 1,
     TRIGGER_REPLACE_ON_MIRROR: 0,
-    ZOOM_BUTTON: 'middle', # other values are : ['left', 'right']
+    USE_ICON_FOR_UNSAVED_TAB: 1,
+    ZOOM_BUTTON: ZOOM_BUTTONS[1],
     ZOOM_SENSITIVITY: 50
 }
 

@@ -2,16 +2,17 @@
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
-    save_optionvar, AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS,
-    DISPLAY_QUICK_OPTIONS, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
-    TRIGGER_REPLACE_ON_MIRROR, ZOOM_SENSITIVITY, ZOOM_BUTTON)
+    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS,
+    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, NAMESPACE_TOOLBAR,
+    SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR, USE_ICON_FOR_UNSAVED_TAB,
+    ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
 
 
 MAX_SENSITIVITY = 200
 AUTO_FOCUSES = {
-    'Disable': 'off',
-    'Bilateral': 'bilateral',
-    'From picker to Maya only': 'pickertomaya'}
+    'Disable':AUTO_FOCUS_BEHAVIORS[0],
+    'Bilateral': AUTO_FOCUS_BEHAVIORS[1],
+    'From picker to Maya only': AUTO_FOCUS_BEHAVIORS[2]}
 
 
 class PreferencesWindow(QtWidgets.QWidget):
@@ -21,18 +22,21 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.setWindowTitle("Preferences")
         self.callback = callback
 
-        text = "Display namespace toolbar"
+        text = "Display namespace toolbar."
         self.namespace_toolbar = QtWidgets.QCheckBox(text)
-        self.quick_options = QtWidgets.QCheckBox("Display quick options")
-        self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection")
-        text = "Check images paths on picker load"
+        self.quick_options = QtWidgets.QCheckBox("Display quick options.")
+        self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
+        text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
+        text = "Use icon to mark unsaved tab."
+        self.unsaved_tab_icon = QtWidgets.QCheckBox(text)
         self.ui_group = QtWidgets.QGroupBox("Ui")
         self.ui_layout = QtWidgets.QVBoxLayout(self.ui_group)
         self.ui_layout.addWidget(self.namespace_toolbar)
         self.ui_layout.addWidget(self.quick_options)
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
+        self.ui_layout.addWidget(self.unsaved_tab_icon)
 
         self.auto_focus = QtWidgets.QComboBox()
         self.auto_focus.addItems(list(AUTO_FOCUSES))
@@ -41,7 +45,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.focus_layout = QtWidgets.QFormLayout(self.focus_group)
         self.focus_layout.addRow("Behavior", self.auto_focus)
 
-        msg = "Prompt search and replace after mirror"
+        msg = "Prompt search and replace after mirror."
         self.search_on_mirror = QtWidgets.QCheckBox(msg)
         self.advanced_group = QtWidgets.QGroupBox("Advanced editor")
         self.advanced_layout = QtWidgets.QVBoxLayout(self.advanced_group)
@@ -52,7 +56,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.zoom_sensitivity.setMinimum(1)
         self.zoom_sensitivity.setSingleStep(1)
         self.zoom_button = QtWidgets.QComboBox()
-        for item in ["left", "middle", "right"]:
+        for item in ZOOM_BUTTONS:
             self.zoom_button.addItem(item)
 
         self.zoom_group = QtWidgets.QGroupBox("Zoom options")
@@ -72,6 +76,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.quick_options.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
+        self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
@@ -86,6 +91,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
         self.sychronize.setChecked(state)
+        state = bool(cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB))
+        self.unsaved_tab_icon.setChecked(state)
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
@@ -104,7 +111,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
-        save_optionvar(SYNCHRONYZE_SELECTION, int(self.sychronize.isChecked()))
+        value = int(self.unsaved_tab_icon.isChecked())
+        save_optionvar(USE_ICON_FOR_UNSAVED_TAB, value)
         value = AUTO_FOCUSES[self.auto_focus.currentText()]
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.search_on_mirror.isChecked())

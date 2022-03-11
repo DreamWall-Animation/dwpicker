@@ -20,7 +20,8 @@ from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
     LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    save_optionvar, append_recent_filename, save_opened_filenames)
+    USE_ICON_FOR_UNSAVED_TAB, save_optionvar, append_recent_filename,
+    save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -342,6 +343,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         value = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
         self.namespace_widget.setVisible(value)
         self.update_namespaces()
+        for i in range(self.tab.count()):
+            self.set_modified_state(i, self.modified_states[i])
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
@@ -518,8 +521,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if not self.filenames[index]:
             return
         self.modified_states[index] = state
-        icon_ = icon('save.png') if state else QtGui.QIcon()
+        use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
+        icon_ = icon('save.png') if state and use_icon else QtGui.QIcon()
         self.tab.setTabIcon(index, icon_)
+        title = self.generals[index]['name']
+        title = "*" + title if state and not use_icon else title
+        self.tab.setTabText(index, title)
 
     def call_tools(self):
         webbrowser.open(DW_GITHUB)
@@ -623,6 +630,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             return
 
         self.generals[index]['name'] = title
+        use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
+        if not use_icon and self.modified_states[index]:
+            title = "*" + title
         self.tab.setTabText(index, title)
         self.data_changed_from_picker(self.tab.widget(index))
 

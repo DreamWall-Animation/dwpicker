@@ -24,7 +24,7 @@ def get_topleft_rect(rect):
        |                        |
        |________________________|
     """
-    if not rect:
+    if rect is None:
         return None
     point = rect.topLeft()
     return QtCore.QRectF(
@@ -43,7 +43,7 @@ def get_bottomleft_rect(rect):
        |________________________|
       *
     """
-    if not rect:
+    if rect is None:
         return None
     point = rect.bottomLeft()
     return QtCore.QRectF(
@@ -61,7 +61,7 @@ def get_topright_rect(rect):
        |                        |
        |________________________|
     """
-    if not rect:
+    if rect is None:
         return None
     point = rect.topRight()
     return QtCore.QRectF(
@@ -80,7 +80,7 @@ def get_bottomright_rect(rect):
        |________________________|
                                  *
     """
-    if not rect:
+    if rect is None:
         return None
     point = rect.bottomRight()
     return QtCore.QRectF(
@@ -98,7 +98,7 @@ def get_left_side_rect(rect):
       *|                        |
        |________________________|
     """
-    if not rect:
+    if rect is None:
         return None
     top = rect.top() + (rect.height() / 2.0)
     return QtCore.QRectF(
@@ -116,7 +116,7 @@ def get_right_side_rect(rect):
        |                        |*
        |________________________|
     """
-    if not rect:
+    if rect is None:
         return None
     top = rect.top() + (rect.height() / 2.0)
     return QtCore.QRectF(
@@ -134,7 +134,7 @@ def get_top_side_rect(rect):
        |                        |
        |________________________|
     """
-    if not rect:
+    if rect is None:
         return None
     return QtCore.QRectF(
         rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0),
@@ -152,7 +152,7 @@ def get_bottom_side_rect(rect):
        |________________________|
                     *
     """
-    if not rect:
+    if rect is None:
         return None
     return QtCore.QRectF(
         rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0),
@@ -161,7 +161,7 @@ def get_bottom_side_rect(rect):
 
 
 def grow_rect(rect, value):
-    if not rect:
+    if rect is None:
         return None
     return QtCore.QRectF(
         rect.left() - value,
@@ -448,7 +448,7 @@ def get_combined_rects(rects):
     |                     |          |
     |_____________________|__________|
     """
-    if not rects:
+    if rect is Nones:
         return None
     l = min(rect.left() for rect in rects)
     t = min(rect.top() for rect in rects)
