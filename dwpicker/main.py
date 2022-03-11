@@ -18,10 +18,10 @@ from dwpicker.dialog import (
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
-    AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    USE_ICON_FOR_UNSAVED_TAB, save_optionvar, append_recent_filename,
-    save_opened_filenames)
+    AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
+    LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
+    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, save_optionvar,
+    append_recent_filename, save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -358,7 +358,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if picker:
             picker.reset()
 
-    def add_picker(self, data, filename=None, modified_state=False):
+    def create_picker(self, data):
         picker = PickerView()
         picker.editable = self.editable
         picker.register_callbacks()
@@ -372,16 +372,31 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker.set_shapes(shapes)
         center = [-data['general']['centerx'], -data['general']['centery']]
         picker.center = center
+        return picker
 
-        self.generals.append(data['general'])
-        self.pickers.append(picker)
-        self.editors.append(None)
-        self.undo_managers.append(UndoManager(data))
-        self.filenames.append(filename)
-        self.modified_states.append(modified_state)
-
-        self.tab.addTab(picker, data['general']['name'])
-        self.tab.setCurrentIndex(self.tab.count() - 1)
+    def add_picker(self, data, filename=None, modified_state=False):
+        picker = self.create_picker(data)
+        insert = cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT)
+        index = self.tab.currentIndex() + 1 if insert else None
+        index = index if index < self.tab.count() - 1 else None
+        if index is None:
+            self.generals.append(data['general'])
+            self.pickers.append(picker)
+            self.editors.append(None)
+            self.undo_managers.append(UndoManager(data))
+            self.filenames.append(filename)
+            self.modified_states.append(modified_state)
+            self.tab.addTab(picker, data['general']['name'])
+            self.tab.setCurrentIndex(self.tab.count() - 1)
+        else:
+            self.generals.insert(index, data['general'])
+            self.pickers.insert(index, picker)
+            self.editors.insert(index, None)
+            self.undo_managers.insert(index, UndoManager(data))
+            self.filenames.insert(index, filename)
+            self.modified_states.insert(index, modified_state)
+            self.tab.insertTab(index, picker, data['general']['name'])
+            self.tab.setCurrentIndex(index)
         picker.reset()
 
     def call_open(self):

@@ -3,9 +3,9 @@ from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS,
-    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, NAMESPACE_TOOLBAR,
-    SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR, USE_ICON_FOR_UNSAVED_TAB,
-    ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
+    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
+    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
+    USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
 
 
 MAX_SENSITIVITY = 200
@@ -30,6 +30,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths = QtWidgets.QCheckBox(text)
         text = "Use icon to mark unsaved tab."
         self.unsaved_tab_icon = QtWidgets.QCheckBox(text)
+        text = "Insert new tab after current tab."
+        self.insert_after_current = QtWidgets.QCheckBox(text)
         self.ui_group = QtWidgets.QGroupBox("Ui")
         self.ui_layout = QtWidgets.QVBoxLayout(self.ui_group)
         self.ui_layout.addWidget(self.namespace_toolbar)
@@ -37,6 +39,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
         self.ui_layout.addWidget(self.unsaved_tab_icon)
+        self.ui_layout.addWidget(self.insert_after_current)
 
         self.auto_focus = QtWidgets.QComboBox()
         self.auto_focus.addItems(list(AUTO_FOCUSES))
@@ -76,6 +79,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.quick_options.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
+        self.insert_after_current.released.connect(self.save_ui_states)
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
@@ -93,6 +97,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.sychronize.setChecked(state)
         state = bool(cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB))
         self.unsaved_tab_icon.setChecked(state)
+        state = bool(cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT))
+        self.insert_after_current.setChecked(state)
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
@@ -113,6 +119,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
         value = int(self.unsaved_tab_icon.isChecked())
         save_optionvar(USE_ICON_FOR_UNSAVED_TAB, value)
+        value = int(self.insert_after_current.isChecked())
+        save_optionvar(INSERT_TAB_AFTER_CURRENT, value)
         value = AUTO_FOCUSES[self.auto_focus.currentText()]
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.search_on_mirror.isChecked())
