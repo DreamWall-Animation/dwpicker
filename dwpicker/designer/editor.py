@@ -39,6 +39,12 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.centerMoved.connect(self.move_center)
         method = self.set_data_modified
         self.shape_editor.increaseUndoStackRequested.connect(method)
+        self.scrollarea = QtWidgets.QScrollArea()
+        alignment = QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
+        self.scrollarea.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.scrollarea.setAlignment(alignment)
+        self.scrollarea.sizeHint = lambda: QtCore.QSize(1000, 750)
+        self.scrollarea.setWidget(self.shape_editor)
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
@@ -95,7 +101,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setContentsMargins(0, 0, 0, 0)
         self.hlayout.addStretch(1)
-        self.hlayout.addWidget(self.shape_editor)
+        self.hlayout.addWidget(self.scrollarea)
         self.hlayout.addStretch(1)
         self.hlayout.addWidget(self.attribute_editor)
 
