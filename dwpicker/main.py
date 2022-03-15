@@ -18,10 +18,10 @@ from dwpicker.dialog import (
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
-    AUTO_FOCUS_BEHAVIOR, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
-    LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
-    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, save_optionvar,
-    append_recent_filename, save_opened_filenames)
+    AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS,
+    INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY,
+    LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
+    save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, DockableBase
@@ -278,7 +278,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.clear()
         pickers = load_local_picker_data()
         for picker in pickers:
-            picker = ensure_images_path_exists(picker)
+            if cmds.optionVar(query=CHECK_IMAGES_PATHS):
+                picker = ensure_images_path_exists(picker)
             self.add_picker(picker)
         clean_stray_picker_holder_nodes()
 
