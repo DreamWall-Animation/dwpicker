@@ -6,7 +6,8 @@ from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
 from dwpicker.geometry import split_line
-from dwpicker.optionvar import SYNCHRONYZE_SELECTION, ZOOM_BUTTON
+from dwpicker.optionvar import (
+    SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
 from dwpicker.painting import PaintContext
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
@@ -62,13 +63,9 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
         s.rect.intersects(selection_rect)]
     targets = {t for s in selection_shapes_hovered for t in s.targets()}
 
-    for shape in selection_shapes:
-        for target in shape.targets():
-            if target not in targets:
-                shape.hovered = False
-                break
-        else:
-            shape.hovered = True
+    for s in selection_shapes:
+        state = next((False for t in s.targets() if t not in targets), True)
+        s.hovered = state
 
     for shape in shapes:
         if not shape.is_interactive():
@@ -201,7 +198,7 @@ class PickerView(QtWidgets.QWidget):
     def wheelEvent(self, event):
         # To center the zoom on the mouse, we save a reference mouse position
         # and compare the offset after zoom computation.
-        factor = 10.0 if event.angleDelta().y() > 0 else -10.0
+        factor = .25 if event.angleDelta().y() > 0 else -.25
         self.zoom(factor, event.pos())
         self.repaint()
 
@@ -242,7 +239,8 @@ class PickerView(QtWidgets.QWidget):
         elif self.mode_manager.mode == ModeManager.ZOOMING:
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None and self.mode_manager.zoom_anchor:
-                factor = offset.y() + offset.x() * 2.5
+                sensitivity = float(cmds.optionVar(query=ZOOM_SENSITIVITY))
+                factor = (offset.x() + offset.y()) / sensitivity
                 self.zoom(factor, self.mode_manager.zoom_anchor)
 
         elif self.mode_manager.mode == ModeManager.NAVIGATION:
@@ -253,9 +251,6 @@ class PickerView(QtWidgets.QWidget):
                 self.paintcontext.center = [x, y]
 
         self.repaint()
-
-    def offset(self, point):
-        return self.rect().center() + point.toPoint()
 
     def call_context_menu(self):
         if not self.editable:
