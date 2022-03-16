@@ -3,9 +3,10 @@ from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS,
-    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
-    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
-    USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
+    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
+    INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
+    TRIGGER_REPLACE_ON_MIRROR, USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY,
+    ZOOM_BUTTON, ZOOM_BUTTONS)
 
 
 MAX_SENSITIVITY = 500
@@ -28,6 +29,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
         text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
+        text = "Disable callback on import event. (Use with Studio Library)"
+        self.disable_import_callbacks = QtWidgets.QCheckBox(text)
         text = "Use icon to mark unsaved tab."
         self.unsaved_tab_icon = QtWidgets.QCheckBox(text)
         text = "Insert new tab after current tab."
@@ -36,6 +39,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout = QtWidgets.QVBoxLayout(self.ui_group)
         self.ui_layout.addWidget(self.namespace_toolbar)
         self.ui_layout.addWidget(self.quick_options)
+        self.ui_layout.addWidget(self.disable_import_callbacks)
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
         self.ui_layout.addWidget(self.unsaved_tab_icon)
@@ -79,6 +83,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.quick_options.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
+        self.disable_import_callbacks.released.connect(self.save_ui_states)
         self.insert_after_current.released.connect(self.save_ui_states)
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
@@ -91,6 +96,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.namespace_toolbar.setChecked(state)
         state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
         self.quick_options.setChecked(state)
+        state = bool(cmds.optionVar(query=DISABLE_IMPORT_CALLBACKS))
+        self.disable_import_callbacks.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_IMAGES_PATHS))
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
@@ -117,6 +124,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
+        value = int(self.disable_import_callbacks.isChecked())
+        save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
         value = int(self.unsaved_tab_icon.isChecked())
         save_optionvar(USE_ICON_FOR_UNSAVED_TAB, value)
         value = int(self.insert_after_current.isChecked())

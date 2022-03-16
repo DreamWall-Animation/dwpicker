@@ -15,6 +15,7 @@ DEFAULT_LABEL = 'dwpicker_default_label_color'
 DEFAULT_HEIGHT = 'dwpicker_default_height'
 DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
 DEFAULT_WIDTH = 'dwpicker_default_width'
+DISABLE_IMPORT_CALLBACKS = 'dwpicker_disable_import_callbacks'
 DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
 INSERT_TAB_AFTER_CURRENT = 'dwpicker_insert_tab_after_current'
 LAST_COMMAND_LANGUAGE = 'dwpicker_last_command_language_used'
@@ -46,6 +47,7 @@ OPTIONVARS = {
     DEFAULT_LABEL: '',
     DEFAULT_TEXT_COLOR: '000000',
     DEFAULT_WIDTH: 30,
+    DISABLE_IMPORT_CALLBACKS: 1,
     DISPLAY_QUICK_OPTIONS: 1,
     INSERT_TAB_AFTER_CURRENT: 0,
     LAST_OPEN_DIRECTORY: os.path.expanduser("~"),

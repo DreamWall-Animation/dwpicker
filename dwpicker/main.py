@@ -18,10 +18,11 @@ from dwpicker.dialog import (
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
-    AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS,
-    INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY,
-    LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
-    save_optionvar, append_recent_filename, save_opened_filenames)
+    AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS, DISABLE_IMPORT_CALLBACKS,
+    DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
+    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
+    USE_ICON_FOR_UNSAVED_TAB, save_optionvar, append_recent_filename,
+    save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
@@ -95,6 +96,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.modified_states = []
         self.preferences_window = PreferencesWindow(
             callback=self.load_ui_states, parent=maya_main_window())
+        self.preferences_window.disable_import_callbacks.released.connect(
+            self.reload_callbacks)
 
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
@@ -253,6 +256,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         save_opened_filenames(self.filenames)
         return super(DwPicker, self).dockCloseEventTriggered()
 
+    def reload_callbacks(self):
+        self.unregister_callbacks()
+        self.register_callbacks()
+
     def register_callbacks(self):
         self.unregister_callbacks()
         callbacks = {
@@ -260,10 +267,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
                 self.close_tabs, self.update_namespaces],
             om.MSceneMessage.kAfterOpen: [
                 self.load_saved_pickers, self.update_namespaces],
-            om.MSceneMessage.kAfterImport: [
-                self.load_saved_pickers, self.update_namespaces],
             om.MSceneMessage.kAfterCreateReference: [
                 self.load_saved_pickers, self.update_namespaces]}
+        if not cmds.optionVar(query=DISABLE_IMPORT_CALLBACKS):
+            callbacks[om.MSceneMessage.kAfterImport] = [
+                self.load_saved_pickers, self.update_namespaces]
 
         for event, methods in callbacks.items():
             for method in methods:
