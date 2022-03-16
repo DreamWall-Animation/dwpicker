@@ -94,6 +94,8 @@ class PickerEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+I", self.shape_editor, self.invert_selection)
 
         self.attribute_editor = AttributeEditor()
+        self.attribute_editor.set_generals(self.options)
+        self.attribute_editor.generalOptionSet.connect(self.generals_modified)
         self.attribute_editor.optionSet.connect(self.option_set)
         self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
@@ -183,6 +185,13 @@ class PickerEditor(QtWidgets.QWidget):
     def edit_center_mode_changed(self, state):
         self.shape_editor.edit_center_mode = state
         self.shape_editor.repaint()
+
+    def generals_modified(self, key, value):
+        self.options[key] = value
+        if key == 'name':
+            title = "Picker editor - " + self.options['name']
+            self.setWindowTitle(title)
+        self.pickerDataModified.emit(self.picker_data())
 
     def option_set(self, option, value):
         for shape in self.shape_editor.selection:

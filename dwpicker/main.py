@@ -389,6 +389,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             picker.dataChanged.connect(method)
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
+        picker.zoom_locked = data['general']['zoom_locked']
         center = [-data['general']['centerx'], -data['general']['centery']]
         picker.center = center
         return picker
@@ -636,12 +637,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def data_changed_from_editor(self, data, picker):
-        shapes = [Shape(s) for s in data['shapes']]
-        picker.set_shapes(shapes)
         index = self.tab.indexOf(picker)
         self.generals[index] = data['general']
+        shapes = [Shape(s) for s in data['shapes']]
+        picker.set_shapes(shapes)
+        picker.zoom_locked = data['general']['zoom_locked']
         center = [-data['general']['centerx'], -data['general']['centery']]
         picker.center = center
+        self.set_title(index, data['general']['name'])
         self.set_modified_state(index, True)
         self.store_local_pickers_data()
 
@@ -662,13 +665,15 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         if not operate:
             return
+        self.set_title(index, title)
+        self.data_changed_from_picker(self.tab.widget(index))
 
+    def set_title(self, index, title):
         self.generals[index]['name'] = title
         use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
         if not use_icon and self.modified_states[index]:
             title = "*" + title
         self.tab.setTabText(index, title)
-        self.data_changed_from_picker(self.tab.widget(index))
 
     def change_namespace_dialog(self):
         dialog = NamespaceDialog()
@@ -714,7 +719,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 class DwPickerMenu(QtWidgets.QMenuBar):
     def __init__(self, parent=None):
         super(DwPickerMenu, self).__init__(parent)
-        print(parent)
         self.new = QtWidgets.QAction('&New', parent)
         self.open = QtWidgets.QAction('&Open', parent)
         self.import_ = QtWidgets.QAction('&Import', parent)

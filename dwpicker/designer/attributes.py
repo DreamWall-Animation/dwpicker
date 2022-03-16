@@ -15,13 +15,18 @@ ACTION_TYPES = 'select', 'command'
 
 
 class AttributeEditor(QtWidgets.QWidget):
+    generalOptionSet = QtCore.Signal(str, object)
+    imageModified = QtCore.Signal()
     optionSet = QtCore.Signal(str, object)
     rectModified = QtCore.Signal(str, float)
-    imageModified = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(AttributeEditor, self).__init__(parent)
         self.widget = QtWidgets.QWidget()
+
+        self.generals = GeneralSettings()
+        self.generals.optionModified.connect(self.generalOptionSet.emit)
+        self.generals_toggler = WidgetToggler('Picker options', self.generals)
 
         self.shape = ShapeSettings()
         self.shape.optionSet.connect(self.optionSet.emit)
@@ -48,6 +53,8 @@ class AttributeEditor(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout(self.widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
+        self.layout.addWidget(self.generals_toggler)
+        self.layout.addWidget(self.generals)
         self.layout.addWidget(self.shape_toggler)
         self.layout.addWidget(self.shape)
         self.layout.addWidget(self.image_toggler)
@@ -69,6 +76,11 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.setFixedWidth(self.sizeHint().width() * 1.075)
 
+    def set_generals(self, options):
+        self.blockSignals(True)
+        self.generals.set_options(options)
+        self.blockSignals(False)
+
     def set_options(self, options):
         self.blockSignals(True)
         self.shape.set_options(options)
@@ -81,6 +93,34 @@ class AttributeEditor(QtWidgets.QWidget):
     def image_modified(self, option, value):
         self.optionSet.emit(option, value)
         self.imageModified.emit()
+
+
+class GeneralSettings(QtWidgets.QWidget):
+    optionModified = QtCore.Signal(str, object)
+
+    def __init__(self, parent=None):
+        super(GeneralSettings, self).__init__(parent)
+        self.name = QtWidgets.QLineEdit()
+        self.name.returnPressed.connect(self.name_changed)
+        self.zoom_locked = BoolCombo(False)
+        self.zoom_locked.valueSet.connect(self.zoom_changed)
+
+        self.layout = QtWidgets.QFormLayout(self)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setHorizontalSpacing(5)
+        self.layout.addRow('Name', self.name)
+        self.layout.addRow('Zoom-locked', self.zoom_locked)
+
+    def set_options(self, options):
+        self.name.setText(options['name'])
+        self.zoom_locked.setCurrentText(str(options['zoom_locked']))
+
+    def name_changed(self):
+        self.optionModified.emit('name', self.name.text())
+
+    def zoom_changed(self, state):
+        self.optionModified.emit('zoom_locked', state)
 
 
 class ShapeSettings(QtWidgets.QWidget):

@@ -102,6 +102,7 @@ class PickerView(QtWidgets.QWidget):
         self.center = [0, 0]
         self.context_menu = None
         self.drag_shapes = []
+        self.zoom_locked = False
 
     def register_callbacks(self):
         function = self.sync_with_maya_selection
@@ -198,6 +199,8 @@ class PickerView(QtWidgets.QWidget):
     def wheelEvent(self, event):
         # To center the zoom on the mouse, we save a reference mouse position
         # and compare the offset after zoom computation.
+        if self.zoom_locked:
+            return
         factor = .25 if event.angleDelta().y() > 0 else -.25
         self.zoom(factor, event.pos())
         self.repaint()
@@ -237,6 +240,8 @@ class PickerView(QtWidgets.QWidget):
             return self.repaint()
 
         elif self.mode_manager.mode == ModeManager.ZOOMING:
+            if self.zoom_locked:
+                return self.repaint()
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None and self.mode_manager.zoom_anchor:
                 sensitivity = float(cmds.optionVar(query=ZOOM_SENSITIVITY))
@@ -244,6 +249,8 @@ class PickerView(QtWidgets.QWidget):
                 self.zoom(factor, self.mode_manager.zoom_anchor)
 
         elif self.mode_manager.mode == ModeManager.NAVIGATION:
+            if self.zoom_locked:
+                return self.repaint()
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None:
                 x = self.paintcontext.center[0] + offset.x()

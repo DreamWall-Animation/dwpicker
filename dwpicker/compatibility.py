@@ -14,8 +14,12 @@ def ensure_retro_compatibility(picker_data):
     # If a new release involve a data structure change in the picker, implement
     # the way to update the data here using this pattern:
     #
-    # version = picker_data['version']
     # if version < (youre version number):
     #     picker_data = your code update
+    version = picker_data['version']
     picker_data['version'] = VERSION
+    if tuple(version) < (0, 3, 0):
+        # Add new options added to version 0, 3, 0.
+        picker_data['general']['zoom_locked'] = False
+
     return picker_data
