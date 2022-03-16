@@ -24,7 +24,7 @@ from dwpicker.optionvar import (
     save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.picker import PickerView, detect_picker_namespace
 from dwpicker.preference import PreferencesWindow
-from dwpicker.qtutils import set_shortcut, icon, DockableBase
+from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
 from dwpicker.quick import QuickOptions
 from dwpicker.references import ensure_images_path_exists
 from dwpicker.scenedata import (
