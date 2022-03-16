@@ -55,6 +55,13 @@ def remove_workspace_control(control_name):
     cmds.deleteUI(workspace_control_name, control=True)
 
 
+def maya_main_window():
+    app = QtWidgets.QApplication.instance()
+    return next(
+        w for w in app.topLevelWidgets()
+        if w.objectName()=='MayaWindow')
+
+
 class DockableBase(MayaQWidgetDockableMixin):
     """
     Code from https://kainev.com/qt-for-maya-dockable-windows

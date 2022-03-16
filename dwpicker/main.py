@@ -58,6 +58,7 @@ https://github.com/luckylyk/hotbox_designer
     release=RELEASE_DATE)
 WINDOW_TITLE = "DreamWall - Picker"
 WINDOW_CONTROL_NAME = "dwPickerWindow"
+CLOSE_CALLBACK_COMMAND = "import dwpicker;dwpicker._dwpicker.close_event()"
 
 
 def build_multiple_shapes(targets, override):
@@ -93,7 +94,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.filenames = []
         self.modified_states = []
         self.preferences_window = PreferencesWindow(
-            callback=self.load_ui_states, parent=self)
+            callback=self.load_ui_states, parent=maya_main_window())
 
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
@@ -173,8 +174,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.load_ui_states()
 
     def show(self, *args, **kwargs):
-        super(DwPicker, self).show(*args, **kwargs)
+        super(DwPicker, self).show(
+            closeCallback=CLOSE_CALLBACK_COMMAND, *args, **kwargs)
         self.register_callbacks()
+
+    def close_event(self):
+        self.preferences_window.close()
 
     def update_namespaces(self, *_):
         namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
