@@ -16,8 +16,8 @@ def ensure_retro_compatibility(picker_data):
     #
     # if version < (youre version number):
     #     picker_data = your code update
-    version = picker_data['version']
-    picker_data['version'] = VERSION
+    version = picker_data['general']['version']
+    picker_data['general']['version'] = VERSION
     if tuple(version) < (0, 3, 0):
         # Add new options added to version 0, 3, 0.
         picker_data['general']['zoom_locked'] = False

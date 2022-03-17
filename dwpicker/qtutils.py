@@ -5,6 +5,12 @@ from PySide2 import QtGui, QtWidgets, QtCore
 from maya import cmds
 import maya.OpenMayaUI as omui
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+import shiboken2
+
+
+# Ensure backward compatibility.
+if sys.version_info[0] == 3:
+    long = int
 
 
 VALIGNS = {
@@ -56,10 +62,9 @@ def remove_workspace_control(control_name):
 
 
 def maya_main_window():
-    app = QtWidgets.QApplication.instance()
-    return next(
-        w for w in app.topLevelWidgets()
-        if w.objectName()=='MayaWindow')
+    ptr = omui.MQtUtil.mainWindow()
+    if ptr is not None:
+        return shiboken2.wrapInstance(long(ptr), QtWidgets.QWidget)
 
 
 class DockableBase(MayaQWidgetDockableMixin):
