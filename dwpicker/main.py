@@ -397,9 +397,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def add_picker(self, data, filename=None, modified_state=False):
         picker = self.create_picker(data)
         insert = cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT)
-        index = self.tab.currentIndex() + 1 if insert else None
-        index = index if index < self.tab.count() - 1 else None
-        if index is None:
+        if not insert or self.tab.currentIndex() == self.tab.count() - 1:
             self.generals.append(data['general'])
             self.pickers.append(picker)
             self.editors.append(None)
@@ -409,6 +407,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.tab.addTab(picker, data['general']['name'])
             self.tab.setCurrentIndex(self.tab.count() - 1)
         else:
+            index = self.tab.currentIndex() + 1
             self.generals.insert(index, data['general'])
             self.pickers.insert(index, picker)
             self.editors.insert(index, None)
