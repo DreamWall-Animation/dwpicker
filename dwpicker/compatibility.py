@@ -16,7 +16,7 @@ def ensure_retro_compatibility(picker_data):
     #
     # if version < (youre version number):
     #     picker_data = your code update
-    version = picker_data['general']['version']
+    version = picker_data['general'].get('version') or (0, 0, 0)
     picker_data['general']['version'] = VERSION
     if tuple(version) < (0, 3, 0):
         # Add new options added to version 0, 3, 0.
