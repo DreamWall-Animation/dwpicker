@@ -29,7 +29,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
         text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
-        text = "Disable callback on import event. (Use with Studio Library)"
+        text = "Disable callback at import time. (Use with Studio Library)"
         self.disable_import_callbacks = QtWidgets.QCheckBox(text)
         text = "Use icon to mark unsaved tab."
         self.unsaved_tab_icon = QtWidgets.QCheckBox(text)
