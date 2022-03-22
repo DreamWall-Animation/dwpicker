@@ -2,6 +2,14 @@ from contextlib import contextmanager
 from maya import cmds
 
 
+class NameclashError(BaseException):
+    def __init__(self, nodes=None):
+        self.clashes = [node for node in nodes or [] if len(cmds.ls(node)) > 1]
+        message = 'Some nodes exists more than once:\n'
+        nodes = '\n  - '.join(self.clashes)
+        super(NameclashError, self).__init__(message + nodes)
+
+
 @contextmanager
 def maya_namespace(
         namespace='', create_if_missing=True, restore_current_namespace=True):
@@ -30,10 +38,16 @@ def select_targets(shapes, selection_mode='replace'):
     targets = {t for s in hovered for t in s.targets() if cmds.objExists(t)}
 
     if selection_mode in ('add', 'replace'):
-        return cmds.select(list(targets), add=selection_mode == 'add')
+        try:
+            return cmds.select(list(targets), add=selection_mode == 'add')
+        except ValueError:
+            raise NameclashError(targets)
     elif selection_mode == 'remove':
         selection = [n for n in cmds.ls(sl=True) if n not in targets]
-        return cmds.select(selection)
+        try:
+            return cmds.select(selection)
+        except ValueError:
+            raise NameclashError(targets)
 
     # Invert selection
     selected = [s for s in shapes if s.selected]
@@ -45,7 +59,10 @@ def select_targets(shapes, selection_mode='replace'):
     # List targets in reversed selection
     invert_t = {t for s in to_select for t in s.targets() if cmds.objExists(t)}
     targets.union(invert_t)
-    cmds.select(targets)
+    try:
+        cmds.select(targets)
+    except ValueError:
+        raise NameclashError(targets)
     return
 
 

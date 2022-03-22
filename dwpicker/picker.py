@@ -5,13 +5,15 @@ import maya.OpenMaya as om
 from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
+from dwpicker.dialog import warning
 from dwpicker.geometry import split_line
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
 from dwpicker.painting import PaintContext
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
-    select_targets, select_shapes_from_selection, get_selection_mode)
+    select_targets, select_shapes_from_selection, get_selection_mode,
+    NameclashError)
 
 
 def _namespace(node):
@@ -164,10 +166,7 @@ class PickerView(QtWidgets.QWidget):
             self.clicked_shape.is_interactive())
 
         if zoom and self.mode_manager.alt_pressed:
-            self.mode_manager.update(event, pressed=False)
-            self.selection_square.release()
-            self.clicked_shape = None
-            self.repaint()
+            self.release(event)
             return
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
@@ -175,7 +174,12 @@ class PickerView(QtWidgets.QWidget):
             self.dataChanged.emit()
 
         elif self.mode_manager.mode == ModeManager.SELECTION and not interact:
-            select_targets(self.shapes, selection_mode=selection_mode)
+            try:
+                select_targets(self.shapes, selection_mode=selection_mode)
+            except NameclashError as e:
+                warning('Selection Error', str(e), parent=self)
+                self.release(event)
+                return
 
         if not self.clicked_shape:
             if self.mode_manager.right_click_pressed:
@@ -191,6 +195,9 @@ class PickerView(QtWidgets.QWidget):
             elif self.mode_manager.right_click_pressed:
                 self.call_context_menu()
 
+        self.release(event)
+
+    def release(self, event):
         self.mode_manager.update(event, pressed=False)
         self.selection_square.release()
         self.clicked_shape = None
@@ -301,6 +308,7 @@ class PickerView(QtWidgets.QWidget):
     def paintEvent(self, event):
         painter = QtGui.QPainter()
         painter.begin(self)
+        painter.setRenderHints(QtGui.QPainter.Antialiasing)
         if not self.shapes:
             return
         for shape in self.shapes:
