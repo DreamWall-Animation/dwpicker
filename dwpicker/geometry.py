@@ -15,6 +15,73 @@ DIRECTIONS = [
     'bottom']
 
 
+class ViewportMapper():
+    """
+    Used to translate/map between:
+        - abstract/data/units coordinates
+        - viewport/display/pixels coordinates
+    """
+    def __init__(self):
+        self.zoom = 1
+        self.origin = QtCore.QPointF(0, 0)
+        # We need the viewport size to be able to center the view or to
+        # automatically set zoom from selection:
+        self.viewsize = QtCore.QSize(300, 300)
+
+    def to_viewport(self, value):
+        return value * self.zoom
+
+    def to_units(self, pixels):
+        return pixels / self.zoom
+
+    def to_viewport_coords(self, units_point):
+        return QtCore.QPointF(
+            self.to_viewport(units_point.x()) - self.origin.x(),
+            self.to_viewport(units_point.y()) - self.origin.y())
+
+    def to_units_coords(self, pixels_point):
+        return QtCore.QPointF(
+            self.to_units(pixels_point.x() + self.origin.x()),
+            self.to_units(pixels_point.y() + self.origin.y()))
+
+    def to_viewport_rect(self, units_rect):
+        return QtCore.QRectF(
+            (units_rect.left() * self.zoom) - self.origin.x(),
+            (units_rect.top() * self.zoom) - self.origin.y(),
+            units_rect.width() * self.zoom,
+            units_rect.height() * self.zoom)
+
+    def to_units_rect(self, pixels_rect):
+        top_left = self.to_units_coords(pixels_rect.topLeft())
+        width = self.to_units(pixels_rect.width())
+        height = self.to_units(pixels_rect.height())
+        return QtCore.QRectF(top_left.x(), top_left.y(), width, height)
+
+    def zoomin(self, factor=10.0):
+        self.zoom += self.zoom * factor
+        self.zoom = min(self.zoom, 5.0)
+
+    def zoomout(self, factor=10.0):
+        self.zoom -= self.zoom * factor
+        self.zoom = max(self.zoom, .1)
+
+    def center_on_point(self, units_center):
+        """Given current zoom and viewport size, set the origin point."""
+        self.origin = QtCore.QPointF(
+            units_center.x() * self.zoom - self.viewsize.width() / 2,
+            units_center.y() * self.zoom - self.viewsize.height() / 2)
+
+    def focus(self, units_rect):
+        if isinstance(units_rect, list):
+            units_rect = get_combined_rects(units_rect)
+        self.zoom = min([
+            self.viewsize.width() / units_rect.width(),
+            self.viewsize.height() / units_rect.height()])
+        if self.zoom > 1:
+            self.zoom *= 0.7  # lower zoom to add some breathing space
+        self.center_on_point(units_rect.center())
+
+
 def get_topleft_rect(rect):
     """
     this function return a manipulator rect for the transform
@@ -237,37 +304,6 @@ def get_absolute_angle_c(a, b, c):
         return round(angle_c, 1)
     elif quarter == 3:
         return math.fabs(round(90.0 + (90 - angle_c), 1))
-
-
-def segment_cross_rect(p1, p2, rect):
-    return (
-        segment_cross_segment(p1, p2, rect.topLeft(), rect.topRight()) or
-        segment_cross_segment(p1, p2, rect.topRight(), rect.bottomRight()) or
-        segment_cross_segment(p1, p2, rect.bottomRight(), rect.bottomLeft()) or
-        segment_cross_segment(p1, p2, rect.bottomLeft(), rect.topLeft()))
-
-
-def segment_cross_segment(p1, p2, p3, p4):
-    """ first is True and second is False
-       \ p1                          \  p1
-        \                             \
-  p3-----------p4       p3 ------- p4  \
-          \                             \
-           \ p2                          \ p2
-    """
-    dx1, dy1 = p2.x() - p1.x(), p2.y() - p1.y()
-    dx2, dy2 = p4.x() - p3.x(), p4.y() - p3.y()
-    dx3, dy3 = p1.x() - p3.x(), p1.y() - p3.y()
-    d = dx1 * dy2 - dy1 * dx2
-    if d == 0:
-        return False
-
-    t1 = (dx2 * dy3 - dy2 * dx3) / d
-    if t1 < 0 or t1 > 1:
-        return False
-
-    t2 = (dx1 * dy3 - dy1 * dx3) /d
-    return t2 >= 0 and t2 <= 1
 
 
 def proportional_rect(rect, percent=None):
