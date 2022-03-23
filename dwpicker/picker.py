@@ -128,19 +128,21 @@ class PickerView(QtWidgets.QWidget):
         self.repaint()
 
     def reset(self):
-        self.paintcontext.zoom = 1
-        self.paintcontext.origin = QtCore.QPointF(0, 0)
+        shapes_rects = [s.rect for s in self.shapes if s.selected]
+        if not shapes_rects:
+            shapes_rects = [s.rect for s in self.shapes]
+        self.paintcontext.viewsize = self.size()
+        self.paintcontext.focus(shapes_rects)
         self.repaint()
 
     def resizeEvent(self, event):
-        size = (event.size() - event.oldSize()) / 2
-        self.paintcontext.origin += QtCore.QPointF(size.width(), size.height())
+        self.paintcontext.viewsize = self.size()
         self.repaint()
 
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)
         self.shapes.extend(self.drag_shapes)
-        cursor = self.paintcontext.absolute_point(event.pos()).toPoint()
+        cursor = self.paintcontext.get_units_coords(event.pos()).toPoint()
         self.clicked_shape = detect_hovered_shape(self.shapes, cursor)
         hsh = any(s.hovered for s in self.shapes)
         self.mode_manager.update(
@@ -153,7 +155,7 @@ class PickerView(QtWidgets.QWidget):
         shift = self.mode_manager.shift_pressed
         ctrl = self.mode_manager.ctrl_pressed
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
-        cursor = self.paintcontext.absolute_point(event.pos()).toPoint()
+        cursor = self.paintcontext.get_units_coords(event.pos()).toPoint()
         zoom = self.mode_manager.zoom_button_pressed
         interact = (
             self.clicked_shape and
@@ -208,29 +210,29 @@ class PickerView(QtWidgets.QWidget):
         self.repaint()
 
     def zoom(self, factor, reference):
-        abspoint = self.paintcontext.absolute_point(reference)
+        abspoint = self.paintcontext.get_units_coords(reference)
         if factor > 0:
             self.paintcontext.zoomin(abs(factor))
         else:
             self.paintcontext.zoomout(abs(factor))
-        relcursor = self.paintcontext.relative_point(abspoint)
+        relcursor = self.paintcontext.get_pixels_coords(abspoint)
         vector = relcursor - reference
-        self.paintcontext.origin = self.paintcontext.origin - vector
+        self.paintcontext.origin = self.paintcontext.origin + vector
 
     def mouseMoveEvent(self, event):
         selection_rect = self.selection_square.rect
         if selection_rect:
-            selection_rect = self.paintcontext.absolute_rect(selection_rect)
+            selection_rect = self.paintcontext.get_units_rect(selection_rect)
             selection_rect = selection_rect.toRect()
 
         set_shapes_hovered(
             self.shapes,
-            self.paintcontext.absolute_point(event.pos()),
+            self.paintcontext.get_units_coords(event.pos()),
             selection_rect)
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
-            point1 = self.paintcontext.absolute_point(self.mode_manager.anchor)
-            point2 = self.paintcontext.absolute_point(event.pos())
+            point1 = self.paintcontext.get_units_coords(self.mode_manager.anchor)
+            point2 = self.paintcontext.get_units_coords(event.pos())
             align_shapes_on_line(self.drag_shapes, point1, point2)
 
         elif self.mode_manager.mode == ModeManager.SELECTION:
@@ -253,7 +255,7 @@ class PickerView(QtWidgets.QWidget):
                 return self.repaint()
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None:
-                self.paintcontext.origin = self.paintcontext.origin + offset
+                self.paintcontext.origin = self.paintcontext.origin - offset
 
         self.repaint()
 
@@ -293,7 +295,7 @@ class PickerView(QtWidgets.QWidget):
             1 = Multiple buttons from selection.
             2 = Command button.
         """
-        position = self.paintcontext.absolute_point(position).toPoint()
+        position = self.paintcontext.get_units_coords(position).toPoint()
         self.addButtonRequested.emit(position.x(), position.y(), button_type)
 
     def paintEvent(self, event):

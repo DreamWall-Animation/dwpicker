@@ -3,7 +3,7 @@ from maya import cmds
 
 from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.geometry import grow_rect
+from dwpicker.geometry import grow_rect, get_combined_rects
 
 
 MANIPULATOR_BORDER = 5
@@ -12,71 +12,87 @@ SELECTION_COLOR = '#3388FF'
 
 class PaintContext():
     """
-    The PaintContext is used to translate from abstract/data coordinates to
-    viewport/display coordinates and vice-versa.
+    Used to translate between:
+        - abstract/data/units coordinates
+        - viewport/display/pixels coordinates
     """
     def __init__(self):
         self.zoom = 1
         self.origin = QtCore.QPointF(0, 0)
+        # We need the viewport size to be able to center the view or to
+        # automatically set zoom from selection:
+        self.viewsize = QtCore.QSize(300, 300)
 
     @property
     def manipulator_border(self):
-        return self.relative(MANIPULATOR_BORDER)
+        return self.to_pixels(MANIPULATOR_BORDER)
 
-    def relative(self, value):
+    def to_pixels(self, value):
         return value * self.zoom
 
-    def absolute(self, value):
-        return value / self.zoom
+    def to_units(self, pixels):
+        return pixels / self.zoom
 
-    def absolute_point(self, point):
+    def get_pixels_coords(self, units_point):
         return QtCore.QPointF(
-            self.absolute(point.x() - self.origin.x()),
-            self.absolute(point.y() - self.origin.y()))
+            self.to_pixels(units_point.x()) - self.origin.x(),
+            self.to_pixels(units_point.y()) - self.origin.y())
 
-    def relative_point(self, point):
+    def get_units_coords(self, pixels_point):
         return QtCore.QPointF(
-            self.relative(point.x()) + self.origin.x(),
-            self.relative(point.y()) + self.origin.y())
+            self.to_units(pixels_point.x() + self.origin.x()),
+            self.to_units(pixels_point.y() + self.origin.y()))
 
-    def absolute_rect(self, rect):
-        top_left = self.absolute_point(rect.topLeft())
-        width = self.absolute(rect.width())
-        height = self.absolute(rect.height())
+    def get_pixels_rect(self, units_rect):
+        return QtCore.QRectF(
+            (units_rect.left() * self.zoom) - self.origin.x(),
+            (units_rect.top() * self.zoom) - self.origin.y(),
+            units_rect.width() * self.zoom,
+            units_rect.height() * self.zoom)
+
+    def get_units_rect(self, pixels_rect):
+        top_left = self.get_units_coords(pixels_rect.topLeft())
+        width = self.to_units(pixels_rect.width())
+        height = self.to_units(pixels_rect.height())
         return QtCore.QRectF(top_left.x(), top_left.y(), width, height)
 
-    def relatives_rect(self, rect):
-        return QtCore.QRectF(
-            (rect.left() * self.zoom) + self.origin.x(),
-            (rect.top() * self.zoom) + self.origin.y(),
-            rect.width() * self.zoom,
-            rect.height() * self.zoom)
-
     def zoomin(self, factor=10.0):
-        if not factor:  # Avoid 0 division error
-            return
         self.zoom += self.zoom * factor
         self.zoom = min(self.zoom, 5.0)
 
     def zoomout(self, factor=10.0):
-        if not factor:  # Avoid 0 division error
-            return
         self.zoom -= self.zoom * factor
         self.zoom = max(self.zoom, .1)
 
+    def center_on_point(self, units_center):
+        """Given current zoom and viewport size, set the origin point."""
+        self.origin = QtCore.QPointF(
+            units_center.x() * self.zoom - self.viewsize.width() / 2,
+            units_center.y() * self.zoom - self.viewsize.height() / 2)
+
+    def focus(self, units_rect):
+        if isinstance(units_rect, list):
+            units_rect = get_combined_rects(units_rect)
+        self.zoom = min([
+            self.viewsize.width() / units_rect.width(),
+            self.viewsize.height() / units_rect.height()])
+        if self.zoom > 1:
+            self.zoom *= 0.7  # lower zoom to add some breathing space
+        self.center_on_point(units_rect.center())
+
 
 def factor_sensitivity(factor):
-    sensitivity = (cmds.optionVar(query=ZOOM_SENSITIVITY) / 50.0)
+    sensitivity = cmds.optionVar(query=ZOOM_SENSITIVITY) / 50.0
     return factor * sensitivity
 
 
 def draw_editor(painter, rect, snap=None, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
-    rect = paintcontext.relatives_rect(rect)
+    rect = paintcontext.get_pixels_rect(rect)
     # draw border
     pen = QtGui.QPen(QtGui.QColor('#333333'))
     pen.setStyle(QtCore.Qt.DashDotLine)
-    pen.setWidthF(paintcontext.relative(3))
+    pen.setWidthF(paintcontext.to_pixels(3))
     brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
     painter.setPen(pen)
     painter.setBrush(brush)
@@ -85,7 +101,7 @@ def draw_editor(painter, rect, snap=None, paintcontext=None):
     if snap is None:
         return
     # draw snap grid
-    snap = paintcontext.relative(snap[0]), paintcontext.relative(snap[1])
+    snap = paintcontext.to_pixels(snap[0]), paintcontext.to_pixels(snap[1])
     pen = QtGui.QPen(QtGui.QColor('red'))
     painter.setPen(pen)
     x = 0
@@ -100,7 +116,7 @@ def draw_editor(painter, rect, snap=None, paintcontext=None):
 
 def draw_editor_center(painter, rect, point, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
-    rect = paintcontext.relatives_rect(rect)
+    rect = paintcontext.get_pixels_rect(rect)
     color = QtGui.QColor(200, 200, 200, 125)
     painter.setPen(QtGui.QPen(color))
     painter.setBrush(QtGui.QBrush(color))
@@ -108,7 +124,7 @@ def draw_editor_center(painter, rect, point, paintcontext=None):
 
     path = get_center_path(QtCore.QPoint(*point))
     pen = QtGui.QPen(QtGui.QColor(50, 125, 255))
-    pen.setWidthF(paintcontext.relative(2))
+    pen.setWidthF(paintcontext.to_pixels(2))
     painter.setPen(pen)
     painter.drawPath(path)
 
@@ -153,22 +169,22 @@ def draw_shape(painter, shape, paintcontext=None):
 
     pen = QtGui.QPen(bordercolor)
     pen.setStyle(QtCore.Qt.SolidLine)
-    pen.setWidthF(paintcontext.relative(bordersize))
+    pen.setWidthF(paintcontext.to_pixels(bordersize))
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
-    rect = paintcontext.relatives_rect(shape.rect)
+    rect = paintcontext.get_pixels_rect(shape.rect)
     if options['shape'] == 'square':
         painter.drawRect(rect)
     elif options['shape'] == 'round':
         painter.drawEllipse(rect)
     else:  # 'rounded_rect'
-        x = paintcontext.relative(options['shape.cornersx'])
-        y = paintcontext.relative(options['shape.cornersy'])
+        x = paintcontext.to_pixels(options['shape.cornersx'])
+        y = paintcontext.to_pixels(options['shape.cornersy'])
         painter.drawRoundedRect(rect, x, y)
 
     if shape.pixmap is not None:
         rect = shape.image_rect or content_rect
-        rect = paintcontext.relatives_rect(rect)
+        rect = paintcontext.get_pixels_rect(rect)
         painter.drawPixmap(rect.toRect(), shape.pixmap)
 
     painter.setPen(QtGui.QPen(textcolor))
@@ -179,17 +195,17 @@ def draw_shape(painter, shape, paintcontext=None):
     font = QtGui.QFont()
     font.setBold(options['text.bold'])
     font.setItalic(options['text.italic'])
-    size = round(paintcontext.relative(options['text.size']))
+    size = round(paintcontext.to_pixels(options['text.size']))
     font.setPixelSize(size)
     painter.setFont(font)
     text = options['text.content']
-    content_rect = paintcontext.relatives_rect(content_rect)
+    content_rect = paintcontext.get_pixels_rect(content_rect)
     painter.drawText(content_rect, flags, text)
 
 
 def draw_selection_square(painter, rect, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
-    rect = paintcontext.relatives_rect(rect)
+    rect = paintcontext.get_pixels_rect(rect)
     bordercolor = QtGui.QColor(SELECTION_COLOR)
     backgroundcolor = QtGui.QColor(SELECTION_COLOR)
     backgroundcolor.setAlpha(85)
@@ -214,7 +230,7 @@ def draw_manipulator(painter, manipulator, cursor, paintcontext=None):
     brush = QtGui.QBrush(QtGui.QColor('white'))
     painter.setBrush(brush)
     for rect in manipulator.handler_rects():
-        rect = paintcontext.relatives_rect(rect)
+        rect = paintcontext.get_pixels_rect(rect)
         pen.setWidth(3 if rect in hovered else 1)
         painter.setPen(pen)
         painter.drawEllipse(rect)
@@ -223,13 +239,13 @@ def draw_manipulator(painter, manipulator, cursor, paintcontext=None):
     pen.setStyle(QtCore.Qt.DashLine)  # if not moving else QtCore.Qt.SolidLine)
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 0, 0, 0)))
-    rect = paintcontext.relatives_rect(manipulator.rect)
+    rect = paintcontext.get_pixels_rect(manipulator.rect)
     painter.drawRect(rect)
 
 
 def draw_aiming_background(painter, rect, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
-    rect = paintcontext.relatives_rect(rect)
+    rect = paintcontext.get_pixels_rect(rect)
     pen = QtGui.QPen(QtGui.QColor(0, 0, 0, 0))
     brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 1))
     painter.setPen(pen)
@@ -240,17 +256,17 @@ def draw_aiming_background(painter, rect, paintcontext=None):
 def draw_aiming(painter, center, target, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
     pen = QtGui.QPen(QtGui.QColor(35, 35, 35))
-    pen.setWidth(paintcontext.relative(3))
+    pen.setWidth(paintcontext.to_pixels(3))
     painter.setPen(pen)
     painter.setBrush(QtGui.QColor(0, 0, 0, 0))
-    center = paintcontext.relative_point(center)
-    target = paintcontext.relatives_rect(target)
+    center = paintcontext.get_pixels_coords(center)
+    target = paintcontext.get_pixels_rect(target)
     painter.drawLine(center, target)
 
 
 def get_hovered_path(rect, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
-    rect = paintcontext.relatives_rect(rect)
+    rect = paintcontext.get_pixels_rect(rect)
     manipulator_rect = grow_rect(rect, paintcontext.manipulator_border)
     path = QtGui.QPainterPath()
     path.addRect(rect)
