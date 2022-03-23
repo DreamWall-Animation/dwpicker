@@ -367,8 +367,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
-            data=ensure_retro_compatibility(json.load(f))
-            data=ensure_images_path_exists(data)
+            data = ensure_retro_compatibility(json.load(f))
+            data = ensure_images_path_exists(data)
             self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 
@@ -390,8 +390,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
         picker.zoom_locked = data['general']['zoom_locked']
-        center = [-data['general']['centerx'], -data['general']['centery']]
-        picker.center = center
         return picker
 
     def add_picker(self, data, filename=None, modified_state=False):
@@ -641,8 +639,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
         picker.zoom_locked = data['general']['zoom_locked']
-        center = [-data['general']['centerx'], -data['general']['centery']]
-        picker.center = center
         self.set_title(index, data['general']['name'])
         self.set_modified_state(index, True)
         self.store_local_pickers_data()

@@ -121,7 +121,7 @@ def get_right_side_rect(rect):
     top = rect.top() + (rect.height() / 2.0)
     return QtCore.QRectF(
         rect.right() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        top - (POINT_RADIUS / 2.0) ,
+        top - (POINT_RADIUS / 2.0),
         POINT_RADIUS, POINT_RADIUS)
 
 

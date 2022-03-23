@@ -172,7 +172,7 @@ class Shape():
         return self.options['action.targets']
 
     def set_targets(self, targets):
-         self.options['action.targets'] = targets
+        self.options['action.targets'] = targets
 
     def is_interactive(self):
         if self.targets():

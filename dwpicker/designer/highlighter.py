@@ -3,7 +3,6 @@ from PySide2 import QtGui, QtCore
 from dwpicker.languages import PYTHON, MEL
 
 
-
 MELKEYWORDS = [
     'if', 'else', 'int', 'float', 'double', 'string', 'array'
     'var', 'return', 'case', 'then', 'continue', 'break', 'global', 'proc']

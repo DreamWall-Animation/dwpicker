@@ -15,7 +15,7 @@ class UndoManager():
 
     def undo(self):
         if not self._undo_stack:
-            print ('No undostack.')
+            print('No undostack.')
             return False
         self._redo_stack.append(deepcopy(self._current_state))
         self._current_state = deepcopy(self._undo_stack[-1])

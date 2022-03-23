@@ -36,7 +36,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.set_lock_background_shape(bg_locked)
         self.set_picker_data(picker_data)
         self.shape_editor.selectedShapesChanged.connect(self.selection_changed)
-        self.shape_editor.centerMoved.connect(self.move_center)
         method = self.set_data_modified
         self.shape_editor.increaseUndoStackRequested.connect(method)
         self.scrollarea = QtWidgets.QScrollArea()
@@ -48,9 +47,7 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
-        self.menu.centerValuesChanged.connect(self.move_center)
         self.menu.deleteRequested.connect(self.delete_selection)
-        self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
         self.menu.frameShapes.connect(self.frame_shapes)
         self.menu.pasteRequested.connect(self.paste)
         self.menu.sizeChanged.connect(self.editor_size_changed)
@@ -61,8 +58,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.lockBackgroundShapeToggled.connect(method)
         width, height = self.options['width'], self.options['height']
         self.menu.set_size_values(width, height)
-        x, y = self.options['centerx'], self.options['centery']
-        self.menu.set_center_values(x, y)
         self.menu.undoRequested.connect(self.undo)
         self.menu.redoRequested.connect(self.redo)
         method = partial(self.create_shape, BUTTON)
@@ -127,7 +122,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.undo_manager.set_data_modified(picker_data)
         self.pickerDataModified.emit(picker_data)
         # select new shapes
-        shapes = self.shape_editor.shapes [-len(self.clipboard):]
+        shapes = self.shape_editor.shapes[-len(self.clipboard):]
         self.shape_editor.selection.replace(shapes)
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
@@ -182,10 +177,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.set_data_modified()
         self.shape_editor.repaint()
 
-    def edit_center_mode_changed(self, state):
-        self.shape_editor.edit_center_mode = state
-        self.shape_editor.repaint()
-
     def generals_modified(self, key, value):
         self.options[key] = value
         if key == 'name':
@@ -204,13 +195,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.setFixedSize(size)
         self.options['width'] = size.width()
         self.options['height'] = size.height()
-        self.set_data_modified()
-
-    def move_center(self, x, y):
-        self.options['centerx'] = x
-        self.options['centery'] = y
-        self.menu.set_center_values(x, y)
-        self.shape_editor.repaint()
         self.set_data_modified()
 
     def rect_modified(self, option, value):
@@ -348,7 +332,7 @@ class PickerEditor(QtWidgets.QWidget):
         if result != QtWidgets.QDialog.Accepted:
             return False
 
-        if dialog.filter == 0: # Search on all shapes.
+        if dialog.filter == 0:  # Search on all shapes.
             shapes = self.shape_editor.shapes
         else:
             shapes = self.shape_editor.selection
@@ -357,7 +341,7 @@ class PickerEditor(QtWidgets.QWidget):
         replace = dialog.replace.text()
 
         for s in shapes:
-            if not dialog.field: # Targets
+            if not dialog.field:  # Targets
                 if not s.targets():
                     continue
                 targets = [t.replace(pattern, replace) for t in s.targets()]

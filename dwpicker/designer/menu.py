@@ -73,21 +73,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.picker_height.setValidator(validator)
         self.picker_height.textEdited.connect(self.size_changed)
 
-        icon_ = icon('center.png')
-        self.editcenter = QtWidgets.QAction(icon_, '', self)
-        self.editcenter.setToolTip('Edit the picker focus center')
-        self.editcenter.setCheckable(True)
-        self.editcenter.triggered.connect(self.edit_center_toggled)
-        validator = QtGui.QIntValidator()
-        self.editcenterx = QtWidgets.QLineEdit('10')
-        self.editcenterx.setFixedWidth(35)
-        self.editcenterx.setValidator(validator)
-        self.editcenterx.textEdited.connect(self.center_values_changed)
-        self.editcentery = QtWidgets.QLineEdit('10')
-        self.editcentery.setFixedWidth(35)
-        self.editcentery.setValidator(validator)
-        self.editcentery.textEdited.connect(self.center_values_changed)
-
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
         self.snap.setCheckable(True)
@@ -163,10 +148,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addWidget(self.picker_width)
         self.toolbar.addWidget(self.picker_height)
         self.toolbar.addSeparator()
-        self.toolbar.addAction(self.editcenter)
-        self.toolbar.addWidget(self.editcenterx)
-        self.toolbar.addWidget(self.editcentery)
-        self.toolbar.addSeparator()
         self.toolbar.addAction(self.addbutton)
         self.toolbar.addAction(self.addtext)
         self.toolbar.addAction(self.addbg)
@@ -221,15 +202,6 @@ class MenuWidget(QtWidgets.QWidget):
     def snap_value_changed(self, _):
         self.snapValuesChanged.emit()
         self.save_ui_states()
-
-    def set_center_values(self, x, y):
-        self.editcenterx.setText(str(x))
-        self.editcentery.setText(str(y))
-
-    def center_values_changed(self, _):
-        x = int(self.editcenterx.text()) if self.editcenterx.text() else 0
-        y = int(self.editcentery.text()) if self.editcentery.text() else 0
-        self.centerValuesChanged.emit(x, y)
 
     def set_size_values(self, width, height):
         self.picker_width.setText(str(width))

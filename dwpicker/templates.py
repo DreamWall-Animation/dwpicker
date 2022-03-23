@@ -108,7 +108,7 @@ BACKGROUND = {
     'text.color': '#FFFFFF',
     'text.valign': 'center',  # or 'top' or bottom
     'text.halign': 'center',  # or 'left' or 'right'
-    'action.type': 'select', # 'select' or 'command'
+    'action.type': 'select',  # 'select' or 'command'
     'action.targets': [],
     'action.namespace': [],
     'action.left': False,
@@ -129,7 +129,4 @@ PICKER = {
     'zoom_locked': False,
     'width': 900,
     'height': 600,
-    'centerx': 450,
-    'centery': 300
 }
-

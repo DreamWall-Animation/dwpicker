@@ -101,7 +101,6 @@ class PickerView(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.shapes = None
         self.clicked_shape = None
-        self.center = [0, 0]
         self.context_menu = None
         self.drag_shapes = []
         self.zoom_locked = False
@@ -129,11 +128,8 @@ class PickerView(QtWidgets.QWidget):
         self.repaint()
 
     def reset(self):
-        self.paintcontext.reset()
-        rect = self.rect()
-        x = rect.center().x() + self.center[0]
-        y = rect.center().y() + self.center[1]
-        self.paintcontext.center = [x , y]
+        self.paintcontext.zoom = 1
+        self.paintcontext.center = [0, 0]
         self.repaint()
 
     def resizeEvent(self, event):
@@ -233,7 +229,7 @@ class PickerView(QtWidgets.QWidget):
         set_shapes_hovered(
             self.shapes,
             self.paintcontext.absolute_point(event.pos()),
-            selection_rect )
+            selection_rect)
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
             point1 = self.paintcontext.absolute_point(self.mode_manager.anchor)
@@ -358,10 +354,12 @@ class ModeManager:
     def ctrl_pressed(self):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         return modifiers == (modifiers | QtCore.Qt.ControlModifier)
+
     @property
     def shift_pressed(self):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         return modifiers == (modifiers | QtCore.Qt.ShiftModifier)
+
     @property
     def alt_pressed(self):
         modifiers = QtWidgets.QApplication.keyboardModifiers()

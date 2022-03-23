@@ -11,6 +11,10 @@ SELECTION_COLOR = '#3388FF'
 
 
 class PaintContext():
+    """
+    The PaintContext is used to translate from abstract/data coordinates to
+    viewport/display coordinates and vice-versa.
+    """
     def __init__(self):
         self.zoom = 1
         self.center = [0, 0]
@@ -19,9 +23,9 @@ class PaintContext():
 
     @property
     def manipulator_border(self):
-        return self.relatives(MANIPULATOR_BORDER)
+        return self.relative(MANIPULATOR_BORDER)
 
-    def relatives(self, value):
+    def relative(self, value):
         return value * self.zoom
 
     def absolute(self, value):
@@ -34,8 +38,8 @@ class PaintContext():
 
     def relative_point(self, point):
         return QtCore.QPointF(
-            self.relatives(point.x()) + self.center[0],
-            self.relatives(point.y()) + self.center[1])
+            self.relative(point.x()) + self.center[0],
+            self.relative(point.y()) + self.center[1])
 
     def absolute_rect(self, rect):
         top_left = self.absolute_point(rect.topLeft())
@@ -51,20 +55,16 @@ class PaintContext():
             rect.height() * self.zoom)
 
     def zoomin(self, factor=10.0):
-        if not factor: # Avoid 0 division error
+        if not factor:  # Avoid 0 division error
             return
         self.zoom += self.zoom * factor
         self.zoom = min(self.zoom, 5.0)
 
     def zoomout(self, factor=10.0):
-        if not factor: # Avoid 0 division error
+        if not factor:  # Avoid 0 division error
             return
         self.zoom -= self.zoom * factor
         self.zoom = max(self.zoom, .1)
-
-    def reset(self):
-        self.center = [0, 0]
-        self.zoom = 1
 
 
 def factor_sensitivity(factor):
@@ -78,7 +78,7 @@ def draw_editor(painter, rect, snap=None, paintcontext=None):
     # draw border
     pen = QtGui.QPen(QtGui.QColor('#333333'))
     pen.setStyle(QtCore.Qt.DashDotLine)
-    pen.setWidthF(paintcontext.relatives(3))
+    pen.setWidthF(paintcontext.relative(3))
     brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
     painter.setPen(pen)
     painter.setBrush(brush)
@@ -87,7 +87,7 @@ def draw_editor(painter, rect, snap=None, paintcontext=None):
     if snap is None:
         return
     # draw snap grid
-    snap = paintcontext.relatives(snap[0]), paintcontext.relatives(snap[1])
+    snap = paintcontext.relative(snap[0]), paintcontext.relative(snap[1])
     pen = QtGui.QPen(QtGui.QColor('red'))
     painter.setPen(pen)
     x = 0
@@ -110,7 +110,7 @@ def draw_editor_center(painter, rect, point, paintcontext=None):
 
     path = get_center_path(QtCore.QPoint(*point))
     pen = QtGui.QPen(QtGui.QColor(50, 125, 255))
-    pen.setWidthF(paintcontext.relatives(2))
+    pen.setWidthF(paintcontext.relative(2))
     painter.setPen(pen)
     painter.drawPath(path)
 
@@ -155,7 +155,7 @@ def draw_shape(painter, shape, paintcontext=None):
 
     pen = QtGui.QPen(bordercolor)
     pen.setStyle(QtCore.Qt.SolidLine)
-    pen.setWidthF(paintcontext.relatives(bordersize))
+    pen.setWidthF(paintcontext.relative(bordersize))
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
     rect = paintcontext.relatives_rect(shape.rect)
@@ -163,9 +163,9 @@ def draw_shape(painter, shape, paintcontext=None):
         painter.drawRect(rect)
     elif options['shape'] == 'round':
         painter.drawEllipse(rect)
-    else: # 'rounded_rect'
-        x = paintcontext.relatives(options['shape.cornersx'])
-        y = paintcontext.relatives(options['shape.cornersy'])
+    else:  # 'rounded_rect'
+        x = paintcontext.relative(options['shape.cornersx'])
+        y = paintcontext.relative(options['shape.cornersy'])
         painter.drawRoundedRect(rect, x, y)
 
     if shape.pixmap is not None:
@@ -181,7 +181,7 @@ def draw_shape(painter, shape, paintcontext=None):
     font = QtGui.QFont()
     font.setBold(options['text.bold'])
     font.setItalic(options['text.italic'])
-    size = round(paintcontext.relatives(options['text.size']))
+    size = round(paintcontext.relative(options['text.size']))
     font.setPixelSize(size)
     painter.setFont(font)
     text = options['text.content']
@@ -242,7 +242,7 @@ def draw_aiming_background(painter, rect, paintcontext=None):
 def draw_aiming(painter, center, target, paintcontext=None):
     paintcontext = paintcontext or PaintContext()
     pen = QtGui.QPen(QtGui.QColor(35, 35, 35))
-    pen.setWidth(paintcontext.relatives(3))
+    pen.setWidth(paintcontext.relative(3))
     painter.setPen(pen)
     painter.setBrush(QtGui.QColor(0, 0, 0, 0))
     center = paintcontext.relative_point(center)

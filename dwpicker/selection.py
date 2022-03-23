@@ -134,7 +134,8 @@ class Selection():
 
     def __bool__(self):
         return bool(self.shapes)
-    __nonzero__=__bool__
+
+    __nonzero__ = __bool__
 
     def __iter__(self):
         return self.shapes.__iter__()

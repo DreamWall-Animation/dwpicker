@@ -1,9 +1,8 @@
-
 from PySide2 import QtCore, QtGui, QtWidgets
 
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.geometry import Transform, snap, get_combined_rects
-from dwpicker.painting import draw_editor, draw_editor_center
+from dwpicker.painting import draw_editor
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 
@@ -30,7 +29,6 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selecting = False
         self.handeling = False
         self.manipulator_moved = False
-        self.edit_center_mode = False
         self.increase_undo_on_release = False
         self.lock_background_shape = True
 
@@ -52,17 +50,8 @@ class ShapeEditArea(QtWidgets.QWidget):
                 if not shape.is_background()]
         return self.shapes
 
-    def move_center(self, cursor):
-        if self.transform.snap:
-            x, y = snap(cursor.x(), cursor.y(), self.transform.snap)
-        else:
-            x, y = cursor.x(), cursor.y()
-        self.centerMoved.emit(x, y)
-        self.increase_undo_on_release = True
-        self.repaint()
-
     def mousePressEvent(self, _):
-        self.setFocus(QtCore.Qt.MouseFocusReason) # This is not automatic
+        self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
 
         cursor = get_cursor(self)
         self.clicked = True
@@ -94,12 +83,6 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, _):
         cursor = get_cursor(self)
-        if self.edit_center_mode is True:
-            if self.clicked is False:
-                return
-            self.move_center(cursor)
-            return
-
         if self.handeling:
             rect = self.manipulator.rect
             if self.transform.direction:
@@ -187,6 +170,3 @@ class ShapeEditArea(QtWidgets.QWidget):
             shape.draw(painter)
         self.manipulator.draw(painter, get_cursor(self))
         self.selection_square.draw(painter)
-        if self.edit_center_mode is True:
-            point = self.options['centerx'], self.options['centery']
-            draw_editor_center(painter, self.rect(), point)

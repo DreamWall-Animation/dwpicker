@@ -203,11 +203,11 @@ class ColorWheel(QtWidgets.QWidget):
         x = ((((
             sorted([r, g, b], reverse=True)[0] -
             sorted([r, g, b])[0]) / 255.0) * self._rect.width()) +
-             self._rect.left())
+            self._rect.left())
 
         y = ((((
             255 - (sorted([r, g, b], reverse=True)[0])) / 255.0) *
-              self._rect.height()) + self._rect.top())
+            self._rect.height()) + self._rect.top())
 
         self._current_color = color
         self._color_point = QtCore.QPoint(x, y)

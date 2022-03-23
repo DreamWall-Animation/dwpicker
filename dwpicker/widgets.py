@@ -188,7 +188,6 @@ class IntEdit(NumEdit):
         return int(float(self.text()))
 
 
-
 class Title(QtWidgets.QLabel):
     def __init__(self, title, parent=None):
         super(Title, self).__init__(parent)
@@ -206,6 +205,7 @@ class TouchEdit(QtWidgets.QLineEdit):
 class CommandButton(QtWidgets.QWidget):
     released = QtCore.Signal()
     playReleased = QtCore.Signal()
+
     def __init__(self, label, parent=None):
         super(CommandButton, self).__init__(parent)
         self.mainbutton = QtWidgets.QPushButton(label)

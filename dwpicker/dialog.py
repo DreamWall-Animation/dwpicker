@@ -124,7 +124,8 @@ class CommandButtonDialog(QtWidgets.QDialog):
         return {
             'action.left.language': language,
             'text.content': self.label.text(),
-            'action.left.command': self.command.toPlainText(),}
+            'action.left.command': self.command.toPlainText(),
+        }
 
     def change_state(self, *_):
         save_optionvar(
@@ -157,14 +158,14 @@ class SearchAndReplaceDialog(QtWidgets.QDialog):
         self.cancel.released.connect(self.reject)
 
         self.options = QtWidgets.QFormLayout()
-        self.options.setContentsMargins(0, 0, 0 , 0)
+        self.options.setContentsMargins(0, 0, 0, 0)
         self.options.addRow('Apply on: ', self.filters)
         self.options.addRow('Field to search: ', self.fields)
         self.options.addRow('Search: ', self.search)
         self.options.addRow('Replace by: ', self.replace)
 
         self.button_layout = QtWidgets.QHBoxLayout()
-        self.button_layout.setContentsMargins(0, 0, 0 , 0)
+        self.button_layout.setContentsMargins(0, 0, 0, 0)
         self.button_layout.addStretch(1)
         self.button_layout.addWidget(self.ok)
         self.button_layout.addWidget(self.cancel)

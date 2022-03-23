@@ -22,13 +22,12 @@ HALIGNS = {
     'center': QtCore.Qt.AlignHCenter,
     'right': QtCore.Qt.AlignRight}
 HERE = os.path.dirname(__file__)
-ERROR_IMPORT_MSG = (
-"ERROR: Dwpicker: DwPicker is not found in Python paths.\\n"
-"    - Please use sys.path.append('<dwpicker forlder>') and relaunch it.\\n"
-"    - Or add '<picker folder>' to environment variable PYTHONPATH")
+ERROR_IMPORT_MSG = ('''
+ERROR: Dwpicker: DwPicker is not found in Python paths.
+    - Please use sys.path.append('<dwpicker forlder>') and relaunch it.
+    - Or add '<picker folder>' to environment variable PYTHONPATH''')
 
-RESTORE_CMD = (
-"""
+RESTORE_CMD = ("""
 try:
     import {0}
     {0}.{1}.restore()

@@ -72,11 +72,6 @@ def fit_picker_to_content(picker):
     picker['general']['height'] = int(height)
 
 
-def autocenter_picker(picker):
-    picker['general']['centerx'] = picker['general']['width'] // 2
-    picker['general']['centery'] = picker['general']['height'] // 2
-
-
 def image_to_background_shape(imagepath):
     shape = BACKGROUND.copy()
     shape['image.path'] = imagepath
