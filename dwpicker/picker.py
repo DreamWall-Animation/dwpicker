@@ -129,13 +129,12 @@ class PickerView(QtWidgets.QWidget):
 
     def reset(self):
         self.paintcontext.zoom = 1
-        self.paintcontext.center = [0, 0]
+        self.paintcontext.origin = QtCore.QPointF(0, 0)
         self.repaint()
 
     def resizeEvent(self, event):
         size = (event.size() - event.oldSize()) / 2
-        self.paintcontext.center[0] += size.width()
-        self.paintcontext.center[1] += size.height()
+        self.paintcontext.origin += QtCore.QPointF(size.width(), size.height())
         self.repaint()
 
     def mousePressEvent(self, event):
@@ -216,9 +215,7 @@ class PickerView(QtWidgets.QWidget):
             self.paintcontext.zoomout(abs(factor))
         relcursor = self.paintcontext.relative_point(abspoint)
         vector = relcursor - reference
-        center = self.paintcontext.center
-        result = [center[0] - vector.x(), center[1] - vector.y()]
-        self.paintcontext.center = result
+        self.paintcontext.origin = self.paintcontext.origin - vector
 
     def mouseMoveEvent(self, event):
         selection_rect = self.selection_square.rect
@@ -256,9 +253,7 @@ class PickerView(QtWidgets.QWidget):
                 return self.repaint()
             offset = self.mode_manager.mouse_offset(event.pos())
             if offset is not None:
-                x = self.paintcontext.center[0] + offset.x()
-                y = self.paintcontext.center[1] + offset.y()
-                self.paintcontext.center = [x, y]
+                self.paintcontext.origin = self.paintcontext.origin + offset
 
         self.repaint()
 

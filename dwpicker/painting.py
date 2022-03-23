@@ -17,9 +17,7 @@ class PaintContext():
     """
     def __init__(self):
         self.zoom = 1
-        self.center = [0, 0]
-        self.cursor_background_alpha = 0.2
-        self.zone_alpha = 0.2
+        self.origin = QtCore.QPointF(0, 0)
 
     @property
     def manipulator_border(self):
@@ -33,13 +31,13 @@ class PaintContext():
 
     def absolute_point(self, point):
         return QtCore.QPointF(
-            self.absolute(point.x() - self.center[0]),
-            self.absolute(point.y() - self.center[1]))
+            self.absolute(point.x() - self.origin.x()),
+            self.absolute(point.y() - self.origin.y()))
 
     def relative_point(self, point):
         return QtCore.QPointF(
-            self.relative(point.x()) + self.center[0],
-            self.relative(point.y()) + self.center[1])
+            self.relative(point.x()) + self.origin.x(),
+            self.relative(point.y()) + self.origin.y())
 
     def absolute_rect(self, rect):
         top_left = self.absolute_point(rect.topLeft())
@@ -49,8 +47,8 @@ class PaintContext():
 
     def relatives_rect(self, rect):
         return QtCore.QRectF(
-            (rect.left() * self.zoom) + self.center[0],
-            (rect.top() * self.zoom) + self.center[1],
+            (rect.left() * self.zoom) + self.origin.x(),
+            (rect.top() * self.zoom) + self.origin.y(),
             rect.width() * self.zoom,
             rect.height() * self.zoom)
 
