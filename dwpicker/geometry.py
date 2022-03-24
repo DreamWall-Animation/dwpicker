@@ -75,10 +75,11 @@ class ViewportMapper():
         if isinstance(units_rect, list):
             units_rect = get_combined_rects(units_rect)
         self.zoom = min([
-            self.viewsize.width() / units_rect.width(),
-            self.viewsize.height() / units_rect.height()])
+            float(self.viewsize.width()) / units_rect.width(),
+            float(self.viewsize.height()) / units_rect.height()])
         if self.zoom > 1:
             self.zoom *= 0.7  # lower zoom to add some breathing space
+        self.zoom = max(self.zoom, .1)
         self.center_on_point(units_rect.center())
 
 
