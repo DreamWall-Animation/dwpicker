@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
 from dwpicker.interactive import Manipulator, SelectionSquare
-from dwpicker.geometry import Transform, snap, get_combined_rects
+from dwpicker.geometry import Transform, get_combined_rects
 from dwpicker.painting import draw_editor
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode

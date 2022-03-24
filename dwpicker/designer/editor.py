@@ -20,6 +20,10 @@ from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
 
 
+DIRECTION_OFFSETS = {
+    'Left': (-1, 0), 'Right': (1, 0), 'Up': (0, -1), 'Down': (0, 1)}
+
+
 class PickerEditor(QtWidgets.QWidget):
     pickerDataModified = QtCore.Signal(object)
 
@@ -41,8 +45,11 @@ class PickerEditor(QtWidgets.QWidget):
         self.scrollarea = QtWidgets.QScrollArea()
         alignment = QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
         self.scrollarea.setFocusPolicy(QtCore.Qt.NoFocus)
+        policy = QtWidgets.QSizePolicy.Expanding
+        self.scrollarea.setSizePolicy(policy, policy)
+        # HACK: Stupid hack to force scroll area to fix layout size.
+        self.scrollarea.sizeHint = lambda: QtCore.QSize(10000, 10000)
         self.scrollarea.setAlignment(alignment)
-        self.scrollarea.sizeHint = lambda: QtCore.QSize(1000, 750)
         self.scrollarea.setWidget(self.shape_editor)
 
         self.menu = MenuWidget()
@@ -87,6 +94,10 @@ class PickerEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+D", self.shape_editor, self.deselect_all)
         set_shortcut("Ctrl+A", self.shape_editor, self.select_all)
         set_shortcut("Ctrl+I", self.shape_editor, self.invert_selection)
+        for direction in ['Left', 'Right', 'Up', 'Down']:
+            method = partial(self.move_selection, direction)
+            shortcut = set_shortcut(direction, self.shape_editor, method)
+            shortcut.setAutoRepeat(True)
 
         self.attribute_editor = AttributeEditor()
         self.attribute_editor.set_generals(self.options)
@@ -96,6 +107,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.imageModified.connect(self.image_modified)
 
         self.hlayout = QtWidgets.QHBoxLayout()
+        self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.hlayout.setContentsMargins(0, 0, 0, 0)
         self.hlayout.addStretch(1)
         self.hlayout.addWidget(self.scrollarea)
@@ -111,6 +123,9 @@ class PickerEditor(QtWidgets.QWidget):
     def copy(self):
         self.clipboard = [
             s.options.copy() for s in self.shape_editor.selection]
+
+    def sizeHint(self):
+        return QtCore.QSize(1300, 750)
 
     def paste(self):
         clipboad_copy = [s.copy() for s in self.clipboard]
@@ -360,3 +375,14 @@ class PickerEditor(QtWidgets.QWidget):
         self.set_data_modified()
         self.shape_editor.repaint()
         return True
+
+    def move_selection(self, direction):
+        offset = DIRECTION_OFFSETS[direction]
+        rects = (s.rect for s in self.shape_editor.selection)
+        rect = self.shape_editor.manipulator.rect
+        reference_rect = QtCore.QRect(rect)
+
+        self.shape_editor.transform.set_rect(rect)
+        self.shape_editor.transform.reference_rect = reference_rect
+        self.shape_editor.transform.shift(rects, offset)
+        self.shape_editor.manipulator.update_geometries()

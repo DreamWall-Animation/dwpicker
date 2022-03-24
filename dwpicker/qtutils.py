@@ -53,6 +53,7 @@ def set_shortcut(keysequence, parent, method, context=None):
     shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(keysequence), parent)
     shortcut.setContext(context or QtCore.Qt.WidgetWithChildrenShortcut)
     shortcut.activated.connect(method)
+    return shortcut
 
 
 def remove_workspace_control(control_name):

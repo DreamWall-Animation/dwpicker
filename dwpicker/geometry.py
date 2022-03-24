@@ -414,7 +414,7 @@ def resize_rect_with_direction(rect, cursor, direction, force_square=False):
                 rect.setWidth(rect.height())
 
 
-class Transform():
+class Transform:
     def __init__(self):
         self.snap = None
         self.direction = None
@@ -460,6 +460,20 @@ class Transform():
         y = cursor.y() - self.reference_y
         if self.snap is not None:
             x, y = snap(x, y, self.snap)
+        self.apply_topleft(rects, x, y)
+
+    def shift(self, rects, offset):
+        x, y = offset
+        if self.snap is not None:
+            x *= self.snap[0]
+            y *= self.snap[1]
+        x = self.rect.left() + x
+        y = self.rect.top() + y
+        if self.snap:
+            x, y = snap(x, y, self.snap)
+        self.apply_topleft(rects, x, y)
+
+    def apply_topleft(self, rects, x, y):
         width = self.rect.width()
         height = self.rect.height()
         self.rect.setTopLeft(QtCore.QPoint(x, y))

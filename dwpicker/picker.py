@@ -6,7 +6,7 @@ from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
 from dwpicker.dialog import warning
-from dwpicker.geometry import split_line
+from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
 from dwpicker.painting import ViewportMapper
@@ -131,8 +131,12 @@ class PickerView(QtWidgets.QWidget):
         shapes_rects = [s.rect for s in self.shapes if s.selected]
         if not shapes_rects:
             shapes_rects = [s.rect for s in self.shapes]
+        if not shapes_rects:
+            self.repaint()
+            return
         self.viewportmapper.viewsize = self.size()
-        self.viewportmapper.focus(shapes_rects)
+        rect = get_combined_rects(shapes_rects)
+        self.viewportmapper.focus(rect)
         self.repaint()
 
     def resizeEvent(self, event):
