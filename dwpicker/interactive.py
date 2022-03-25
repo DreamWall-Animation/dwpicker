@@ -137,9 +137,6 @@ class Shape():
         self.clicked = False
         self.hovered = self.rect.contains(cursor)
 
-    def draw(self, painter, viewportmapper=None):
-        draw_shape(painter, self, viewportmapper)
-
     def synchronize_rect(self):
         self.options['shape.left'] = self.rect.left()
         self.options['shape.top'] = self.rect.top()

@@ -141,27 +141,6 @@ def draw_manipulator(painter, manipulator, cursor, viewportmapper=None):
     painter.drawRect(rect)
 
 
-def draw_aiming_background(painter, rect, viewportmapper=None):
-    viewportmapper = viewportmapper or ViewportMapper()
-    rect = viewportmapper.to_viewport_rect(rect)
-    pen = QtGui.QPen(QtGui.QColor(0, 0, 0, 0))
-    brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 1))
-    painter.setPen(pen)
-    painter.setBrush(brush)
-    painter.drawRect(rect)
-
-
-def draw_aiming(painter, center, target, viewportmapper=None):
-    viewportmapper = viewportmapper or ViewportMapper()
-    pen = QtGui.QPen(QtGui.QColor(35, 35, 35))
-    pen.setWidth(viewportmapper.to_viewport(3))
-    painter.setPen(pen)
-    painter.setBrush(QtGui.QColor(0, 0, 0, 0))
-    center = viewportmapper.to_viewport_coords(center)
-    target = viewportmapper.to_viewport_rect(target)
-    painter.drawLine(center, target)
-
-
 def get_hovered_path(rect, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     rect = viewportmapper.to_viewport_rect(rect)

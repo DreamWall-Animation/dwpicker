@@ -72,8 +72,6 @@ class ViewportMapper():
             units_center.y() * self.zoom - self.viewsize.height() / 2)
 
     def focus(self, units_rect):
-        if isinstance(units_rect, list):
-            units_rect = get_combined_rects(units_rect)
         self.zoom = min([
             float(self.viewsize.width()) / units_rect.width(),
             float(self.viewsize.height()) / units_rect.height()])

@@ -9,7 +9,7 @@ from dwpicker.dialog import warning
 from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
-from dwpicker.painting import ViewportMapper
+from dwpicker.painting import ViewportMapper, draw_shape
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
@@ -311,7 +311,7 @@ class PickerView(QtWidgets.QWidget):
         if not self.shapes:
             return
         for shape in self.shapes:
-            shape.draw(painter, self.viewportmapper)
+            draw_shape(painter, shape, self.viewportmapper)
         self.selection_square.draw(painter)
         painter.end()
 
