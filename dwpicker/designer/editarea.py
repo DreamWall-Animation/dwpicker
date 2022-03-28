@@ -2,7 +2,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.geometry import Transform, get_combined_rects
-from dwpicker.painting import draw_editor
+from dwpicker.painting import draw_editor, draw_shape
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 
@@ -167,6 +167,6 @@ class ShapeEditArea(QtWidgets.QWidget):
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
         draw_editor(painter, self.rect(), snap=self.transform.snap)
         for shape in self.shapes:
-            shape.draw(painter)
+            draw_shape(painter, shape)
         self.manipulator.draw(painter, get_cursor(self))
         self.selection_square.draw(painter)
