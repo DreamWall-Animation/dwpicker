@@ -93,7 +93,6 @@ def build_picker_from_pkr(title, buttons, imagepath, dst):
         picker['shapes'].insert(0, image_to_background_shape(imagepath))
     frame_picker_buttons(picker)
     fit_picker_to_content(picker)
-    autocenter_picker(picker)
     with open(dst, "w") as f:
         json.dump(picker, f, indent=2)
 
