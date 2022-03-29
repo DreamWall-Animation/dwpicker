@@ -2,7 +2,7 @@
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
-    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS,
+    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB,
     CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
     INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
     TRIGGER_REPLACE_ON_MIRROR, USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY,
@@ -26,6 +26,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         text = "Display namespace toolbar."
         self.namespace_toolbar = QtWidgets.QCheckBox(text)
         self.quick_options = QtWidgets.QCheckBox("Display quick options.")
+        text = "Auto switch tab with selection."
+        self.autoswitch_tab = QtWidgets.QCheckBox(text)
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
         text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
@@ -40,6 +42,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.namespace_toolbar)
         self.ui_layout.addWidget(self.quick_options)
         self.ui_layout.addWidget(self.disable_import_callbacks)
+        self.ui_layout.addWidget(self.autoswitch_tab)
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
         self.ui_layout.addWidget(self.unsaved_tab_icon)
@@ -81,6 +84,7 @@ class PreferencesWindow(QtWidgets.QWidget):
 
         self.namespace_toolbar.released.connect(self.save_ui_states)
         self.quick_options.released.connect(self.save_ui_states)
+        self.autoswitch_tab.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
         self.disable_import_callbacks.released.connect(self.save_ui_states)
@@ -96,6 +100,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.namespace_toolbar.setChecked(state)
         state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
         self.quick_options.setChecked(state)
+        state = bool(cmds.optionVar(query=AUTO_SWITCH_TAB))
+        self.autoswitch_tab.setChecked(state)
         state = bool(cmds.optionVar(query=DISABLE_IMPORT_CALLBACKS))
         self.disable_import_callbacks.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_IMAGES_PATHS))
@@ -124,6 +130,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
+        value = int(self.autoswitch_tab.isChecked())
+        save_optionvar(AUTO_SWITCH_TAB, value)
         value = int(self.disable_import_callbacks.isChecked())
         save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
         value = int(self.unsaved_tab_icon.isChecked())

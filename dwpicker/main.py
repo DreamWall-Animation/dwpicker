@@ -18,12 +18,12 @@ from dwpicker.dialog import (
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.optionvar import (
-    AUTO_FOCUS_BEHAVIOR, CHECK_IMAGES_PATHS, DISABLE_IMPORT_CALLBACKS,
-    DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    USE_ICON_FOR_UNSAVED_TAB, save_optionvar, append_recent_filename,
-    save_opened_filenames)
-from dwpicker.picker import PickerView, detect_picker_namespace
+    AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
+    DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
+    LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
+    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, save_optionvar,
+    append_recent_filename, save_opened_filenames)
+from dwpicker.picker import PickerView, detect_picker_namespace, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
 from dwpicker.quick import QuickOptions
@@ -277,6 +277,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             for method in methods:
                 callback = om.MSceneMessage.addCallback(event, method)
                 self.callbacks.append(callback)
+
+        method = self.auto_switch_tab
+        cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
+        self.callbacks.append(cb)
+
         for picker in self.pickers:
             picker.register_callbacks()
 
@@ -286,6 +291,23 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.callbacks.remove(cb)
         for picker in self.pickers:
             picker.unregister_callbacks()
+
+    def auto_switch_tab(self, *_, **__):
+        if not cmds.optionVar(query=AUTO_SWITCH_TAB):
+            return
+        nodes = cmds.ls(selection=True)
+        if not nodes:
+            return
+        picker = self.tab.currentWidget()
+        if not picker:
+            return
+        targets = list_targets(picker.shapes)
+        if nodes[-1] in targets:
+            return
+        for i, picker in enumerate(self.pickers):
+            if nodes[-1] in list_targets(picker.shapes):
+                self.tab.setCurrentIndex(i)
+                return
 
     def load_saved_pickers(self, *_, **__):
         self.clear()

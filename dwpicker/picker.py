@@ -63,7 +63,7 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
         s for s in selection_shapes
         if s.rect.contains(cursor) or
         s.rect.intersects(selection_rect)]
-    targets = {t for s in selection_shapes_hovered for t in s.targets()}
+    targets = list_targets(selection_shapes_hovered)
 
     for s in selection_shapes:
         state = next((False for t in s.targets() if t not in targets), True)
@@ -83,6 +83,10 @@ def detect_hovered_shape(shapes, cursor):
             continue
         if shape.rect.contains(cursor):
             return shape
+
+
+def list_targets(shapes):
+    return {t for s in shapes for t in s.targets()}
 
 
 class PickerView(QtWidgets.QWidget):
@@ -106,8 +110,8 @@ class PickerView(QtWidgets.QWidget):
         self.zoom_locked = False
 
     def register_callbacks(self):
-        function = self.sync_with_maya_selection
-        cb = om.MEventMessage.addEventCallback('SelectionChanged', function)
+        method = self.sync_with_maya_selection
+        cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
         self.callbacks.append(cb)
 
     def unregister_callbacks(self):
