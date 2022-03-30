@@ -132,6 +132,9 @@ class Selection():
     def clear(self):
         self.shapes = []
 
+    def __len__(self):
+        return len(self.shapes)
+
     def __bool__(self):
         return bool(self.shapes)
 

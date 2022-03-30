@@ -29,6 +29,7 @@ class MenuWidget(QtWidgets.QWidget):
     symmetryRequested = QtCore.Signal(bool)
     undoRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
+    alignRequested = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
@@ -128,6 +129,28 @@ class MenuWidget(QtWidgets.QWidget):
         method = partial(self.symmetryRequested.emit, False)
         self.vsymmetry.triggered.connect(method)
 
+        method = partial(self.alignRequested.emit, 'left')
+        self.align_left = QtWidgets.QAction(icon('align_left.png'),'', self)
+        self.align_left.triggered.connect(method)
+        file_ = 'align_h_center.png'
+        method = partial(self.alignRequested.emit, 'h_center')
+        self.align_h_center = QtWidgets.QAction(icon(file_),'', self)
+        self.align_h_center.triggered.connect(method)
+        method = partial(self.alignRequested.emit, 'right')
+        self.align_right = QtWidgets.QAction(icon('align_right.png'),'', self)
+        self.align_right.triggered.connect(method)
+        method = partial(self.alignRequested.emit, 'top')
+        self.align_top = QtWidgets.QAction(icon('align_top.png'),'', self)
+        self.align_top.triggered.connect(method)
+        file_ = 'align_v_center.png'
+        self.align_v_center = QtWidgets.QAction(icon(file_),'', self)
+        method = partial(self.alignRequested.emit, 'v_center')
+        self.align_v_center.triggered.connect(method)
+        file_ = 'align_bottom.png'
+        method = partial(self.alignRequested.emit, 'bottom')
+        self.align_bottom = QtWidgets.QAction(icon(file_),'', self)
+        self.align_bottom.triggered.connect(method)
+
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.addAction(self.delete)
         self.toolbar.addAction(self.copy)
@@ -161,6 +184,13 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.movedown)
         self.toolbar.addAction(self.moveup)
         self.toolbar.addAction(self.ontop)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.align_left)
+        self.toolbar.addAction(self.align_h_center)
+        self.toolbar.addAction(self.align_right)
+        self.toolbar.addAction(self.align_top)
+        self.toolbar.addAction(self.align_v_center)
+        self.toolbar.addAction(self.align_bottom)
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 10, 0)

@@ -4,6 +4,7 @@ from math import ceil
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
+from dwpicker.align import align_shapes
 from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
@@ -83,6 +84,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.onBottomRequested.connect(method)
         self.menu.symmetryRequested.connect(self.do_symmetry)
         self.menu.searchAndReplaceRequested.connect(self.search_and_replace)
+        self.menu.alignRequested.connect(self.align_selection)
         self.menu.load_ui_states()
 
         set_shortcut("Ctrl+Z", self.shape_editor, self.undo)
@@ -379,6 +381,7 @@ class PickerEditor(QtWidgets.QWidget):
     def move_selection(self, direction):
         offset = DIRECTION_OFFSETS[direction]
         rects = (s.rect for s in self.shape_editor.selection)
+        rects = (s.rect for s in self.shape_editor.selection)
         rect = self.shape_editor.manipulator.rect
         reference_rect = QtCore.QRect(rect)
 
@@ -386,3 +389,19 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.transform.reference_rect = reference_rect
         self.shape_editor.transform.shift(rects, offset)
         self.shape_editor.manipulator.update_geometries()
+        for shape in self.shape_editor.selection:
+            shape.synchronize_rect()
+        self.shape_editor.repaint()
+        self.shape_editor.selectedShapesChanged.emit()
+        self.pickerDataModified.emit(self.picker_data())
+
+    def align_selection(self, direction):
+        if not self.shape_editor.selection:
+            return
+        align_shapes(self.shape_editor.selection, direction)
+        rects = [s.rect for s in self.shape_editor.selection]
+        self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
+        self.shape_editor.manipulator.update_geometries()
+        self.shape_editor.repaint()
+        self.shape_editor.selectedShapesChanged.emit()
+        self.pickerDataModified.emit(self.picker_data())
