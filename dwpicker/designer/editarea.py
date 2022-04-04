@@ -158,10 +158,15 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selectedShapesChanged.emit()
 
     def paintEvent(self, _):
-        painter = QtGui.QPainter()
-        painter.begin(self)
-        self.paint(painter)
-        painter.end()
+        try:
+            painter = QtGui.QPainter()
+            painter.begin(self)
+            self.paint(painter)
+        except BaseException:
+            pass  # avoid crash
+            # TODO: log the error
+        finally:
+            painter.end()
 
     def paint(self, painter):
         painter.setRenderHint(QtGui.QPainter.Antialiasing)

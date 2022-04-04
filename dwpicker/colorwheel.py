@@ -77,16 +77,19 @@ class ColorWheel(QtWidgets.QWidget):
         self._horizontal_gradient.setColorAt(0.0, QtGui.QColor(WHITE))
 
     def paintEvent(self, _):
-        painter = QtGui.QPainter()
-        painter.begin(self)
-        self.paint(painter)
-        painter.end()
+        try:
+            painter = QtGui.QPainter()
+            painter.begin(self)
+            self.paint(painter)
+        except BaseException:
+            pass  # avoid crash
+            # TODO: log the error
+        finally:
+            painter.end()
 
     def mousePressEvent(self, event):
-        if self._rect.contains(event.pos()):
-            self._current_tool = 'rect'
-        else:
-            self._current_tool = 'wheel'
+        tool = 'rect' if self._rect.contains(event.pos()) else 'wheel'
+        self._current_tool = tool
         self.mouse_update(event)
 
     def mouseMoveEvent(self, event):

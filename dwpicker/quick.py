@@ -104,13 +104,18 @@ class ColorButton(QtWidgets.QAbstractButton):
         self.color.setNamedColor(value)
 
     def paintEvent(self, _):
-        painter = QtGui.QPainter()
-        painter.begin(self)
-        painter.setBrush(QtGui.QBrush(self.color))
-        if self.rect().contains(QtGui.QCursor.pos()):
-            color = QtCore.Qt.transparent
-        else:
-            color = QtCore.Qt.gray
-        painter.setPen(QtGui.QPen(color))
-        painter.drawRect(self.rect())
-        painter.end()
+        try:
+            painter = QtGui.QPainter()
+            painter.begin(self)
+            painter.setBrush(QtGui.QBrush(self.color))
+            if self.rect().contains(QtGui.QCursor.pos()):
+                color = QtCore.Qt.transparent
+            else:
+                color = QtCore.Qt.gray
+            painter.setPen(QtGui.QPen(color))
+            painter.drawRect(self.rect())
+        except BaseException:
+            pass  # avoid crash
+            # TODO: log the error
+        finally:
+            painter.end()

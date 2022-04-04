@@ -309,15 +309,20 @@ class PickerView(QtWidgets.QWidget):
         self.addButtonRequested.emit(position.x(), position.y(), button_type)
 
     def paintEvent(self, event):
-        painter = QtGui.QPainter()
-        painter.begin(self)
-        painter.setRenderHints(QtGui.QPainter.Antialiasing)
-        if not self.shapes:
-            return
-        for shape in self.shapes:
-            draw_shape(painter, shape, self.viewportmapper)
-        self.selection_square.draw(painter)
-        painter.end()
+        try:
+            painter = QtGui.QPainter()
+            painter.begin(self)
+            painter.setRenderHints(QtGui.QPainter.Antialiasing)
+            if not self.shapes:
+                return
+            for shape in self.shapes:
+                draw_shape(painter, shape, self.viewportmapper)
+            self.selection_square.draw(painter)
+        except BaseException:
+            pass  # avoid crash
+            # TODO: log the error
+        finally:
+            painter.end()
 
 
 class PickerMenu(QtWidgets.QMenu):
