@@ -1,5 +1,4 @@
 
-import contextlib
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.qtutils import remove_workspace_control
@@ -54,13 +53,12 @@ def close():
 
 
 
-class disable(contextlib.ContextDecorator):
+class disable():
     """
     This context manager temporarily disable the picker callbacks.
     This is usefull to decorate code which change the maya selection multiple
     times. This can lead constant refresh of the picker and lead performance
     issue. This should fix it.
-    This context manager can also be used as decorator.
     """
     def __enter__(self):
         if _dwpicker is None:
