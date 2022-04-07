@@ -6,7 +6,8 @@ from dwpicker.languages import MEL, PYTHON
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.designer.highlighter import get_highlighter
 from dwpicker.widgets import (
-    Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit, ColorEdit, IntEdit)
+    BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit,
+    TextEdit, Title, WidgetToggler)
 
 
 LEFT_CELL_WIDTH = 80
@@ -100,8 +101,8 @@ class GeneralSettings(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(GeneralSettings, self).__init__(parent)
-        self.name = QtWidgets.QLineEdit()
-        self.name.returnPressed.connect(self.name_changed)
+        self.name = TextEdit()
+        self.name.valueSet.connect(self.name_changed)
         self.zoom_locked = BoolCombo(False)
         self.zoom_locked.valueSet.connect(self.zoom_changed)
 
@@ -116,8 +117,8 @@ class GeneralSettings(QtWidgets.QWidget):
         self.name.setText(options['name'])
         self.zoom_locked.setCurrentText(str(options['zoom_locked']))
 
-    def name_changed(self):
-        self.optionModified.emit('name', self.name.text())
+    def name_changed(self, value):
+        self.optionModified.emit('name', value)
 
     def zoom_changed(self, state):
         self.optionModified.emit('zoom_locked', state)
@@ -569,8 +570,9 @@ class TextSettings(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(TextSettings, self).__init__(parent)
-        self.text = QtWidgets.QLineEdit()
-        self.text.returnPressed.connect(self.text_changed)
+        self.text = TextEdit()
+        method = partial(self.optionSet.emit,'text.content')
+        self.text.valueSet.connect(method)
 
         self.size = FloatEdit(minimum=0.0)
         self.size.valueSet.connect(partial(self.optionSet.emit, 'text.size'))
@@ -610,9 +612,6 @@ class TextSettings(QtWidgets.QWidget):
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
-
-    def text_changed(self):
-        self.optionSet.emit('text.content', self.text.text())
 
     def valign_changed(self):
         self.optionSet.emit('text.valign', self.valignement.currentText())

@@ -134,13 +134,13 @@ class ColorEdit(QtWidgets.QWidget):
         self.text.setText(color)
 
 
-class NumEdit(QtWidgets.QLineEdit):
+class LineEdit(QtWidgets.QLineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
 
     def __init__(self, minimum=None, maximum=None, parent=None):
-        super(NumEdit, self).__init__(parent)
-        self.validator = self.VALIDATOR_CLS()
+        super(LineEdit, self).__init__(parent)
+        self.validator = self.VALIDATOR_CLS() if self.VALIDATOR_CLS else None
         if minimum is not None:
             self.validator.setBottom(minimum)
         if maximum is not None:
@@ -151,11 +151,11 @@ class NumEdit(QtWidgets.QLineEdit):
 
     def focusInEvent(self, event):
         self._value = self.value()
-        return super(NumEdit, self).focusInEvent(event)
+        return super(LineEdit, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
         self.apply()
-        return super(NumEdit, self).focusOutEvent(event)
+        return super(LineEdit, self).focusOutEvent(event)
 
     def apply(self):
         if self._value != self.value():
@@ -168,9 +168,20 @@ class NumEdit(QtWidgets.QLineEdit):
         return float(self.text().replace(',', '.'))
 
 
-class FloatEdit(NumEdit):
+class TextEdit(LineEdit):
+    VALIDATOR_CLS = None
+    valueSet = QtCore.Signal(str)
+
+    def value(self):
+        if self.text() == '':
+            return None
+        return self.text()
+
+
+class FloatEdit(LineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
+
 
     def value(self):
         if self.text() == '':
@@ -178,7 +189,7 @@ class FloatEdit(NumEdit):
         return float(self.text().replace(',', '.'))
 
 
-class IntEdit(NumEdit):
+class IntEdit(LineEdit):
     valueSet = QtCore.Signal(int)
     VALIDATOR_CLS = QtGui.QIntValidator
 

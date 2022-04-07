@@ -52,7 +52,6 @@ def close():
     _dwpicker = None
 
 
-
 class disable():
     """
     This context manager temporarily disable the picker callbacks.
