@@ -139,7 +139,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.undo_manager.set_data_modified(picker_data)
         self.pickerDataModified.emit(picker_data)
         # select new shapes
-        shapes = self.shape_editor.shapes[-len(self.clipboard):]
+        shapes = self.shape_editor.shapes[-len(clipboard.get()):]
         self.shape_editor.selection.replace(shapes)
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
