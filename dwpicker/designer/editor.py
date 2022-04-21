@@ -4,6 +4,7 @@ from math import ceil
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
+from dwpicker import clipboard
 from dwpicker.align import align_shapes
 from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
@@ -33,7 +34,6 @@ class PickerEditor(QtWidgets.QWidget):
         title = "Picker editor - " + picker_data['general']['name']
         self.setWindowTitle(title)
         self.options = picker_data['general']
-        self.clipboard = []
         self.undo_manager = undo_manager
 
         self.shape_editor = ShapeEditArea(self.options)
@@ -123,14 +123,14 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.addLayout(self.hlayout)
 
     def copy(self):
-        self.clipboard = [
-            s.options.copy() for s in self.shape_editor.selection]
+        clipboard.set([
+            s.options.copy() for s in self.shape_editor.selection])
 
     def sizeHint(self):
         return QtCore.QSize(1300, 750)
 
     def paste(self):
-        clipboad_copy = [s.copy() for s in self.clipboard]
+        clipboad_copy = [s.copy() for s in clipboard.get()]
         shape_datas = self.picker_data()['shapes'][:] + clipboad_copy
         picker_data = {
             'general': self.options,
