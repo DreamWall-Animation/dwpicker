@@ -1,35 +1,42 @@
 
 
 import os
-from dwpicker.dialog import get_image_path, question
+from dwpicker.dialog import MissingImages
 
 
 IMAGE_MISSING_WARNING = (
     '\nImage is not found.\nWould you like to set a new path ?')
 
 
-def ensure_images_path_exists(picker_data):
+def ensure_images_path_exists(pickers):
     """
     As images are stored as path in the picker, this function ensure the paths
     exists. If not, it proposes to set a new path. If more than an image is not
     found, it will automatically look up into directories given in previous
     repath to find the images.
     """
-    possible_directories = []
-    for shape in picker_data['shapes']:
-        path = os.path.expandvars(shape['image.path'])
-        if path and not os.path.exists(path):
-            basename = os.path.basename(path)
-            for directory in possible_directories:
-                possible_path = os.path.join(directory, basename)
-                if os.path.exists(possible_path):
-                    shape['image.path'] = possible_path
-                    break
-            else:
-                msg = shape['image.path'] + IMAGE_MISSING_WARNING
-                result = question('Repath image: ' + basename, msg)
-                image_path = get_image_path() if result else ''
-                if image_path:
-                    shape['image.path'] = image_path
-                    possible_directories.append(os.path.dirname(image_path))
+    missing_images = list_missing_images(pickers)
+    if not missing_images:
+        return
+    dialog = MissingImages(missing_images)
+    result = dialog.exec_()
+    if result != dialog.Accepted:
+        return
+    for picker_data in pickers:
+        for shape in picker_data['shapes']:
+            path = os.path.expandvars(shape['image.path'])
+            if path in missing_images:
+                new_path = dialog.output(path)
+                if not new_path:
+                    continue
+                shape['image.path'] = new_path
     return picker_data
+
+
+def list_missing_images(pickers_data):
+    return sorted(list(set([
+        shape['image.path']
+        for picker_data in pickers_data
+        for shape in picker_data['shapes'] if
+        shape['image.path'] and not
+        os.path.exists(os.path.expandvars(shape['image.path']))])))

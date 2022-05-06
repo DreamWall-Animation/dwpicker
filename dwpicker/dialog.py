@@ -1,7 +1,7 @@
 from functools import partial
 import os
 
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker.optionvar import (
@@ -191,3 +191,114 @@ class SearchAndReplaceDialog(QtWidgets.QDialog):
         1 = Apply on selected shapes
         '''
         return self.filters.currentIndex()
+
+
+class MissingImages(QtWidgets.QDialog):
+    def __init__(self, paths, parent=None):
+        super(MissingImages, self).__init__(parent)
+        self.setWindowTitle('Missing images')
+        self.model = PathModel(paths)
+        self.paths = QtWidgets.QTableView()
+        self.paths.setAlternatingRowColors(True)
+        self.paths.setShowGrid(False)
+        self.paths.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.paths.verticalHeader().resizeSections(mode)
+        self.paths.verticalHeader().hide()
+        self.paths.horizontalHeader().show()
+        self.paths.horizontalHeader().resizeSections(mode)
+        self.paths.horizontalHeader().setStretchLastSection(True)
+        mode = QtWidgets.QAbstractItemView.ScrollPerPixel
+        self.paths.setHorizontalScrollMode(mode)
+        self.paths.setVerticalScrollMode(mode)
+        self.paths.setModel(self.model)
+
+        self.browse = QtWidgets.QPushButton('B')
+        self.browse.setFixedWidth(30)
+        self.browse.released.connect(self.call_browse)
+        self.update = QtWidgets.QPushButton('Update')
+        self.update.released.connect(self.accept)
+        self.skip = QtWidgets.QPushButton('Skip')
+        self.skip.released.connect(self.reject)
+        self.validators = QtWidgets.QHBoxLayout()
+        self.validators.addStretch(1)
+        self.validators.addWidget(self.browse)
+        self.validators.addWidget(self.update)
+        self.validators.addWidget(self.skip)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.addWidget(self.paths)
+        self.layout.addLayout(self.validators)
+
+    def output(self, path):
+        for p, output in zip(self.model.paths, self.model.outputs):
+            if p == path:
+                return output
+
+    @property
+    def outputs(self):
+        return self.model.outputs
+
+    def resizeEvent(self, _):
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.paths.verticalHeader().resizeSections(mode)
+        self.paths.horizontalHeader().resizeSections(mode)
+
+    def call_browse(self):
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Select image folder")
+        if not directory:
+            return
+        filenames = os.listdir(directory)
+        self.model.layoutAboutToBeChanged.emit()
+        for i, path in enumerate(self.model.paths):
+            filename = os.path.basename(path)
+            if filename in filenames:
+                filepath = os.path.join(directory, filename)
+                self.model.outputs[i] = filepath
+        self.model.layoutChanged.emit()
+
+
+class PathModel(QtCore.QAbstractTableModel):
+    HEADERS = 'filename', 'directory'
+
+    def __init__(self, paths, parent=None):
+        super(PathModel, self).__init__(parent)
+        self.paths = paths
+        self.outputs = paths[:]
+
+    def rowCount(self, *_):
+        return 2
+
+    def columnCount(self, *_):
+        return len(self.paths)
+
+    def flags(self, index):
+        flags = super(PathModel, self).flags(index)
+        if index.column() == 1:
+            flags |= QtCore.Qt.ItemIsEditable
+        return flags
+
+    def headerData(self, position, orientation, role):
+        if orientation != QtCore.Qt.Horizontal:
+            return
+
+        if role != QtCore.Qt.DisplayRole:
+            return
+
+        return self.HEADERS[position]
+
+    def data(self, index, role):
+        if not index.isValid():
+            return
+
+        row, col = index.row(), index.column()
+        if role == QtCore.Qt.DisplayRole:
+            if col == 0:
+                return os.path.basename(self.outputs[row])
+            if col == 1:
+                return os.path.dirname(self.outputs[row])
+
+        elif role == QtCore.Qt.BackgroundColorRole:
+            if not os.path.exists(self.outputs[row]):
+                return QtGui.QColor(QtCore.Qt.darkRed)

@@ -312,9 +312,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def load_saved_pickers(self, *_, **__):
         self.clear()
         pickers = load_local_picker_data()
+        if cmds.optionVar(query=CHECK_IMAGES_PATHS):
+            picker = ensure_images_path_exists(pickers)
         for picker in pickers:
-            if cmds.optionVar(query=CHECK_IMAGES_PATHS):
-                picker = ensure_images_path_exists(picker)
             self.add_picker(picker)
         clean_stray_picker_holder_nodes()
 
@@ -390,7 +390,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
             data = ensure_retro_compatibility(json.load(f))
-            data = ensure_images_path_exists(data)
+            data = ensure_images_path_exists([data])
             self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 
