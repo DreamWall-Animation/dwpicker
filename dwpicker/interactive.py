@@ -1,5 +1,5 @@
 
-
+import os
 from PySide2 import QtCore, QtGui
 
 from dwpicker.geometry import (
@@ -183,7 +183,8 @@ class Shape():
             self.options['action.left']])
 
     def synchronize_image(self):
-        self.pixmap = QtGui.QPixmap(self.options['image.path'])
+        path = os.path.expandvars(self.options['image.path'])
+        self.pixmap = QtGui.QPixmap(path)
         if self.options['image.fit'] is True:
             self.image_rect = None
             return

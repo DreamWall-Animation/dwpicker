@@ -17,8 +17,9 @@ def ensure_images_path_exists(picker_data):
     """
     possible_directories = []
     for shape in picker_data['shapes']:
-        if shape['image.path'] and not os.path.exists(shape['image.path']):
-            basename = os.path.basename(shape['image.path'])
+        path = os.path.expandvars(shape['image.path'])
+        if path and not os.path.exists(path):
+            basename = os.path.basename(path)
             for directory in possible_directories:
                 possible_path = os.path.join(directory, basename)
                 if os.path.exists(possible_path):
