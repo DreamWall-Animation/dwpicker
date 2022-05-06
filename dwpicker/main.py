@@ -390,7 +390,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
             data = ensure_retro_compatibility(json.load(f))
-            data = ensure_images_path_exists([data])
+            ensure_images_path_exists([data])
             self.add_picker(data, filename=filename)
         append_recent_filename(filename)
 

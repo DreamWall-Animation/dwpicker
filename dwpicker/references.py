@@ -30,7 +30,7 @@ def ensure_images_path_exists(pickers):
                 if not new_path:
                     continue
                 shape['image.path'] = new_path
-    return picker_data
+    return pickers
 
 
 def list_missing_images(pickers_data):
