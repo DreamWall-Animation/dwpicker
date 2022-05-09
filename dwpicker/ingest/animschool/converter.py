@@ -97,14 +97,26 @@ def build_picker_from_pkr(title, buttons, imagepath, dst):
         json.dump(picker, f, indent=2)
 
 
-def convert(filepath, folder=None):
-    folder = folder or os.path.dirname(filepath)
+def convert(filepath, directory=None):
+    directory = directory or os.path.dirname(filepath)
     title, buttons, png_data = parse_animschool_picker(filepath)
-    png_filename = os.path.basename(filepath)[:-4] + '.png'
-    png_path = os.path.join(folder, png_filename) if png_data else None
-    picker_filename = os.path.basename(filepath)[:-4] + '.json'
-    dst = os.path.join(folder, picker_filename)
+    picker_filename = os.path.splitext(os.path.basename(filepath))[0]
+    png_path = unique_filename(directory, picker_filename, 'png')
+    png_path = png_path if png_data else None
+    dst = unique_filename(directory, picker_filename, 'json')
     if png_path:
         save_png(png_data, png_path)
     build_picker_from_pkr(title, buttons, png_path, dst)
     return dst
+
+
+def unique_filename(directory, filename, extension):
+    filepath = os.path.join(directory, filename) + '.' + extension
+    i = 0
+    while os.path.exists(filepath):
+        filepath = '{base}.{index}.{extension}'.format(
+            base=os.path.join(directory, filename),
+            index=str(i).zfill(3),
+            extension=extension)
+        i += 1
+    return filepath
