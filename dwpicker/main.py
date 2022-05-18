@@ -448,7 +448,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         save_optionvar(LAST_OPEN_DIRECTORY, os.path.dirname(filenames[0]))
         for filename in filenames:
             self.add_picker_from_file(filename)
-            self.filenames.append(filename)
         self.store_local_pickers_data()
 
     def call_preferences(self):
@@ -524,7 +523,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         for src in sources:
             filename = animschool.convert(src, dst)
             self.add_picker_from_file(filename)
-            self.filenames.append(filename)
 
     def call_new(self):
         self.add_picker({

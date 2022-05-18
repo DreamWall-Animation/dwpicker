@@ -268,10 +268,10 @@ class PathModel(QtCore.QAbstractTableModel):
         self.outputs = paths[:]
 
     def rowCount(self, *_):
-        return 2
+        return len(self.paths)
 
     def columnCount(self, *_):
-        return len(self.paths)
+        return 2
 
     def flags(self, index):
         flags = super(PathModel, self).flags(index)
