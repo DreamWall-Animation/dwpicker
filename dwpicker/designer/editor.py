@@ -220,10 +220,12 @@ class PickerEditor(QtWidgets.QWidget):
             shape.options[option] = value
             if option == 'shape.height':
                 shape.rect.setHeight(value)
+                shape.synchronize_image()
                 continue
 
             elif option == 'shape.width':
                 shape.rect.setWidth(value)
+                shape.synchronize_image()
                 continue
 
             width = shape.rect.width()
@@ -234,8 +236,10 @@ class PickerEditor(QtWidgets.QWidget):
                 shape.rect.setTop(value)
             shape.rect.setWidth(width)
             shape.rect.setHeight(height)
+            shape.synchronize_image()
 
         self.update_manipulator_rect()
+        self.set_data_modified()
 
     def selection_changed(self):
         shapes = self.shape_editor.selection
