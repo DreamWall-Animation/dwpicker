@@ -454,14 +454,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.show()
 
     def call_save(self, index=None):
-        index = self.tab.currentIndex() if index is None else index
+        index = self.tab.currentIndex() if index in (None, False) else index
         filename = self.filenames[index]
         if not filename:
             return self.call_save_as(index=index)
         self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
-        index = self.tab.currentIndex() if index is None else index
+        index = self.tab.currentIndex() if index in (None, False) else index
         filename = QtWidgets.QFileDialog.getSaveFileName(
             None, "Save a picker ...",
             cmds.optionVar(query=LAST_SAVE_DIRECTORY),
@@ -531,7 +531,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.store_local_pickers_data()
 
     def picker_data(self, index=None):
-        index = self.tab.currentIndex() if index is None else index
+        index = self.tab.currentIndex() if index in (None, False) else index
         if index < 0:
             return None
         picker = self.tab.widget(index)
