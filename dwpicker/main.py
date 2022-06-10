@@ -672,7 +672,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def change_title(self, index=None):
         if not self.editable:
             return
-        index = self.tab.currentIndex() if index is None else index
+        index = self.tab.currentIndex() if index in (None, False) else index
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(
