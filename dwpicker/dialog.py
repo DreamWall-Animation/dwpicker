@@ -47,7 +47,8 @@ class NamespaceDialog(QtWidgets.QDialog):
         self.setWindowTitle('Select namespace ...')
         self.namespace_combo = QtWidgets.QComboBox()
         self.namespace_combo.setEditable(True)
-        namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
+        namespaces = [':'] + cmds.namespaceInfo(
+            listOnlyNamespaces=True, recurse=True)
         self.namespace_combo.addItems(namespaces)
 
         self.ok = QtWidgets.QPushButton('Ok')
