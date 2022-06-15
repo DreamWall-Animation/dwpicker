@@ -1,7 +1,11 @@
 import json
+import base64
+
 from maya import cmds
+
 from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.selection import maya_namespace
+from dwpicker.optionvar import USE_BASE64_DATA_ENCODING
 
 
 PICKER_HOLDER_NODE = '_dwpicker_data'
@@ -25,6 +29,8 @@ def create_picker_holder_node():
 
 def store_local_picker_data(pickers):
     data = json.dumps(pickers)
+    if cmds.optionVar(query=USE_BASE64_DATA_ENCODING):
+        data = base64.b64encode(bytes(data, "utf-8"))
     node = get_picker_holder_node()
     cmds.setAttr(node + '.' + PICKER_HOLDER_ATTRIBUTE, data, type='string')
     clean_stray_picker_holder_nodes()
@@ -35,9 +41,16 @@ def load_local_picker_data():
     pickers = []
     for node in nodes:
         data = cmds.getAttr(node + '.' + PICKER_HOLDER_ATTRIBUTE)
-        data = json.loads(data)
+        data = decode_data(data)
         pickers.extend(ensure_retro_compatibility(p) for p in data)
     return pickers
+
+
+def decode_data(data):
+    try:
+        return json.loads(data)
+    except ValueError:  # Happe if data encoded is encoded as base 64 string.
+        return json.loads(base64.b64decode(data))
 
 
 def list_picker_holder_nodes():

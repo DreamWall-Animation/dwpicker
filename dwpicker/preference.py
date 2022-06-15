@@ -5,13 +5,13 @@ from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB,
     CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
     INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
-    TRIGGER_REPLACE_ON_MIRROR, USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY,
-    ZOOM_BUTTON, ZOOM_BUTTONS)
+    TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
+    USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
 
 
 MAX_SENSITIVITY = 500
 AUTO_FOCUSES = {
-    'Disable':AUTO_FOCUS_BEHAVIORS[0],
+    'Disable': AUTO_FOCUS_BEHAVIORS[0],
     'Bilateral': AUTO_FOCUS_BEHAVIORS[1],
     'From picker to Maya only': AUTO_FOCUS_BEHAVIORS[2]}
 
@@ -48,6 +48,13 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.unsaved_tab_icon)
         self.ui_layout.addWidget(self.insert_after_current)
 
+        text = "Encode in-scene data as base64."
+        self.use_base64_encoding = QtWidgets.QCheckBox(text)
+
+        self.data_group = QtWidgets.QGroupBox("Data")
+        self.data_layout = QtWidgets.QVBoxLayout(self.data_group)
+        self.data_layout.addWidget(self.use_base64_encoding)
+
         self.auto_focus = QtWidgets.QComboBox()
         self.auto_focus.addItems(list(AUTO_FOCUSES))
 
@@ -76,6 +83,7 @@ class PreferencesWindow(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.addWidget(self.ui_group)
+        self.layout.addWidget(self.data_group)
         self.layout.addWidget(self.focus_group)
         self.layout.addWidget(self.advanced_group)
         self.layout.addWidget(self.zoom_group)
@@ -89,6 +97,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.released.connect(self.save_ui_states)
         self.disable_import_callbacks.released.connect(self.save_ui_states)
         self.insert_after_current.released.connect(self.save_ui_states)
+        self.use_base64_encoding.released.connect(self.save_ui_states)
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
@@ -108,6 +117,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
         self.sychronize.setChecked(state)
+        state = bool(cmds.optionVar(query=USE_BASE64_DATA_ENCODING))
+        self.use_base64_encoding.setChecked(state)
         state = bool(cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB))
         self.unsaved_tab_icon.setChecked(state)
         state = bool(cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT))
@@ -134,6 +145,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(AUTO_SWITCH_TAB, value)
         value = int(self.disable_import_callbacks.isChecked())
         save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
+        value = int(self.use_base64_encoding.isChecked())
+        save_optionvar(USE_BASE64_DATA_ENCODING, value)
         value = int(self.unsaved_tab_icon.isChecked())
         save_optionvar(USE_ICON_FOR_UNSAVED_TAB, value)
         value = int(self.insert_after_current.isChecked())

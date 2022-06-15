@@ -34,6 +34,7 @@ SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
 SYNCHRONYZE_SELECTION = 'dwpicker_synchronize_selection'
 TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
+USE_BASE64_DATA_ENCODING = 'dwpicker_use_base64_data_encoding'
 USE_ICON_FOR_UNSAVED_TAB = 'dwpicker_use_icon_for_unsaved_tab'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
@@ -55,7 +56,7 @@ OPTIONVARS = {
     LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
     LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
     LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),
-    LAST_COMMAND_LANGUAGE: 0, # 0 = python, 1 = mel
+    LAST_COMMAND_LANGUAGE: 0,  # 0 = python, 1 = mel
     LAST_IMAGE_DIRECTORY_USED: os.path.expanduser("~"),
     NAMESPACE_TOOLBAR: 0,
     OPENED_FILES: '',
@@ -67,6 +68,7 @@ OPTIONVARS = {
     SNAP_GRID_Y: 10,
     SYNCHRONYZE_SELECTION: 1,
     TRIGGER_REPLACE_ON_MIRROR: 0,
+    USE_BASE64_DATA_ENCODING: 0,
     USE_ICON_FOR_UNSAVED_TAB: 1,
     ZOOM_BUTTON: ZOOM_BUTTONS[2],
     ZOOM_SENSITIVITY: 50
