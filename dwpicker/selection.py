@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+
 from maya import cmds
 
 
@@ -8,28 +8,6 @@ class NameclashError(BaseException):
         message = 'Some nodes exists more than once:\n'
         nodes = '\n  - '.join(self.clashes)
         super(NameclashError, self).__init__(message + nodes)
-
-
-@contextmanager
-def maya_namespace(
-        namespace='', create_if_missing=True, restore_current_namespace=True):
-    """Context manager to temporarily set a namespace"""
-    initial_namespace = ':' + cmds.namespaceInfo(currentNamespace=True)
-    if not namespace.startswith(':'):
-        namespace = ':' + namespace
-    try:
-        if not cmds.namespace(absoluteName=True, exists=namespace):
-            if create_if_missing:
-                cmds.namespace(setNamespace=':')
-                namespace = cmds.namespace(addNamespace=namespace)
-            else:
-                cmds.namespace(initial_namespace)
-                raise ValueError(namespace + " doesn't exist.")
-        cmds.namespace(setNamespace=namespace)
-        yield namespace
-    finally:
-        if restore_current_namespace:
-            cmds.namespace(setNamespace=initial_namespace)
 
 
 def select_targets(shapes, selection_mode='replace'):
@@ -78,14 +56,6 @@ def select_shapes_from_selection(shapes):
                 break
         else:
             shape.selected = True
-
-
-def switch_namespace(name, namespace):
-    basename = name.split("|")[-1]
-    name = basename if ":" not in basename else basename.split(":")[-1]
-    if not namespace:
-        return name
-    return namespace + ":" + name
 
 
 class Selection():

@@ -7,6 +7,7 @@ from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, LAST_COMMAND_LANGUAGE, SEARCH_FIELD_INDEX,
     SHAPES_FILTER_INDEX, LAST_IMAGE_DIRECTORY_USED)
+from dwpicker.namespace import selected_namespace
 
 
 SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Command', 'Image path'
@@ -50,7 +51,10 @@ class NamespaceDialog(QtWidgets.QDialog):
         namespaces = [':'] + cmds.namespaceInfo(
             listOnlyNamespaces=True, recurse=True)
         self.namespace_combo.addItems(namespaces)
+        self.namespace_combo.setCurrentText(selected_namespace())
 
+        self.detect_selection = QtWidgets.QPushButton('Detect from selection')
+        self.detect_selection.released.connect(self.call_detect_selection)
         self.ok = QtWidgets.QPushButton('Ok')
         self.ok.released.connect(self.accept)
         self.cancel = QtWidgets.QPushButton('Cancel')
@@ -59,6 +63,8 @@ class NamespaceDialog(QtWidgets.QDialog):
         self.button_layout = QtWidgets.QHBoxLayout()
         self.button_layout.setContentsMargins(0, 0, 0, 0)
         self.button_layout.addStretch(1)
+        self.button_layout.addWidget(self.detect_selection)
+        self.button_layout.addSpacing(16)
         self.button_layout.addWidget(self.ok)
         self.button_layout.addWidget(self.cancel)
 
@@ -69,6 +75,9 @@ class NamespaceDialog(QtWidgets.QDialog):
     @property
     def namespace(self):
         return self.namespace_combo.currentText()
+
+    def call_detect_selection(self):
+        self.namespace_combo.setCurrentText(selected_namespace())
 
 
 class CommandButtonDialog(QtWidgets.QDialog):

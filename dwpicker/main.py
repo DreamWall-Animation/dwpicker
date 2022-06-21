@@ -17,13 +17,16 @@ from dwpicker.dialog import (
     warning, question, get_image_path, CommandButtonDialog, NamespaceDialog)
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
+from dwpicker.namespace import (
+    switch_namespace, selected_namespace, detect_picker_namespace,
+    pickers_namespaces)
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
     DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
     LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
     NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, save_optionvar,
     append_recent_filename, save_opened_filenames)
-from dwpicker.picker import PickerView, detect_picker_namespace, list_targets
+from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
 from dwpicker.quick import QuickOptions
@@ -31,7 +34,6 @@ from dwpicker.references import ensure_images_path_exists
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
-from dwpicker.selection import switch_namespace
 from dwpicker.templates import BUTTON, PICKER, BACKGROUND
 from dwpicker.undo import UndoManager
 
@@ -109,6 +111,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_refresh.setFixedSize(17, 17)
         self.namespace_refresh.setIconSize(QtCore.QSize(15, 15))
         self.namespace_refresh.released.connect(self.update_namespaces)
+        self.namespace_picker = QtWidgets.QPushButton("")
+        self.namespace_picker.setIcon(icon("picker.png"))
+        self.namespace_picker.setFixedSize(17, 17)
+        self.namespace_picker.setIconSize(QtCore.QSize(15, 15))
+        self.namespace_picker.released.connect(self.pick_namespace)
         self.namespace_widget = QtWidgets.QWidget()
         self.namespace_layout = QtWidgets.QHBoxLayout(self.namespace_widget)
         self.namespace_layout.setContentsMargins(10, 2, 2, 2)
@@ -118,6 +125,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_layout.addWidget(self.namespace_combo)
         self.namespace_layout.addSpacing(2)
         self.namespace_layout.addWidget(self.namespace_refresh)
+        self.namespace_layout.addWidget(self.namespace_picker)
         self.namespace_layout.addStretch(1)
 
         self.tab = QtWidgets.QTabWidget()
@@ -185,7 +193,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.preferences_window.close()
 
     def update_namespaces(self, *_):
-        namespaces = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
+        namespaces = list(set(
+            (cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)) +
+            (pickers_namespaces(self.pickers))))
+        print(namespaces)
         self.namespace_combo.blockSignals(True)
         self.namespace_combo.clear()
         self.namespace_combo.addItem("*Root*")
@@ -703,6 +714,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         text = self.namespace_combo.currentText()
         namespace = text if index else ":"
         self.change_namespace(namespace)
+
+    def pick_namespace(self):
+        namespace = selected_namespace()
+        self.namespace_combo.setCurrentText(namespace)
 
     def change_namespace(self, namespace):
         picker = self.tab.currentWidget()

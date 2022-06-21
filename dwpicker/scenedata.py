@@ -4,8 +4,8 @@ import base64
 from maya import cmds
 
 from dwpicker.compatibility import ensure_retro_compatibility
-from dwpicker.selection import maya_namespace
 from dwpicker.optionvar import USE_BASE64_DATA_ENCODING
+from dwpicker.namespace import maya_namespace
 
 
 PICKER_HOLDER_NODE = '_dwpicker_data'

@@ -16,21 +16,6 @@ from dwpicker.selection import (
     NameclashError)
 
 
-def _namespace(node):
-    basename = node.split("|")[-1]
-    if ":" not in node:
-        return None
-    return basename.split(":")[0]
-
-
-def detect_picker_namespace(shapes):
-    targets = {target for shape in shapes for target in shape.targets()}
-    namespaces = {ns for ns in [_namespace(t) for t in targets] if ns}
-    if len(namespaces) != 1:
-        return None
-    return list(namespaces)[0]
-
-
 def align_shapes_on_line(shapes, point1, point2):
     centers = split_line(point1, point2, len(shapes))
     for center, shape in zip(centers, shapes):
