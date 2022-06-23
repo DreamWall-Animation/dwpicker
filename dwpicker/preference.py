@@ -6,7 +6,8 @@ from dwpicker.optionvar import (
     CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
     INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
     TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
-    USE_ICON_FOR_UNSAVED_TAB, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
+    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
+    ZOOM_BUTTON, ZOOM_BUTTONS)
 
 
 MAX_SENSITIVITY = 500
@@ -37,6 +38,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.unsaved_tab_icon = QtWidgets.QCheckBox(text)
         text = "Insert new tab after current tab."
         self.insert_after_current = QtWidgets.QCheckBox(text)
+        text = "Warning before closing a tab."
+        self.warn_on_tab_close = QtWidgets.QCheckBox(text)
         self.ui_group = QtWidgets.QGroupBox("Ui")
         self.ui_layout = QtWidgets.QVBoxLayout(self.ui_group)
         self.ui_layout.addWidget(self.namespace_toolbar)
@@ -47,6 +50,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.check_images_paths)
         self.ui_layout.addWidget(self.unsaved_tab_icon)
         self.ui_layout.addWidget(self.insert_after_current)
+        self.ui_layout.addWidget(self.warn_on_tab_close)
 
         text = "Encode in-scene data as base64."
         self.use_base64_encoding = QtWidgets.QCheckBox(text)
@@ -101,6 +105,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
+        self.warn_on_tab_close.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
 
@@ -121,6 +126,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.use_base64_encoding.setChecked(state)
         state = bool(cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB))
         self.unsaved_tab_icon.setChecked(state)
+        state = bool(cmds.optionVar(query=WARN_ON_TAB_CLOSED))
+        self.warn_on_tab_close.setChecked(state)
         state = bool(cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT))
         self.insert_after_current.setChecked(state)
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
@@ -155,6 +162,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.search_on_mirror.isChecked())
         save_optionvar(TRIGGER_REPLACE_ON_MIRROR, value)
+        value = int(self.warn_on_tab_close.isChecked())
+        save_optionvar(WARN_ON_TAB_CLOSED, value)
         save_optionvar(ZOOM_BUTTON, self.zoom_button.currentText())
         value = MAX_SENSITIVITY - int(self.zoom_sensitivity.value()) + 1
         save_optionvar(ZOOM_SENSITIVITY, value)

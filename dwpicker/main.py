@@ -24,8 +24,8 @@ from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
     DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
     LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
-    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, save_optionvar,
-    append_recent_filename, save_opened_filenames)
+    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
+    save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
@@ -62,6 +62,9 @@ https://github.com/luckylyk/hotbox_designer
 WINDOW_TITLE = "DreamWall - Picker"
 WINDOW_CONTROL_NAME = "dwPickerWindow"
 CLOSE_CALLBACK_COMMAND = "import dwpicker;dwpicker._dwpicker.close_event()"
+CLOSE_TAB_WARNING = """\
+Close the tab will remove completely the picker data from the scene.
+Are you sure to continue ?"""
 
 
 def build_multiple_shapes(targets, override):
@@ -368,11 +371,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.close_tab(i, force=True)
 
     def close_tab(self, index, force=False, store=False):
-        conditions = (
-            self.modified_states[index]
-            and force is False
-            and not self.save_tab(index))
-        if conditions:
+        if self.modified_states[index] and force is False:
+            if not self.save_tab(index):
+                return
+        elif (cmds.optionVar(query=WARN_ON_TAB_CLOSED) and
+              not question('Warning', CLOSE_TAB_WARNING)):
             return
 
         editor = self.editors.pop(index)
@@ -469,7 +472,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         filename = self.filenames[index]
         if not filename:
             return self.call_save_as(index=index)
-        self.save_picker(index, filename)
+        return self.save_picker(index, filename)
 
     def call_save_as(self, index=None):
         index = self.tab.currentIndex() if type(index) is not int else index

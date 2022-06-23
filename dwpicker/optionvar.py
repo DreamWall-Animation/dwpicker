@@ -37,6 +37,7 @@ TRIGGER_REPLACE_ON_MIRROR = 'dwpicker_trigger_search_and_replace_on_mirror'
 USE_BASE64_DATA_ENCODING = 'dwpicker_use_base64_data_encoding'
 USE_ICON_FOR_UNSAVED_TAB = 'dwpicker_use_icon_for_unsaved_tab'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
+WARN_ON_TAB_CLOSED = 'dwpicker_warn_on_tab_closed'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
 
@@ -70,6 +71,7 @@ OPTIONVARS = {
     TRIGGER_REPLACE_ON_MIRROR: 0,
     USE_BASE64_DATA_ENCODING: 0,
     USE_ICON_FOR_UNSAVED_TAB: 1,
+    WARN_ON_TAB_CLOSED: 0,
     ZOOM_BUTTON: ZOOM_BUTTONS[2],
     ZOOM_SENSITIVITY: 50
 }
