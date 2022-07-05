@@ -7,11 +7,13 @@ from dwpicker.qtutils import remove_workspace_control
 _dwpicker = None
 
 
-def show(editable=True, pickers=None, ignore_scene_pickers=False):
+def show(
+        editable=True, pickers=None, ignore_scene_pickers=False, 
+        storage_class=None):
     ensure_optionvars_exists()
     global _dwpicker
     if not _dwpicker:
-        _dwpicker = DwPicker()
+        _dwpicker = DwPicker(storage_class=storage_class)
 
     try:
         _dwpicker.show(dockable=True)
