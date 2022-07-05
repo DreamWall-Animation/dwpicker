@@ -8,12 +8,14 @@ from dwpicker.updatechecker import warn_if_update_available
 _dwpicker = None
 
 
-def show(editable=True, pickers=None, ignore_scene_pickers=False):
+def show(
+        editable=True, pickers=None, ignore_scene_pickers=False, 
+        storage_class=None):
     ensure_optionvars_exists()
     global _dwpicker
     if not _dwpicker:
         warn_if_update_available()
-        _dwpicker = DwPicker()
+        _dwpicker = DwPicker(storage_class=storage_class)
 
     try:
         _dwpicker.show(dockable=True)
