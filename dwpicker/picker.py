@@ -130,6 +130,9 @@ class PickerView(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         self.viewportmapper.viewsize = self.size()
+        size = (event.size() - event.oldSize()) / 2
+        offset = QtCore.QPointF(size.width(), size.height())
+        self.viewportmapper.origin -= offset
         self.repaint()
 
     def mousePressEvent(self, event):
