@@ -63,7 +63,7 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
 def detect_hovered_shape(shapes, cursor):
     if not shapes:
         return
-    for shape in shapes:
+    for shape in reversed(shapes):
         if not (shape.is_interactive() or shape.targets()):
             continue
         if shape.rect.contains(cursor):
