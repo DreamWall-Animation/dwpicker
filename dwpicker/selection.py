@@ -110,6 +110,9 @@ class Selection():
 
     __nonzero__ = __bool__
 
+    def __getitem__(self, i):
+        return self.shapes[i]
+
     def __iter__(self):
         return self.shapes.__iter__()
 

@@ -28,6 +28,8 @@ OPENED_FILES = 'dwpicker_opened_files'
 NAMESPACE_TOOLBAR = 'dwpicker_display_dwtoolbar'
 RECENT_FILES = 'dwpicker_recent_files'
 SEARCH_FIELD_INDEX = 'dwpicker_designer_search_field_index'
+SETTINGS_GROUP_TO_COPY = 'dwpicker_settings_group_to_copy'
+SETTINGS_TO_COPY = 'dwpicker_settings_to_copy'
 SHAPES_FILTER_INDEX = 'dwpicker_designer_shape_filter_index'
 SNAP_ITEMS = 'dwpicker_designer_snap_items'
 SNAP_GRID_X = 'dwpicker_designer_snap_x'
@@ -64,6 +66,15 @@ OPTIONVARS = {
     RECENT_FILES: '',
     SEARCH_FIELD_INDEX: 0,
     SHAPES_FILTER_INDEX: 0,
+    SETTINGS_GROUP_TO_COPY: 'bordercolor;text;image;bgcolor;shape;borderwidth;border',
+    SETTINGS_TO_COPY: (
+        'bgcolor.clicked;bgcolor.hovered;bgcolor.normal;bgcolor.transparency;'
+        'border;bordercolor.clicked;bordercolor.hovered;bordercolor.normal;'
+        'bordercolor.transparency;borderwidth.clicked;borderwidth.hovered;'
+        'borderwidth.normal;image.fit;image.height;image.width;shape;'
+        'shape.cornersx;shape.cornersy;shape.height;shape.left;'
+        'shape.top;shape.width;text.bold;text.color;text.halign;text.italic;'
+        'text.size;text.valign'),
     SNAP_ITEMS: 0,
     SNAP_GRID_X: 10,
     SNAP_GRID_Y: 10,

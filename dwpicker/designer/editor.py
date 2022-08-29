@@ -9,7 +9,7 @@ from dwpicker.align import align_shapes
 from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
-from dwpicker.dialog import SearchAndReplaceDialog
+from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
 from dwpicker.interactive import Shape
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
@@ -55,9 +55,11 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
+        self.menu.copySettingsRequested.connect(self.copy_settings)
         self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.frameShapes.connect(self.frame_shapes)
         self.menu.pasteRequested.connect(self.paste)
+        self.menu.pasteSettingsRequested.connect(self.paste_settings)
         self.menu.sizeChanged.connect(self.editor_size_changed)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
@@ -126,6 +128,12 @@ class PickerEditor(QtWidgets.QWidget):
         clipboard.set([
             s.options.copy() for s in self.shape_editor.selection])
 
+    def copy_settings(self):
+        if len(self.shape_editor.selection) != 1:
+            return warning('Copy settings', 'Please select only one shape')
+        shape = self.shape_editor.selection[0]
+        clipboard.set_settings(shape.options.copy())
+
     def sizeHint(self):
         return QtCore.QSize(1300, 750)
 
@@ -143,6 +151,18 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.selection.replace(shapes)
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
+
+    def paste_settings(self):
+        dialog = SettingsPaster()
+        result = dialog.exec_()
+        if result != QtWidgets.QDialog.Accepted:
+            return
+        settings = clipboard.get_settings()
+        settings = {k: v for k, v in settings.items() if k in dialog.settings}
+        for shape in self.shape_editor.selection:
+            shape.options.update(settings)
+        self.shape_editor.repaint()
+        self.pickerDataModified.emit(self.picker_data())
 
     def undo(self):
         result = self.undo_manager.undo()

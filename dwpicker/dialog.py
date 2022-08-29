@@ -6,8 +6,10 @@ from maya import cmds
 
 from dwpicker.optionvar import (
     save_optionvar, LAST_COMMAND_LANGUAGE, SEARCH_FIELD_INDEX,
-    SHAPES_FILTER_INDEX, LAST_IMAGE_DIRECTORY_USED)
+    LAST_IMAGE_DIRECTORY_USED, SETTINGS_GROUP_TO_COPY, SHAPES_FILTER_INDEX,
+    SETTINGS_TO_COPY)
 from dwpicker.namespace import selected_namespace
+from dwpicker.templates import BUTTON
 
 
 SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Command', 'Image path'
@@ -141,6 +143,72 @@ class CommandButtonDialog(QtWidgets.QDialog):
         save_optionvar(
             LAST_COMMAND_LANGUAGE,
             self.language_buttons.checkedId())
+
+
+class SettingsPaster(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(SettingsPaster, self).__init__(parent)
+        self.setWindowTitle('Paste settings')
+        self.groups = {}
+        self.categories = {}
+        enable_settings = cmds.optionVar(query=SETTINGS_TO_COPY).split(';')
+
+        for setting in sorted(BUTTON.keys()):
+            text = ' '.join(setting.split('.')[1:]).capitalize()
+            checkbox = QtWidgets.QCheckBox(text or setting.capitalize())
+            checkbox.setting = setting
+            checkbox.setChecked(setting in enable_settings)
+            checkbox.stateChanged.connect(self.updated)
+            name = setting.split('.')[0]
+            self.categories.setdefault(name, []).append(checkbox)
+        enable_groups = cmds.optionVar(query=SETTINGS_GROUP_TO_COPY).split(';')
+
+        groups_layout = QtWidgets.QVBoxLayout()
+        self.group_layouts = QtWidgets.QHBoxLayout()
+        checkboxes_count = 0
+        for category, checkboxes in self.categories.items():
+            if checkboxes_count > 12:
+                checkboxes_count = 0
+                groups_layout.addStretch(1)
+                self.group_layouts.addLayout(groups_layout)
+                groups_layout = QtWidgets.QVBoxLayout()
+            group = QtWidgets.QGroupBox(category)
+            group.toggled.connect(self.updated)
+            group.setCheckable(True)
+            group.setChecked(category in enable_groups)
+            group_layout = QtWidgets.QVBoxLayout(group)
+            for checkbox in checkboxes:
+                group_layout.addWidget(checkbox)
+            self.groups[category] = group
+            groups_layout.addWidget(group)
+            checkboxes_count += len(checkboxes)
+        groups_layout.addStretch(1)
+        self.group_layouts.addLayout(groups_layout)
+
+        self.paste = QtWidgets.QPushButton('Paste')
+        self.paste.released.connect(self.accept)
+        self.cancel = QtWidgets.QPushButton('Cancel')
+        self.cancel.released.connect(self.reject)
+        self.buttons_layout = QtWidgets.QHBoxLayout()
+        self.buttons_layout.addStretch(1)
+        self.buttons_layout.addWidget(self.paste)
+        self.buttons_layout.addWidget(self.cancel)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.addLayout(self.group_layouts)
+        self.layout.addLayout(self.buttons_layout)
+
+    @property
+    def settings(self):
+        return [
+            cb.setting for category, checkboxes in self.categories.items()
+            for cb in checkboxes if cb.isChecked() and
+            self.groups[category].isChecked()]
+
+    def updated(self, *_):
+        cat = ';'.join([c for c, g in self.groups.items() if g.isChecked()])
+        save_optionvar(SETTINGS_GROUP_TO_COPY, cat)
+        save_optionvar(SETTINGS_TO_COPY, ';'.join(self.settings))
 
 
 class SearchAndReplaceDialog(QtWidgets.QDialog):
