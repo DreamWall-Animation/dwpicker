@@ -386,30 +386,35 @@ class UpdateAvailableDialog(QtWidgets.QDialog):
     def __init__(self, version, parent=None):
         super(UpdateAvailableDialog, self).__init__(parent=parent)
         self.setWindowTitle('Update available')
-        layout = QtWidgets.QVBoxLayout(self)
 
+        # Widgets
         text = '\n    New DreamWall Picker version "{0}" is available !    \n'
-        layout.addWidget(QtWidgets.QLabel(text.format(version)))
-
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addStretch(1)
-        layout.addLayout(button_layout)
+        label = QtWidgets.QLabel(text.format(version))
 
         ok_btn = QtWidgets.QPushButton('Open GitHub page')
         ok_btn.released.connect(self.accept)
-        button_layout.addWidget(ok_btn)
 
         cancel_btn = QtWidgets.QPushButton('Close')
         cancel_btn.released.connect(self.reject)
-        button_layout.addWidget(cancel_btn)
 
-        cb_layout = QtWidgets.QHBoxLayout()
-        cb_layout.addStretch(1)
-        layout.addLayout(cb_layout)
         self.check_cb = QtWidgets.QCheckBox('Check for update at startup')
         self.check_cb.stateChanged.connect(
             self.change_check_for_update_preference)
         self.check_cb.setChecked(cmds.optionVar(query=CHECK_FOR_UPDATE))
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(label)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(button_layout)
+        button_layout.addStretch(1)
+        button_layout.addWidget(ok_btn)
+        button_layout.addWidget(cancel_btn)
+
+        cb_layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(cb_layout)
+        cb_layout.addStretch(1)
         cb_layout.addWidget(self.check_cb)
 
     def change_check_for_update_preference(self):
