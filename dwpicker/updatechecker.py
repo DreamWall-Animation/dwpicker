@@ -22,7 +22,7 @@ def warn_if_update_available():
         return
     try:
         appinfos = urlopen(APPINFOS_URL).read().decode()
-        latest_version_str = re.search(VERSION_PATTERN, appinfos).group(0)
+        latest_version_str = re.search(VERSION_PATTERN, appinfos)[0]
         latest_version = tuple(
             int(n) for n in latest_version_str.replace(',', '.').split('.'))
         if VERSION < latest_version:
