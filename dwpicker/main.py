@@ -199,7 +199,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         namespaces = list(set(
             (cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)) +
             (pickers_namespaces(self.pickers))))
-        print(namespaces)
         self.namespace_combo.blockSignals(True)
         self.namespace_combo.clear()
         self.namespace_combo.addItem("*Root*")

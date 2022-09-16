@@ -2,6 +2,7 @@
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.qtutils import remove_workspace_control
+from dwpicker.updatechecker import warn_if_update_available
 
 
 _dwpicker = None
@@ -11,6 +12,7 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
     ensure_optionvars_exists()
     global _dwpicker
     if not _dwpicker:
+        warn_if_update_available()
         _dwpicker = DwPicker()
 
     try:

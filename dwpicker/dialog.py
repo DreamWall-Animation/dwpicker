@@ -5,9 +5,9 @@ from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker.optionvar import (
-    save_optionvar, LAST_COMMAND_LANGUAGE, SEARCH_FIELD_INDEX,
-    LAST_IMAGE_DIRECTORY_USED, SETTINGS_GROUP_TO_COPY, SHAPES_FILTER_INDEX,
-    SETTINGS_TO_COPY)
+    save_optionvar, CHECK_FOR_UPDATE, LAST_COMMAND_LANGUAGE,
+    SEARCH_FIELD_INDEX, LAST_IMAGE_DIRECTORY_USED, SETTINGS_GROUP_TO_COPY,
+    SHAPES_FILTER_INDEX, SETTINGS_TO_COPY)
 from dwpicker.namespace import selected_namespace
 from dwpicker.templates import BUTTON
 
@@ -380,3 +380,37 @@ class PathModel(QtCore.QAbstractTableModel):
         elif role == QtCore.Qt.BackgroundColorRole:
             if not os.path.exists(self.outputs[row]):
                 return QtGui.QColor(QtCore.Qt.darkRed)
+
+
+class UpdateAvailableDialog(QtWidgets.QDialog):
+    def __init__(self, version, parent=None):
+        super(UpdateAvailableDialog, self).__init__(parent=parent)
+        self.setWindowTitle('Update available')
+        layout = QtWidgets.QVBoxLayout(self)
+
+        text = '\n    New DreamWall Picker version "{0}" is available !    \n'
+        layout.addWidget(QtWidgets.QLabel(text.format(version)))
+
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addStretch(1)
+        layout.addLayout(button_layout)
+
+        ok_btn = QtWidgets.QPushButton('Open GitHub page')
+        ok_btn.released.connect(self.accept)
+        button_layout.addWidget(ok_btn)
+
+        cancel_btn = QtWidgets.QPushButton('Close')
+        cancel_btn.released.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+
+        cb_layout = QtWidgets.QHBoxLayout()
+        cb_layout.addStretch(1)
+        layout.addLayout(cb_layout)
+        self.check_cb = QtWidgets.QCheckBox('Check for update at startup')
+        self.check_cb.stateChanged.connect(
+            self.change_check_for_update_preference)
+        self.check_cb.setChecked(cmds.optionVar(query=CHECK_FOR_UPDATE))
+        cb_layout.addWidget(self.check_cb)
+
+    def change_check_for_update_preference(self):
+        save_optionvar(CHECK_FOR_UPDATE, int(self.check_cb.isChecked()))

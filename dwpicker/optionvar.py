@@ -11,6 +11,7 @@ AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
 AUTO_SWITCH_TAB = 'dwpicker_auto_switch_tab'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
 CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
+CHECK_FOR_UPDATE = 'dwpicker_check_for_update'
 DEFAULT_BG_COLOR = 'dwpicker_default_background_color'
 DEFAULT_LABEL = 'dwpicker_default_label_color'
 DEFAULT_HEIGHT = 'dwpicker_default_height'
@@ -48,6 +49,7 @@ OPTIONVARS = {
     AUTO_SWITCH_TAB: 0,
     BG_LOCKED: 1,
     CHECK_IMAGES_PATHS: 1,
+    CHECK_FOR_UPDATE: 1,
     DEFAULT_BG_COLOR: '#777777',
     DEFAULT_HEIGHT: 20,
     DEFAULT_LABEL: '',

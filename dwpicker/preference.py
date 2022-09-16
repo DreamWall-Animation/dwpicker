@@ -3,9 +3,9 @@ from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB,
-    CHECK_IMAGES_PATHS, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
-    INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
-    TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
+    CHECK_IMAGES_PATHS, CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS,
+    DISABLE_IMPORT_CALLBACKS, INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR,
+    SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
     USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
     ZOOM_BUTTON, ZOOM_BUTTONS)
 
@@ -85,12 +85,19 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.zoom_layout.addRow("Sensitivity", self.zoom_sensitivity)
         self.zoom_layout.addRow("Mouse button", self.zoom_button)
 
+        msg = "Check for new version at startup."
+        self.check_for_update = QtWidgets.QCheckBox(msg)
+        self.update_group = QtWidgets.QGroupBox("Update check")
+        self.update_layout = QtWidgets.QVBoxLayout(self.update_group)
+        self.update_layout.addWidget(self.check_for_update)
+
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.addWidget(self.ui_group)
         self.layout.addWidget(self.data_group)
         self.layout.addWidget(self.focus_group)
         self.layout.addWidget(self.advanced_group)
         self.layout.addWidget(self.zoom_group)
+        self.layout.addWidget(self.update_group)
 
         self.load_ui_states()
 
@@ -105,6 +112,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
+        self.check_for_update.released.connect(self.save_ui_states)
         self.warn_on_tab_close.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
@@ -120,6 +128,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.disable_import_callbacks.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_IMAGES_PATHS))
         self.check_images_paths.setChecked(state)
+        state = bool(cmds.optionVar(query=CHECK_FOR_UPDATE))
+        self.check_for_update.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
         self.sychronize.setChecked(state)
         state = bool(cmds.optionVar(query=USE_BASE64_DATA_ENCODING))
@@ -133,7 +143,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
-        value = cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR)
+        state = bool(cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR))
         self.search_on_mirror.setChecked(state)
 
         value = MAX_SENSITIVITY - cmds.optionVar(query=ZOOM_SENSITIVITY)
@@ -146,6 +156,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(NAMESPACE_TOOLBAR, value)
         value = int(self.check_images_paths.isChecked())
         save_optionvar(CHECK_IMAGES_PATHS, value)
+        value = int(self.check_for_update.isChecked())
+        save_optionvar(CHECK_FOR_UPDATE, value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
         value = int(self.autoswitch_tab.isChecked())
