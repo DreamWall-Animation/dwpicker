@@ -402,20 +402,20 @@ class UpdateAvailableDialog(QtWidgets.QDialog):
             self.change_check_for_update_preference)
         self.check_cb.setChecked(cmds.optionVar(query=CHECK_FOR_UPDATE))
 
-        # Layout
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(label)
-
+        # Layouts
         button_layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(button_layout)
         button_layout.addStretch(1)
         button_layout.addWidget(ok_btn)
         button_layout.addWidget(cancel_btn)
 
         cb_layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(cb_layout)
         cb_layout.addStretch(1)
         cb_layout.addWidget(self.check_cb)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(label)
+        layout.addLayout(cb_layout)
+        layout.addLayout(button_layout)
 
     def change_check_for_update_preference(self):
         save_optionvar(CHECK_FOR_UPDATE, int(self.check_cb.isChecked()))
