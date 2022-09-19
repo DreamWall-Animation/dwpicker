@@ -1,6 +1,9 @@
 import re
 import webbrowser
-from urllib.request import urlopen
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen  # python2
 
 from maya import cmds
 
