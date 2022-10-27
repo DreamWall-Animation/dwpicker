@@ -40,6 +40,12 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
             print(traceback.format_exc())
 
 
+def toggle():
+    if not _dwpicker:
+        return show()
+    _dwpicker.setVisible(not _dwpicker.isVisible())
+
+
 def close():
     global _dwpicker
     if not _dwpicker:
