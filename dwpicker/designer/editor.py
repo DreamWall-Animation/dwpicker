@@ -10,7 +10,7 @@ from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
 from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
-from dwpicker.interactive import Shape
+from dwpicker.interactive import Shape, get_shape_rect_from_options
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.picker import frame_shapes
@@ -161,8 +161,12 @@ class PickerEditor(QtWidgets.QWidget):
         settings = {k: v for k, v in settings.items() if k in dialog.settings}
         for shape in self.shape_editor.selection:
             shape.options.update(settings)
+            shape.rect = get_shape_rect_from_options(settings)
+            shape.synchronize_image()
+        self.set_data_modified()
+        self.selection_changed()
+        self.shape_editor.update_selection()
         self.shape_editor.repaint()
-        self.pickerDataModified.emit(self.picker_data())
 
     def undo(self):
         result = self.undo_manager.undo()
