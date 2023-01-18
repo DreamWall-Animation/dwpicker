@@ -179,14 +179,14 @@ class PickerView(QtWidgets.QWidget):
                 self.call_context_menu()
 
         elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
+            if self.mode_manager.right_click_pressed:
+                self.call_context_menu()
+            elif self.clicked_shape.targets():
+                self.clicked_shape.select(selection_mode)
             if interact:
                 self.clicked_shape.execute(
                     left=self.mode_manager.left_click_pressed,
                     right=self.mode_manager.right_click_pressed)
-            elif self.mode_manager.left_click_pressed:
-                self.clicked_shape.select(selection_mode)
-            elif self.mode_manager.right_click_pressed:
-                self.call_context_menu()
 
         self.release(event)
 
