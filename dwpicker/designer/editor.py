@@ -161,7 +161,7 @@ class PickerEditor(QtWidgets.QWidget):
         settings = {k: v for k, v in settings.items() if k in dialog.settings}
         for shape in self.shape_editor.selection:
             shape.options.update(settings)
-            shape.rect = get_shape_rect_from_options(settings)
+            shape.rect = get_shape_rect_from_options(shape.options)
             shape.synchronize_image()
         self.set_data_modified()
         self.selection_changed()

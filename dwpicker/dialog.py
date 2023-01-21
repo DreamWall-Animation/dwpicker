@@ -152,7 +152,6 @@ class SettingsPaster(QtWidgets.QDialog):
         self.groups = {}
         self.categories = {}
         enable_settings = cmds.optionVar(query=SETTINGS_TO_COPY).split(';')
-
         for setting in sorted(BUTTON.keys()):
             text = ' '.join(setting.split('.')[1:]).capitalize()
             checkbox = QtWidgets.QCheckBox(text or setting.capitalize())
@@ -173,9 +172,9 @@ class SettingsPaster(QtWidgets.QDialog):
                 self.group_layouts.addLayout(groups_layout)
                 groups_layout = QtWidgets.QVBoxLayout()
             group = QtWidgets.QGroupBox(category)
-            group.toggled.connect(self.updated)
             group.setCheckable(True)
             group.setChecked(category in enable_groups)
+            group.toggled.connect(self.updated)
             group_layout = QtWidgets.QVBoxLayout(group)
             for checkbox in checkboxes:
                 group_layout.addWidget(checkbox)
