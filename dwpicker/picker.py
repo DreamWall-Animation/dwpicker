@@ -36,7 +36,6 @@ def frame_shapes(shapes):
 
 def set_shapes_hovered(shapes, cursor, selection_rect=None):
     """
-    this function all the given shapes.
     It set hovered the shape if his rect contains the cursor.
     """
     if not shapes:
@@ -53,11 +52,6 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
     for s in selection_shapes:
         state = next((False for t in s.targets() if t not in targets), True)
         s.hovered = state
-
-    for shape in shapes:
-        if not shape.is_interactive():
-            continue
-        shape.hovered = shape.rect.contains(cursor)
 
 
 def detect_hovered_shape(shapes, cursor):
