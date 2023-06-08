@@ -606,7 +606,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         return QtCore.QSize(500, 800)
 
     def add_button(self, x, y, button_type):
-        targets = cmds.ls(sl=True)
+        targets = cmds.ls(selection=True)
         if not targets and button_type <= 1:
             return warning("Warning", "No targets selected")
 
