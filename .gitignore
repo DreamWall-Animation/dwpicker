@@ -4,3 +4,4 @@ __pycache__
 .vscode/*
 credentials.json
 **/platform_support.txt
+.idea

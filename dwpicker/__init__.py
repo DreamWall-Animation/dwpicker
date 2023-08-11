@@ -4,6 +4,8 @@ from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.qtutils import remove_workspace_control
 from dwpicker.updatechecker import warn_if_update_available
 
+from maya import cmds
+
 
 _dwpicker = None
 
@@ -21,6 +23,8 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
         # Workspace control already exists, UI restore as probably failed.
         remove_workspace_control(WINDOW_CONTROL_NAME)
         _dwpicker.show()
+
+    scriptJobLaunch()
 
     _dwpicker.set_editable(editable)
     if not ignore_scene_pickers:
@@ -101,3 +105,55 @@ def refresh():
     if not _dwpicker:
         return
     _dwpicker.load_saved_pickers()
+
+
+def scriptJobLaunch():
+    """
+    launch a scriptJob that will trigger tab change when a character is selected
+    """
+    if cmds.window("dwPickerWindowWorkspaceControl", query=True, exists=True):
+        # scriptJob for selection change ----
+        for sj in cmds.scriptJob(lj=True):
+            if "dwPickerWindowWorkspaceControl" in sj and "SelectionChanged" in sj:
+                break
+        else:
+            cmds.scriptJob(event=["SelectionChanged", selectionChanged], parent="dwPickerWindowWorkspaceControl")
+
+        # sciptJob for scene file open/import/reference ----
+        for sj in cmds.scriptJob(lj=True):
+            if "dwPickerWindowWorkspaceControl" in sj and "PostSceneRead" in sj:
+                break
+        else:
+            cmds.scriptJob(event=["PostSceneRead", refresh], parent="dwPickerWindowWorkspaceControl")
+
+
+def scriptJobKill():
+    """
+    kill any existing scriptJobs
+    """
+    for sj in cmds.scriptJob(lj=True):
+        if "dwPickerWindowWorkspaceControl" in sj:
+            sjNum = int(sj.split(":")[0])
+            cmds.scriptJob(kill=sjNum)
+
+
+def selectionChanged():
+    """
+    get the namespace of the selected item and trigger a tab switch in the UI
+    """
+    if cmds.window("dwPickerWindowWorkspaceControl", query=True, visible=True):
+        selection = cmds.ls(selection=True)
+        if selection and ":" in selection[0]:
+            namespace = selection[0].split(":")[0]
+            tabSwitch(tabName=namespace)
+
+
+def tabSwitch(tabName=None):
+    """
+    switch the current tab to the tab with a matching name
+    """
+    for n in range(_dwpicker.tab.count()):
+        # switch to the tab if the name matches ----
+        if _dwpicker.tab.tabText(n) == tabName:
+            _dwpicker.tab.setCurrentIndex(n)
+            break
