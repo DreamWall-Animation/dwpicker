@@ -107,7 +107,6 @@ class PickerView(QtWidgets.QWidget):
     def set_shapes(self, shapes):
         self.shapes = shapes
         self.mode_manager.shapes = shapes
-        self.reset()
         self.repaint()
 
     def reset(self):

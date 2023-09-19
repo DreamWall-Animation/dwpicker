@@ -16,7 +16,7 @@ view = PickerView(editable=False)
 view.register_callbacks()
 view.setWindowFlags(QtCore.Qt.Tool)
 view.set_shapes(shapes)
+view.reset()
 set_shortcut('F', view, view.reset)
 
 view.show()
-

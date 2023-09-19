@@ -424,6 +424,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             picker.dataChanged.connect(method)
         shapes = [Shape(s) for s in data['shapes']]
         picker.set_shapes(shapes)
+        picker.reset()
         picker.zoom_locked = data['general']['zoom_locked']
         return picker
 
