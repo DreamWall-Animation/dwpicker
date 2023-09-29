@@ -34,6 +34,7 @@ class BrowseEdit(QtWidgets.QWidget):
 
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
+        self.text.focusOutEvent = self.text_focus_out_event
         self.button = QtWidgets.QPushButton('B')
         self.button.setFixedSize(21, 21)
         self.button.released.connect(self.browse)
@@ -45,6 +46,9 @@ class BrowseEdit(QtWidgets.QWidget):
         self.layout.addWidget(self.button)
 
         self._value = self.value()
+
+    def text_focus_out_event(self, _):
+        self.apply()
 
     def browse(self):
         filename = get_image_path(self)
