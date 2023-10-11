@@ -1,13 +1,13 @@
-import sys
-import json
 import base64
+import json
+import re
+import sys
 
 from maya import cmds
 
 from dwpicker.compatibility import ensure_retro_compatibility
+from dwpicker.namespace import maya_namespace, node_full_namespace
 from dwpicker.optionvar import USE_BASE64_DATA_ENCODING
-from dwpicker.namespace import maya_namespace
-
 
 PICKER_HOLDER_NODE = '_dwpicker_data'
 PICKER_HOLDER_ATTRIBUTE = '_dwpicker_data'
@@ -40,8 +40,17 @@ def load_local_picker_data():
     pickers = []
     for node in nodes:
         data = cmds.getAttr(node + '.' + PICKER_HOLDER_ATTRIBUTE)
-        data = decode_data(data)
-        pickers.extend(ensure_retro_compatibility(p) for p in data)
+        data = [ensure_retro_compatibility(p) for p in decode_data(data)]
+        namespace = node_full_namespace(node)
+        if namespace:
+            # holder node would have namespace when it is referenced
+            # and we should add it's namespace for items to be selectable
+            for p in data:
+                for s in p['shapes']:
+                    s['action.targets'] = [
+                        re.sub(r'([^|]+)', r'{}:\1'.format(namespace), n)
+                        for n in s['action.targets']]
+        pickers.extend(data)
     return pickers
 
 
