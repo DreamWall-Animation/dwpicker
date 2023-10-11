@@ -40,6 +40,8 @@ def load_local_picker_data():
     pickers = []
     for node in nodes:
         data = cmds.getAttr(node + '.' + PICKER_HOLDER_ATTRIBUTE)
+        if not data:
+            continue
         data = [ensure_retro_compatibility(p) for p in decode_data(data)]
         namespace = node_full_namespace(node)
         if namespace:
