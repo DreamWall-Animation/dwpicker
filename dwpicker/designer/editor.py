@@ -5,7 +5,7 @@ from PySide2 import QtWidgets, QtCore
 from maya import cmds
 
 from dwpicker import clipboard
-from dwpicker.align import align_shapes
+from dwpicker.align import align_shapes, arrange_horizontal, arrange_vertical
 from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
@@ -37,6 +37,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.undo_manager = undo_manager
 
         self.shape_editor = ShapeEditArea(self.options)
+        self.shape_editor.callContextMenu.connect(self.call_context_menu)
         bg_locked = bool(cmds.optionVar(query=BG_LOCKED))
         self.shape_editor.set_lock_background_shape(bg_locked)
         self.set_picker_data(picker_data)
@@ -87,6 +88,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.symmetryRequested.connect(self.do_symmetry)
         self.menu.searchAndReplaceRequested.connect(self.search_and_replace)
         self.menu.alignRequested.connect(self.align_selection)
+        self.menu.arrangeRequested.connect(self.arrange_selection)
         self.menu.load_ui_states()
 
         set_shortcut("Ctrl+Z", self.shape_editor, self.undo)
@@ -275,17 +277,23 @@ class PickerEditor(QtWidgets.QWidget):
         width = self.options['width']
         height = self.options['height']
         frame_shapes(shapes)
-        width = int(ceil(max([max(s.rect.right() for s in shapes), width])))
-        height = int(ceil(max([max(s.rect.bottom() for s in shapes), height])))
+        width = int(ceil(max(s.rect.right() for s in shapes)))
+        height = int(ceil(max(s.rect.bottom() for s in shapes)))
         self.shape_editor.repaint()
         self.update_manipulator_rect()
         # This mark data as changed, no need to repeat.
         self.menu.set_size_values(width, height)
 
-    def create_shape(self, template, before=False):
+    def create_shape(
+            self, template, before=False, position=None, targets=None):
         options = template.copy()
         shape = Shape(options)
-        shape.rect.moveCenter(self.shape_editor.rect().center())
+        if not position:
+            shape.rect.moveCenter(self.shape_editor.rect().center())
+        else:
+            shape.rect.moveTopLeft(position)
+        if targets:
+            shape.set_targets(targets)
         shape.synchronize_rect()
         if before is True:
             self.shape_editor.shapes.insert(0, shape)
@@ -433,3 +441,39 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.repaint()
         self.shape_editor.selectedShapesChanged.emit()
         self.pickerDataModified.emit(self.picker_data())
+
+    def arrange_selection(self, direction):
+        if not self.shape_editor.selection:
+            return
+        if direction == 'horizontal':
+            arrange_horizontal(self.shape_editor.selection)
+        else:
+            arrange_vertical(self.shape_editor.selection)
+        rects = [s.rect for s in self.shape_editor.selection]
+        self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
+        self.shape_editor.manipulator.update_geometries()
+        self.shape_editor.repaint()
+        self.shape_editor.selectedShapesChanged.emit()
+        self.pickerDataModified.emit(self.picker_data())
+
+    def call_context_menu(self, position):
+        targets = cmds.ls(selection=True)
+        button = QtWidgets.QAction('Add selection button', self)
+        method = partial(
+            self.create_shape, BUTTON.copy(),
+            position=position, targets=targets)
+        button.triggered.connect(method)
+        template = BUTTON.copy()
+        template.update(clipboard.get_settings())
+        method = partial(
+            self.create_shape, template,
+            position=position, targets=targets)
+        text = 'Add selection button (using settings clipboard)'
+        button2 = QtWidgets.QAction(text, self)
+        button2.triggered.connect(method)
+
+        menu = QtWidgets.QMenu()
+        menu.addAction(button)
+        menu.addAction(button2)
+
+        menu.exec_(self.shape_editor.mapToGlobal(position))

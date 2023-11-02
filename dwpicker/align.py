@@ -1,4 +1,5 @@
 from PySide2 import QtCore
+from dwpicker.geometry import split_line
 
 
 def align_shapes(shapes, direction):
@@ -44,6 +45,34 @@ def align_bottom(shapes):
     bottom = max(s.rect.bottom() for s in shapes)
     for shape in shapes:
         shape.rect.moveBottom(bottom)
+        shape.synchronize_rect()
+
+
+def arrange_horizontal(shapes):
+    if len(shapes) < 3:
+        return
+    shapes = sorted(shapes, key=lambda s: s.rect.center().x())
+    centers = split_line(
+        point1=shapes[0].rect.center(),
+        point2=shapes[-1].rect.center(),
+        step_number=len(shapes))
+    for shape, center in zip(shapes, centers):
+        point = QtCore.QPointF(center.x(), shape.rect.center().y())
+        shape.rect.moveCenter(point)
+        shape.synchronize_rect()
+
+
+def arrange_vertical(shapes):
+    if len(shapes) < 3:
+        return
+    shapes = sorted(shapes, key=lambda s: s.rect.center().y())
+    centers = split_line(
+        point1=shapes[0].rect.center(),
+        point2=shapes[-1].rect.center(),
+        step_number=len(shapes))
+    for shape, center in zip(shapes, centers):
+        point = QtCore.QPointF(shape.rect.center().x(), center.y())
+        shape.rect.moveCenter(point)
         shape.synchronize_rect()
 
 

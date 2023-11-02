@@ -11,6 +11,7 @@ class MenuWidget(QtWidgets.QWidget):
     addBackgroundRequested = QtCore.Signal()
     addButtonRequested = QtCore.Signal()
     addTextRequested = QtCore.Signal()
+    arrangeRequested = QtCore.Signal(str)
     centerValuesChanged = QtCore.Signal(int, int)
     copyRequested = QtCore.Signal()
     copySettingsRequested = QtCore.Signal()
@@ -141,26 +142,36 @@ class MenuWidget(QtWidgets.QWidget):
         self.vsymmetry.triggered.connect(method)
 
         method = partial(self.alignRequested.emit, 'left')
-        self.align_left = QtWidgets.QAction(icon('align_left.png'),'', self)
+        self.align_left = QtWidgets.QAction(icon('align_left.png'), '', self)
         self.align_left.triggered.connect(method)
         file_ = 'align_h_center.png'
         method = partial(self.alignRequested.emit, 'h_center')
-        self.align_h_center = QtWidgets.QAction(icon(file_),'', self)
+        self.align_h_center = QtWidgets.QAction(icon(file_), '', self)
         self.align_h_center.triggered.connect(method)
         method = partial(self.alignRequested.emit, 'right')
-        self.align_right = QtWidgets.QAction(icon('align_right.png'),'', self)
+        self.align_right = QtWidgets.QAction(icon('align_right.png'), '', self)
         self.align_right.triggered.connect(method)
         method = partial(self.alignRequested.emit, 'top')
-        self.align_top = QtWidgets.QAction(icon('align_top.png'),'', self)
+        self.align_top = QtWidgets.QAction(icon('align_top.png'), '', self)
         self.align_top.triggered.connect(method)
         file_ = 'align_v_center.png'
-        self.align_v_center = QtWidgets.QAction(icon(file_),'', self)
+        self.align_v_center = QtWidgets.QAction(icon(file_), '', self)
         method = partial(self.alignRequested.emit, 'v_center')
         self.align_v_center.triggered.connect(method)
         file_ = 'align_bottom.png'
         method = partial(self.alignRequested.emit, 'bottom')
-        self.align_bottom = QtWidgets.QAction(icon(file_),'', self)
+        self.align_bottom = QtWidgets.QAction(icon(file_), '', self)
         self.align_bottom.triggered.connect(method)
+
+        file_ = 'arrange_h.png'
+        method = partial(self.arrangeRequested.emit, 'horizontal')
+        self.arrange_horizontal = QtWidgets.QAction(icon(file_), '', self)
+        self.arrange_horizontal.triggered.connect(method)
+
+        file_ = 'arrange_v.png'
+        method = partial(self.arrangeRequested.emit, 'vertical')
+        self.arrange_vertical = QtWidgets.QAction(icon(file_), '', self)
+        self.arrange_vertical.triggered.connect(method)
 
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.addAction(self.delete)
@@ -204,6 +215,8 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.align_top)
         self.toolbar.addAction(self.align_v_center)
         self.toolbar.addAction(self.align_bottom)
+        self.toolbar.addAction(self.arrange_horizontal)
+        self.toolbar.addAction(self.arrange_vertical)
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 10, 0)

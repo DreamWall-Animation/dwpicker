@@ -11,6 +11,7 @@ class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
     increaseUndoStackRequested = QtCore.Signal()
     centerMoved = QtCore.Signal(int, int)
+    callContextMenu = QtCore.Signal(QtCore.QPoint)
 
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
@@ -50,8 +51,10 @@ class ShapeEditArea(QtWidgets.QWidget):
                 if not shape.is_background()]
         return self.shapes
 
-    def mousePressEvent(self, _):
+    def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
+        if event.button() != QtCore.Qt.LeftButton:
+            return
 
         cursor = get_cursor(self)
         self.clicked = True
@@ -110,7 +113,18 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.repaint()
 
-    def mouseReleaseEvent(self, _):
+    def mouseReleaseEvent(self, event):
+        context_menu_condition = (
+            event.button() == QtCore.Qt.RightButton and
+            not self.clicked and
+            not self.handeling and
+            not self.selecting)
+        if context_menu_condition:
+            return self.callContextMenu.emit(event.pos())
+
+        if event.button() != QtCore.Qt.LeftButton:
+            return
+
         if self.increase_undo_on_release:
             self.increaseUndoStackRequested.emit()
             self.increase_undo_on_release = False
