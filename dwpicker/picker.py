@@ -32,6 +32,7 @@ def frame_shapes(shapes):
         shape.rect.moveLeft(shape.rect.left() + offset[0])
         shape.rect.moveTop(shape.rect.top() + offset[1])
         shape.synchronize_rect()
+        shape.synchronize_image()
 
 
 def set_shapes_hovered(shapes, cursor, selection_rect=None):
