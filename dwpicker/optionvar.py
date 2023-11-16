@@ -8,6 +8,7 @@ ZOOM_BUTTONS = ["left", "middle", "right"]
 
 
 AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
+AUTO_SET_NAMESPACE = 'dwpicker_auto_set_namespace'
 AUTO_SWITCH_TAB = 'dwpicker_auto_switch_tab'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
 CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
@@ -47,6 +48,7 @@ ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: AUTO_FOCUS_BEHAVIORS[-1],
     AUTO_SWITCH_TAB: 0,
+    AUTO_SET_NAMESPACE: 0,
     BG_LOCKED: 1,
     CHECK_IMAGES_PATHS: 1,
     CHECK_FOR_UPDATE: 1,

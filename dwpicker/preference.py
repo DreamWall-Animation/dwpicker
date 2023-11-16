@@ -2,10 +2,11 @@
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
-    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB,
-    CHECK_IMAGES_PATHS, CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS,
-    DISABLE_IMPORT_CALLBACKS, INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR,
-    SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
+    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_SET_NAMESPACE,
+    AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
+    CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
+    INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
+    TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
     USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
     ZOOM_BUTTON, ZOOM_BUTTONS)
 
@@ -29,6 +30,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.quick_options = QtWidgets.QCheckBox("Display quick options.")
         text = "Auto switch tab with selection."
         self.autoswitch_tab = QtWidgets.QCheckBox(text)
+        text = "Auto switch namespace."
+        self.autoswitch_namespace = QtWidgets.QCheckBox(text)
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
         text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
@@ -45,6 +48,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.namespace_toolbar)
         self.ui_layout.addWidget(self.quick_options)
         self.ui_layout.addWidget(self.disable_import_callbacks)
+        self.ui_layout.addWidget(self.autoswitch_namespace)
         self.ui_layout.addWidget(self.autoswitch_tab)
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
@@ -101,27 +105,29 @@ class PreferencesWindow(QtWidgets.QWidget):
 
         self.load_ui_states()
 
-        self.namespace_toolbar.released.connect(self.save_ui_states)
-        self.quick_options.released.connect(self.save_ui_states)
         self.autoswitch_tab.released.connect(self.save_ui_states)
+        self.autoswitch_namespace.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
+        self.check_for_update.released.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
         self.disable_import_callbacks.released.connect(self.save_ui_states)
         self.insert_after_current.released.connect(self.save_ui_states)
+        self.quick_options.released.connect(self.save_ui_states)
+        self.namespace_toolbar.released.connect(self.save_ui_states)
         self.use_base64_encoding.released.connect(self.save_ui_states)
         self.unsaved_tab_icon.released.connect(self.save_ui_states)
         self.sychronize.released.connect(self.save_ui_states)
         self.search_on_mirror.released.connect(self.save_ui_states)
-        self.check_for_update.released.connect(self.save_ui_states)
         self.warn_on_tab_close.released.connect(self.save_ui_states)
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
 
     def load_ui_states(self):
-        state = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
-        self.namespace_toolbar.setChecked(state)
-        state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
-        self.quick_options.setChecked(state)
+        value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
+        text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
+        self.auto_focus.setCurrentText(text)
+        state = bool(cmds.optionVar(query=AUTO_SET_NAMESPACE))
+        self.autoswitch_namespace.setChecked(state)
         state = bool(cmds.optionVar(query=AUTO_SWITCH_TAB))
         self.autoswitch_tab.setChecked(state)
         state = bool(cmds.optionVar(query=DISABLE_IMPORT_CALLBACKS))
@@ -130,6 +136,10 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_FOR_UPDATE))
         self.check_for_update.setChecked(state)
+        state = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
+        self.namespace_toolbar.setChecked(state)
+        state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
+        self.quick_options.setChecked(state)
         state = bool(cmds.optionVar(query=SYNCHRONYZE_SELECTION))
         self.sychronize.setChecked(state)
         state = bool(cmds.optionVar(query=USE_BASE64_DATA_ENCODING))
@@ -140,9 +150,6 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.warn_on_tab_close.setChecked(state)
         state = bool(cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT))
         self.insert_after_current.setChecked(state)
-        value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
-        text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
-        self.auto_focus.setCurrentText(text)
         state = bool(cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR))
         self.search_on_mirror.setChecked(state)
 
@@ -152,26 +159,28 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.zoom_button.setCurrentText(value)
 
     def save_ui_states(self, *_):
-        value = int(self.namespace_toolbar.isChecked())
-        save_optionvar(NAMESPACE_TOOLBAR, value)
+        value = AUTO_FOCUSES[self.auto_focus.currentText()]
+        save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
+        value = int(self.autoswitch_namespace.isChecked())
+        save_optionvar(AUTO_SET_NAMESPACE, value)
+        value = int(self.autoswitch_tab.isChecked())
+        save_optionvar(AUTO_SWITCH_TAB, value)
         value = int(self.check_images_paths.isChecked())
         save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.check_for_update.isChecked())
         save_optionvar(CHECK_FOR_UPDATE, value)
-        value = int(self.quick_options.isChecked())
-        save_optionvar(DISPLAY_QUICK_OPTIONS, value)
-        value = int(self.autoswitch_tab.isChecked())
-        save_optionvar(AUTO_SWITCH_TAB, value)
+        value = int(self.insert_after_current.isChecked())
+        save_optionvar(INSERT_TAB_AFTER_CURRENT, value)
         value = int(self.disable_import_callbacks.isChecked())
         save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
+        value = int(self.quick_options.isChecked())
+        save_optionvar(DISPLAY_QUICK_OPTIONS, value)
+        value = int(self.namespace_toolbar.isChecked())
+        save_optionvar(NAMESPACE_TOOLBAR, value)
         value = int(self.use_base64_encoding.isChecked())
         save_optionvar(USE_BASE64_DATA_ENCODING, value)
         value = int(self.unsaved_tab_icon.isChecked())
         save_optionvar(USE_ICON_FOR_UNSAVED_TAB, value)
-        value = int(self.insert_after_current.isChecked())
-        save_optionvar(INSERT_TAB_AFTER_CURRENT, value)
-        value = AUTO_FOCUSES[self.auto_focus.currentText()]
-        save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.search_on_mirror.isChecked())
         save_optionvar(TRIGGER_REPLACE_ON_MIRROR, value)
         value = int(self.warn_on_tab_close.isChecked())

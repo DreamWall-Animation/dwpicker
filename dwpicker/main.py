@@ -22,10 +22,11 @@ from dwpicker.namespace import (
     pickers_namespaces)
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
-    DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT,
-    LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY,
-    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
-    save_optionvar, append_recent_filename, save_opened_filenames)
+    AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS,
+    INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY,
+    LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
+    WARN_ON_TAB_CLOSED, save_optionvar, append_recent_filename,
+    save_opened_filenames)
 from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
@@ -293,6 +294,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         method = self.auto_switch_tab
         cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
+        method = self.auto_switch_namespace
+        cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
         self.callbacks.append(cb)
 
         for picker in self.pickers:
@@ -304,6 +307,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.callbacks.remove(cb)
         for picker in self.pickers:
             picker.unregister_callbacks()
+
+    def auto_switch_namespace(self, *_, **__):
+        if not cmds.optionVar(query=AUTO_SET_NAMESPACE):
+            return
+        self.pick_namespace()
 
     def auto_switch_tab(self, *_, **__):
         if not cmds.optionVar(query=AUTO_SWITCH_TAB):
