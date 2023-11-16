@@ -14,7 +14,7 @@ from dwpicker.interactive import Shape, get_shape_rect_from_options
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.picker import frame_shapes
-from dwpicker.qtutils import set_shortcut
+from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
 from dwpicker.designer.editarea import ShapeEditArea
@@ -302,6 +302,12 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.repaint()
         self.set_data_modified()
 
+    def update_targets(self, shape):
+        # shape = self.shape_editor.selection[0]
+        shape.set_targets(cmds.ls(selection=True))
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
     def image_modified(self):
         for shape in self.shape_editor.selection:
             shape.synchronize_image()
@@ -472,8 +478,17 @@ class PickerEditor(QtWidgets.QWidget):
         button2 = QtWidgets.QAction(text, self)
         button2.triggered.connect(method)
 
+        cursor = get_cursor(self.shape_editor)
+        shape = self.shape_editor.get_hovered_shape(cursor)
+        method = partial(self.update_targets, shape)
+        text = 'Update targets'
+        button3 = QtWidgets.QAction(text, self)
+        button3.setEnabled(bool(shape))
+        button3.triggered.connect(method)
+
         menu = QtWidgets.QMenu()
         menu.addAction(button)
         menu.addAction(button2)
+        menu.addAction(button3)
 
         menu.exec_(self.shape_editor.mapToGlobal(position))
