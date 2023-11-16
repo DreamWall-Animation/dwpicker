@@ -32,9 +32,7 @@ from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
 from dwpicker.quick import QuickOptions
 from dwpicker.references import ensure_images_path_exists
-from dwpicker.scenedata import (
-    load_local_picker_data, store_local_picker_data,
-    clean_stray_picker_holder_nodes)
+from dwpicker.scenedata import DefaultSceneStorage
 from dwpicker.templates import BUTTON, PICKER, BACKGROUND
 from dwpicker.undo import UndoManager
 
@@ -78,7 +76,7 @@ def build_multiple_shapes(targets, override):
 
 
 class DwPicker(DockableBase, QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, storage_class=None):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
         shortcut_context = QtCore.Qt.WidgetWithChildrenShortcut
@@ -100,6 +98,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.pickers = []
         self.filenames = []
         self.modified_states = []
+        self.storage = (storage_class or DefaultSceneStorage)()
+        
         self.preferences_window = PreferencesWindow(
             callback=self.load_ui_states, parent=maya_main_window())
         self.preferences_window.disable_import_callbacks.released.connect(
@@ -333,23 +333,23 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def load_saved_pickers(self, *_, **__):
         self.clear()
-        pickers = load_local_picker_data()
+        pickers = self.storage.load()
         if cmds.optionVar(query=CHECK_IMAGES_PATHS):
             picker = ensure_images_path_exists(pickers)
         for picker in pickers:
             self.add_picker(picker)
-        clean_stray_picker_holder_nodes()
+        self.storage.cleanup()
 
     def store_local_pickers_data(self):
         if not self.editable:
             return
 
         if not self.tab.count():
-            store_local_picker_data([])
+            self.storage.store([])
             return
 
         pickers = [self.picker_data(i) for i in range(self.tab.count())]
-        store_local_picker_data(pickers)
+        self.storage.store(pickers)
 
     def save_tab(self, index):
         msg = (
