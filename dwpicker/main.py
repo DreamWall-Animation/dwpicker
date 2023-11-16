@@ -294,6 +294,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         method = self.auto_switch_tab
         cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
+        self.callbacks.append(cb)
         method = self.auto_switch_namespace
         cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
         self.callbacks.append(cb)
