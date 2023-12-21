@@ -49,6 +49,7 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
             import traceback
             print("Not able to load: {}".format(filename))
             print(traceback.format_exc())
+    _dwpicker.store_local_pickers_data()
 
 
 def toggle():
@@ -120,3 +121,4 @@ def open_picker_file(filepath):
     if not _dwpicker:
         return cmds.warning('Please open picker first.')
     _dwpicker.add_picker_from_file(filepath)
+    _dwpicker.store_local_pickers_data()
