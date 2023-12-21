@@ -1,4 +1,4 @@
-
+from maya import cmds
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.qtutils import remove_workspace_control
@@ -9,6 +9,17 @@ _dwpicker = None
 
 
 def show(editable=True, pickers=None, ignore_scene_pickers=False):
+    """
+    This is the dwpicker default startup function.
+    editable: bool
+        This allow users to do local edit on their picker. This is NOT
+        affecting the original file.
+    pickers: list[str]
+        Path to pickers to open. If scene contains already pickers,
+        they are going to be ignored.
+    ignore_scene_pickers:
+        This is loading the picker empty, ignoring the scene content.
+    """
     ensure_optionvars_exists()
     global _dwpicker
     if not _dwpicker:
@@ -23,7 +34,7 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
         _dwpicker.show()
 
     _dwpicker.set_editable(editable)
-    if not ignore_scene_pickers:
+    if not ignore_scene_pickers and not pickers:
         _dwpicker.load_saved_pickers()
 
     if not pickers:
@@ -100,4 +111,12 @@ def refresh():
     """
     if not _dwpicker:
         return
-    _dwpicker.load_saved_pickers()
+
+
+def open_picker_file(filepath):
+    """
+    Add programmatically a picker to the main UI.
+    """
+    if not _dwpicker:
+        return cmds.warning('Please open picker first.')
+    _dwpicker.add_picker_from_file(filepath)
