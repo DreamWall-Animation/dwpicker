@@ -39,5 +39,5 @@ dwpicker.show()
   
 ### Support
 Preferably, post an issue on the github page.\
-If you don't hold an github account, you can send a mail to `brouyere |a| dreamwall.be`.\
+If you don't hold a github account, you can send a mail to `brouyere |a| dreamwall.be`.\
 Please start you mail subject by ***[dwpicker]***. (Note that the replying delay can be longer using that way).
