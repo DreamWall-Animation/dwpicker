@@ -2,6 +2,7 @@
 
 import os
 from dwpicker.dialog import MissingImages
+from dwpicker.path import expand_path
 
 
 IMAGE_MISSING_WARNING = (
@@ -24,7 +25,7 @@ def ensure_images_path_exists(pickers):
         return
     for picker_data in pickers:
         for shape in picker_data['shapes']:
-            path = os.path.expandvars(shape['image.path'])
+            path = expand_path(shape['image.path'])
             if path in missing_images:
                 new_path = dialog.output(path)
                 if not new_path:
@@ -39,4 +40,4 @@ def list_missing_images(pickers_data):
         for picker_data in pickers_data
         for shape in picker_data['shapes'] if
         shape['image.path'] and not
-        os.path.exists(os.path.expandvars(shape['image.path']))])))
+        os.path.exists(expand_path(shape['image.path']))])))

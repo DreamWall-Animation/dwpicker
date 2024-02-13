@@ -1,14 +1,15 @@
 
-import os
+
 from PySide2 import QtCore, QtGui
 
 from dwpicker.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,
     get_bottomright_rect, get_left_side_rect, get_right_side_rect,
     get_top_side_rect, get_bottom_side_rect, proportional_rect)
-from dwpicker.painting import (
-    draw_selection_square, draw_manipulator, get_hovered_path, draw_shape)
 from dwpicker.languages import execute_code
+from dwpicker.painting import (
+    draw_selection_square, draw_manipulator, get_hovered_path)
+from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
 
 
@@ -183,7 +184,7 @@ class Shape():
             self.options['action.left']])
 
     def synchronize_image(self):
-        path = os.path.expandvars(self.options['image.path'])
+        path = expand_path(self.options['image.path'])
         self.pixmap = QtGui.QPixmap(path)
         if self.options['image.fit'] is True:
             self.image_rect = None

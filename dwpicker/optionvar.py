@@ -8,11 +8,13 @@ ZOOM_BUTTONS = ["left", "middle", "right"]
 
 
 AUTO_FOCUS_BEHAVIOR = 'dwpicker_auto_focus_behavior'
+AUTO_COLLAPSE_IMG_PATH_FROM_ENV = 'dwpicker_auto_collapse_image_path_from_env'
 AUTO_SET_NAMESPACE = 'dwpicker_auto_set_namespace'
 AUTO_SWITCH_TAB = 'dwpicker_auto_switch_tab'
 BG_LOCKED = 'dwpicker_designer_background_items_locked'
 CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
 CHECK_FOR_UPDATE = 'dwpicker_check_for_update'
+CUSTOM_PROD_PICKER_DIRECTORY = 'dwpicker_custom_prod_picker_directory'
 DEFAULT_BG_COLOR = 'dwpicker_default_background_color'
 DEFAULT_LABEL = 'dwpicker_default_label_color'
 DEFAULT_HEIGHT = 'dwpicker_default_height'
@@ -20,6 +22,7 @@ DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
 DEFAULT_WIDTH = 'dwpicker_default_width'
 DISABLE_IMPORT_CALLBACKS = 'dwpicker_disable_import_callbacks'
 DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
+OVERRIDE_PROD_PICKER_DIRECTORY_ENV = 'dwpicker_override_picker_directory_env'
 INSERT_TAB_AFTER_CURRENT = 'dwpicker_insert_tab_after_current'
 LAST_COMMAND_LANGUAGE = 'dwpicker_last_command_language_used'
 LAST_IMAGE_DIRECTORY_USED = 'dwpicker_last_directory_used'
@@ -49,9 +52,11 @@ OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: AUTO_FOCUS_BEHAVIORS[-1],
     AUTO_SWITCH_TAB: 0,
     AUTO_SET_NAMESPACE: 0,
+    AUTO_COLLAPSE_IMG_PATH_FROM_ENV: 1,
     BG_LOCKED: 1,
     CHECK_IMAGES_PATHS: 1,
     CHECK_FOR_UPDATE: 1,
+    CUSTOM_PROD_PICKER_DIRECTORY: '',
     DEFAULT_BG_COLOR: '#777777',
     DEFAULT_HEIGHT: 20,
     DEFAULT_LABEL: '',
@@ -59,6 +64,7 @@ OPTIONVARS = {
     DEFAULT_WIDTH: 30,
     DISABLE_IMPORT_CALLBACKS: 1,
     DISPLAY_QUICK_OPTIONS: 1,
+    OVERRIDE_PROD_PICKER_DIRECTORY_ENV: 0,
     INSERT_TAB_AFTER_CURRENT: 0,
     LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
     LAST_SAVE_DIRECTORY: os.path.expanduser("~"),

@@ -1,14 +1,17 @@
-
+import os
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import (
-    save_optionvar, AUTO_FOCUS_BEHAVIOR, AUTO_SET_NAMESPACE,
+    save_optionvar,
+    AUTO_COLLAPSE_IMG_PATH_FROM_ENV, AUTO_FOCUS_BEHAVIOR, AUTO_SET_NAMESPACE,
     AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
-    CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
+    CUSTOM_PROD_PICKER_DIRECTORY, CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS,
+    DISABLE_IMPORT_CALLBACKS, OVERRIDE_PROD_PICKER_DIRECTORY_ENV,
     INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
     TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
     USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
     ZOOM_BUTTON, ZOOM_BUTTONS)
+from dwpicker.path import unix_path
 
 
 MAX_SENSITIVITY = 500
@@ -56,6 +59,26 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.insert_after_current)
         self.ui_layout.addWidget(self.warn_on_tab_close)
 
+        notfound = "environment variable not found"
+        text = '$DWPICKER_PROJECT_DIRECTORY:{}'.format(
+            os.getenv("DWPICKER_PROJECT_DIRECTORY", notfound))
+        self.project_dir_env = QtWidgets.QLineEdit(text)
+        self.project_dir_env.setReadOnly(True)
+        text = (
+            "Auto-collapse path with environment "
+            "variable $DWPICKER_PROJECT_DIRECTORY")
+        self.auto_collapse_path = QtWidgets.QCheckBox(text)
+        text = "Override $DWPICKER_PROJECT_DIRECTORY"
+        self.override_variable = QtWidgets.QCheckBox(text)
+        self.custom_prod_path = QtWidgets.QLineEdit()
+
+        self.env_group = QtWidgets.QGroupBox("Environment Variables")
+        self.env_layout = QtWidgets.QVBoxLayout(self.env_group)
+        self.env_layout.addWidget(self.project_dir_env)
+        self.env_layout.addWidget(self.auto_collapse_path)
+        self.env_layout.addWidget(self.override_variable)
+        self.env_layout.addWidget(self.custom_prod_path)
+
         text = "Encode in-scene data as base64."
         self.use_base64_encoding = QtWidgets.QCheckBox(text)
 
@@ -95,22 +118,36 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.update_layout = QtWidgets.QVBoxLayout(self.update_group)
         self.update_layout.addWidget(self.check_for_update)
 
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.addWidget(self.ui_group)
-        self.layout.addWidget(self.data_group)
-        self.layout.addWidget(self.focus_group)
-        self.layout.addWidget(self.advanced_group)
-        self.layout.addWidget(self.zoom_group)
-        self.layout.addWidget(self.update_group)
+        central_widget = QtWidgets.QWidget()
+        self.sublayout = QtWidgets.QVBoxLayout(central_widget)
+        self.sublayout.addWidget(self.ui_group)
+        self.sublayout.addWidget(self.env_group)
+        self.sublayout.addWidget(self.data_group)
+        self.sublayout.addWidget(self.focus_group)
+        self.sublayout.addWidget(self.advanced_group)
+        self.sublayout.addWidget(self.zoom_group)
+        self.sublayout.addWidget(self.update_group)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(central_widget)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(scroll)
 
         self.load_ui_states()
 
+        self.auto_collapse_path.released.connect(self.save_ui_states)
         self.autoswitch_tab.released.connect(self.save_ui_states)
         self.autoswitch_namespace.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_for_update.released.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
+        self.custom_prod_path.textEdited.connect(self.save_ui_states)
         self.disable_import_callbacks.released.connect(self.save_ui_states)
+        self.override_variable.released.connect(self.save_ui_states)
         self.insert_after_current.released.connect(self.save_ui_states)
         self.quick_options.released.connect(self.save_ui_states)
         self.namespace_toolbar.released.connect(self.save_ui_states)
@@ -122,7 +159,12 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.zoom_sensitivity.valueChanged.connect(self.save_ui_states)
         self.zoom_button.currentIndexChanged.connect(self.save_ui_states)
 
+    def sizeHint(self):
+        return QtCore.QSize(520, 600)
+
     def load_ui_states(self):
+        state = bool(cmds.optionVar(query=AUTO_COLLAPSE_IMG_PATH_FROM_ENV))
+        self.auto_collapse_path.setChecked(state)
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
@@ -132,10 +174,15 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.autoswitch_tab.setChecked(state)
         state = bool(cmds.optionVar(query=DISABLE_IMPORT_CALLBACKS))
         self.disable_import_callbacks.setChecked(state)
+        value = cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY)
+        self.custom_prod_path.setText(value)
         state = bool(cmds.optionVar(query=CHECK_IMAGES_PATHS))
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_FOR_UPDATE))
         self.check_for_update.setChecked(state)
+        state = bool(cmds.optionVar(query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV))
+        self.override_variable.setChecked(state)
+        self.custom_prod_path.setEnabled(state)
         state = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
         self.namespace_toolbar.setChecked(state)
         state = bool(cmds.optionVar(query=DISPLAY_QUICK_OPTIONS))
@@ -159,6 +206,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.zoom_button.setCurrentText(value)
 
     def save_ui_states(self, *_):
+        value = int(self.auto_collapse_path.isChecked())
+        save_optionvar(AUTO_COLLAPSE_IMG_PATH_FROM_ENV, value)
         value = AUTO_FOCUSES[self.auto_focus.currentText()]
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
         value = int(self.autoswitch_namespace.isChecked())
@@ -169,10 +218,15 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(CHECK_IMAGES_PATHS, value)
         value = int(self.check_for_update.isChecked())
         save_optionvar(CHECK_FOR_UPDATE, value)
+        value = unix_path(self.custom_prod_path.text())
+        save_optionvar(CUSTOM_PROD_PICKER_DIRECTORY, value)
         value = int(self.insert_after_current.isChecked())
         save_optionvar(INSERT_TAB_AFTER_CURRENT, value)
         value = int(self.disable_import_callbacks.isChecked())
         save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
+        value = self.override_variable.isChecked()
+        save_optionvar(OVERRIDE_PROD_PICKER_DIRECTORY_ENV, int(value))
+        self.custom_prod_path.setEnabled(value)
         value = int(self.quick_options.isChecked())
         save_optionvar(DISPLAY_QUICK_OPTIONS, value)
         value = int(self.namespace_toolbar.isChecked())

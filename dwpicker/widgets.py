@@ -2,6 +2,7 @@ from PySide2 import QtGui, QtCore, QtWidgets
 
 from dwpicker.colorwheel import ColorDialog
 from dwpicker.dialog import get_image_path
+from dwpicker.path import format_path
 from dwpicker.qtutils import icon
 
 # don't use style sheet like that, find better design
@@ -52,16 +53,19 @@ class BrowseEdit(QtWidgets.QWidget):
 
     def browse(self):
         filename = get_image_path(self)
+        format_path(filename)
         if not filename:
             return
         self.text.setText(filename)
         self.apply()
 
     def apply(self):
-        self.valueSet.emit(self.text.text())
+        text = format_path(self.text.text())
+        self.text.setText(text)
+        self.valueSet.emit(text)
 
     def value(self):
-        value = self.text.text()
+        value = format(self.text.text())
         return value if value != '' else None
 
     def set_value(self, value):
