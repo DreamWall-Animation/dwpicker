@@ -9,8 +9,8 @@ from dwpicker.optionvar import (
     DISABLE_IMPORT_CALLBACKS, OVERRIDE_PROD_PICKER_DIRECTORY_ENV,
     INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
     TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
-    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
-    ZOOM_BUTTON, ZOOM_BUTTONS)
+    USE_PROD_PICKER_DIR_AS_DEFAULT, USE_ICON_FOR_UNSAVED_TAB,
+    WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
 from dwpicker.path import unix_path
 
 
@@ -71,6 +71,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         text = "Override $DWPICKER_PROJECT_DIRECTORY"
         self.override_variable = QtWidgets.QCheckBox(text)
         self.custom_prod_path = QtWidgets.QLineEdit()
+        text = "Force file dialog to use this directory"
+        self.force_file_dialog_directory = QtWidgets.QCheckBox(text)
 
         self.env_group = QtWidgets.QGroupBox("Environment Variables")
         self.env_layout = QtWidgets.QVBoxLayout(self.env_group)
@@ -78,6 +80,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.env_layout.addWidget(self.auto_collapse_path)
         self.env_layout.addWidget(self.override_variable)
         self.env_layout.addWidget(self.custom_prod_path)
+        self.env_layout.addWidget(self.force_file_dialog_directory)
 
         text = "Encode in-scene data as base64."
         self.use_base64_encoding = QtWidgets.QCheckBox(text)
@@ -147,6 +150,7 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.released.connect(self.save_ui_states)
         self.custom_prod_path.textEdited.connect(self.save_ui_states)
         self.disable_import_callbacks.released.connect(self.save_ui_states)
+        self.force_file_dialog_directory.released.connect(self.save_ui_states)
         self.override_variable.released.connect(self.save_ui_states)
         self.insert_after_current.released.connect(self.save_ui_states)
         self.quick_options.released.connect(self.save_ui_states)
@@ -180,6 +184,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         self.check_images_paths.setChecked(state)
         state = bool(cmds.optionVar(query=CHECK_FOR_UPDATE))
         self.check_for_update.setChecked(state)
+        state = bool(cmds.optionVar(query=USE_PROD_PICKER_DIR_AS_DEFAULT))
+        self.force_file_dialog_directory.setChecked(state)
         state = bool(cmds.optionVar(query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV))
         self.override_variable.setChecked(state)
         self.custom_prod_path.setEnabled(state)
@@ -224,6 +230,8 @@ class PreferencesWindow(QtWidgets.QWidget):
         save_optionvar(INSERT_TAB_AFTER_CURRENT, value)
         value = int(self.disable_import_callbacks.isChecked())
         save_optionvar(DISABLE_IMPORT_CALLBACKS, value)
+        value = int(self.force_file_dialog_directory.isChecked())
+        save_optionvar(USE_PROD_PICKER_DIR_AS_DEFAULT, value)
         value = self.override_variable.isChecked()
         save_optionvar(OVERRIDE_PROD_PICKER_DIRECTORY_ENV, int(value))
         self.custom_prod_path.setEnabled(value)

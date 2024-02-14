@@ -27,6 +27,7 @@ from dwpicker.optionvar import (
     LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
     WARN_ON_TAB_CLOSED, save_optionvar, append_recent_filename,
     save_opened_filenames)
+from dwpicker.path import get_import_directory, get_open_directory
 from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
@@ -464,7 +465,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def call_open(self):
         filenames = QtWidgets.QFileDialog.getOpenFileNames(
             None, "Open a picker...",
-            cmds.optionVar(query=LAST_OPEN_DIRECTORY),
+            get_open_directory(),
             filter="Dreamwall Picker (*.json)")[0]
         if not filenames:
             return
@@ -529,7 +530,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def call_import(self):
         sources = QtWidgets.QFileDialog.getOpenFileNames(
             None, "Import a picker...",
-            cmds.optionVar(query=LAST_IMPORT_DIRECTORY),
+            get_import_directory(),
             filter="Anim School Picker (*.pkr)")[0]
         if not sources:
             return

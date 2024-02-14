@@ -8,6 +8,7 @@ from dwpicker.optionvar import (
     save_optionvar, CHECK_FOR_UPDATE, LAST_COMMAND_LANGUAGE,
     SEARCH_FIELD_INDEX, LAST_IMAGE_DIRECTORY_USED, SETTINGS_GROUP_TO_COPY,
     SHAPES_FILTER_INDEX, SETTINGS_TO_COPY)
+from dwpicker.path import get_image_directory
 from dwpicker.namespace import selected_namespace
 from dwpicker.templates import BUTTON
 
@@ -35,7 +36,7 @@ def question(title, message, buttons=None, parent=None):
 def get_image_path(parent=None):
     filename = QtWidgets.QFileDialog.getOpenFileName(
         parent, "Repath image...",
-        cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED),
+        get_image_directory(),
         filter="Images (*.jpg *.gif *.png *.tga)")[0]
     if not filename:
         return None
