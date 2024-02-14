@@ -74,12 +74,16 @@ class PreferencesWindow(QtWidgets.QWidget):
         text = "Force file dialog to use this directory"
         self.force_file_dialog_directory = QtWidgets.QCheckBox(text)
 
+        custom_path_layout = QtWidgets.QHBoxLayout()
+        custom_path_layout.setContentsMargins(0, 0, 0, 0)
+        custom_path_layout.addWidget(self.override_variable)
+        custom_path_layout.addWidget(self.custom_prod_path)
+
         self.env_group = QtWidgets.QGroupBox("Environment Variables")
         self.env_layout = QtWidgets.QVBoxLayout(self.env_group)
         self.env_layout.addWidget(self.project_dir_env)
         self.env_layout.addWidget(self.auto_collapse_path)
-        self.env_layout.addWidget(self.override_variable)
-        self.env_layout.addWidget(self.custom_prod_path)
+        self.env_layout.addLayout(custom_path_layout)
         self.env_layout.addWidget(self.force_file_dialog_directory)
 
         text = "Encode in-scene data as base64."
