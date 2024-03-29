@@ -16,6 +16,7 @@ CHECK_IMAGES_PATHS = 'dwpicker_check_images_paths'
 CHECK_FOR_UPDATE = 'dwpicker_check_for_update'
 CUSTOM_PROD_PICKER_DIRECTORY = 'dwpicker_custom_prod_picker_directory'
 DEFAULT_BG_COLOR = 'dwpicker_default_background_color'
+DEFAULT_HOTKEYS = 'dwpicker_default_hotkeys'
 DEFAULT_LABEL = 'dwpicker_default_label_color'
 DEFAULT_HEIGHT = 'dwpicker_default_height'
 DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
@@ -56,12 +57,18 @@ OPTIONVARS = {
     AUTO_COLLAPSE_IMG_PATH_FROM_ENV: 1,
     BG_LOCKED: 1,
     CHECK_IMAGES_PATHS: 1,
-    CHECK_FOR_UPDATE: 1,
+    # We disable this default feature for maya 2023. It seems that the github
+    # request can cause a maya crash due to an incompatibility with the python
+    # with this specific version of Maya.
+    CHECK_FOR_UPDATE: int(cmds.about(majorVersion=True) != '2023'),
     CUSTOM_PROD_PICKER_DIRECTORY: '',
     DEFAULT_BG_COLOR: '#777777',
     DEFAULT_HEIGHT: 20,
     DEFAULT_LABEL: '',
     DEFAULT_TEXT_COLOR: '#000000',
+    DEFAULT_HOTKEYS: (
+        'focus=F,1;new=CTRL+N,1;open=CTRL+O,1;save=CTRL+S,1;close=CTRL+Q,1;'
+        'undo=CTRL+Z,1;redo=CTRL+Y,1;edit=CTRL+E,1'),
     DEFAULT_WIDTH: 30,
     DISABLE_IMPORT_CALLBACKS: 1,
     DISPLAY_QUICK_OPTIONS: 1,

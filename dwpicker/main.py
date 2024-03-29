@@ -17,16 +17,17 @@ from dwpicker.dialog import (
     warning, question, get_image_path, CommandButtonDialog, NamespaceDialog)
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
+from dwpicker.hotkeys import get_hotkeys_config
 from dwpicker.namespace import (
     switch_namespace, selected_namespace, detect_picker_namespace,
     pickers_namespaces)
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
-    AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS, DISPLAY_QUICK_OPTIONS,
-    INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY,
-    LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
-    WARN_ON_TAB_CLOSED, save_optionvar, append_recent_filename,
-    save_opened_filenames)
+    AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
+    DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
+    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
+    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, save_optionvar,
+    append_recent_filename, save_opened_filenames)
 from dwpicker.path import get_import_directory, get_open_directory
 from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
@@ -82,15 +83,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def __init__(self):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
-        shortcut_context = QtCore.Qt.WidgetWithChildrenShortcut
-        set_shortcut("F", self, self.reset, shortcut_context)
-        set_shortcut("CTRL+N", self, self.call_new, shortcut_context)
-        set_shortcut("CTRL+O", self, self.call_open, shortcut_context)
-        set_shortcut("CTRL+S", self, self.call_save, shortcut_context)
-        set_shortcut("CTRL+Q", self, self.close, shortcut_context)
-        set_shortcut("CTRL+Z", self, self.call_undo, shortcut_context)
-        set_shortcut("CTRL+Y", self, self.call_redo, shortcut_context)
-        set_shortcut("CTRL+E", self, self.call_edit, shortcut_context)
+        self.shortcuts = {}
 
         self.editable = True
         self.callbacks = []
@@ -103,8 +96,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.modified_states = []
         self.preferences_window = PreferencesWindow(
             callback=self.load_ui_states, parent=maya_main_window())
-        self.preferences_window.disable_import_callbacks.released.connect(
+        self.preferences_window.need_update_callbacks.connect(
             self.reload_callbacks)
+        self.preferences_window.hotkey_changed.connect(self.register_shortcuts)
 
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
@@ -146,30 +140,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         self.menubar = DwPickerMenu(parent=self)
         self.menubar.new.triggered.connect(self.call_new)
-        # HACK: Need to implement twice the shortcut to display key sequence
-        # in the menu and keep it active when the view is docked.
-        self.menubar.new.setShortcut('CTRL+N')
-        self.menubar.new.setShortcutContext(shortcut_context)
         self.menubar.open.triggered.connect(self.call_open)
-        self.menubar.open.setShortcut('CTRL+O')
-        self.menubar.open.setShortcutContext(shortcut_context)
         self.menubar.save.triggered.connect(self.call_save)
-        self.menubar.save.setShortcut('CTRL+S')
-        self.menubar.save.setShortcutContext(shortcut_context)
         self.menubar.save_as.triggered.connect(self.call_save_as)
         self.menubar.exit.triggered.connect(self.close)
-        self.menubar.exit.setShortcut('CTRL+Q')
-        self.menubar.exit.setShortcutContext(shortcut_context)
         self.menubar.import_.triggered.connect(self.call_import)
         self.menubar.undo.triggered.connect(self.call_undo)
-        self.menubar.undo.setShortcut('CTRL+Z')
-        self.menubar.undo.setShortcutContext(shortcut_context)
         self.menubar.redo.triggered.connect(self.call_redo)
-        self.menubar.redo.setShortcut('CTRL+Y')
-        self.menubar.redo.setShortcutContext(shortcut_context)
         self.menubar.advanced_edit.triggered.connect(self.call_edit)
-        self.menubar.advanced_edit.setShortcut('CTRL+E')
-        self.menubar.advanced_edit.setShortcutContext(shortcut_context)
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
         method = self.change_namespace_dialog
@@ -188,6 +166,43 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.layout.addWidget(self.quick_options)
 
         self.load_ui_states()
+        self.register_shortcuts()
+
+    def register_shortcuts(self):
+        # Unregister all shortcuts before create new ones
+        function_names_actions = {
+            'focus': (self.reset, None),
+            'new': (self.call_new, self.menubar.new),
+            'open': (self.call_open, self.menubar.open),
+            'save': (self.call_save, self.menubar.save),
+            'close': (self.close, self.menubar.exit),
+            'undo': (self.call_undo, self.menubar.undo),
+            'redo': (self.call_redo, self.menubar.redo),
+            'edit': (self.call_edit, self.menubar.advanced_edit)}
+        for function_name, sc in self.shortcuts.items():
+            sc.activated.disconnect(function_names_actions[function_name][0])
+            seq = QtGui.QKeySequence()
+            action = function_names_actions[function_name][1]
+            if not action:
+                continue
+            action.setShortcut(seq)
+
+        self.shortcuts = {}
+        shortcut_context = QtCore.Qt.WidgetWithChildrenShortcut
+        for function_name, data in get_hotkeys_config().items():
+            if not data['enabled']:
+                continue
+            method = function_names_actions[function_name][0]
+            ks = data['key_sequence']
+            sc = set_shortcut(ks, self, method, shortcut_context)
+            self.shortcuts[function_name] = sc
+            # HACK: Need to implement twice the shortcut to display key
+            # sequence in the menu and keep it active when the view is docked.
+            action = function_names_actions[function_name][1]
+            if action is None:
+                continue
+            action.setShortcut(ks)
+            action.setShortcutContext(shortcut_context)
 
     def show(self, *args, **kwargs):
         super(DwPicker, self).show(

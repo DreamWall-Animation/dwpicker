@@ -1,6 +1,7 @@
 import os
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
+from dwpicker.hotkeyseditor import HotkeysEditor
 from dwpicker.optionvar import (
     save_optionvar,
     AUTO_COLLAPSE_IMG_PATH_FROM_ENV, AUTO_FOCUS_BEHAVIOR, AUTO_SET_NAMESPACE,
@@ -22,10 +23,30 @@ AUTO_FOCUSES = {
 
 
 class PreferencesWindow(QtWidgets.QWidget):
+    need_update_callbacks = QtCore.Signal()
+    hotkey_changed = QtCore.Signal()
 
     def __init__(self, callback=None, parent=None):
         super(PreferencesWindow, self).__init__(parent, QtCore.Qt.Tool)
         self.setWindowTitle("Preferences")
+        self.general_preferences = GeneralPreferences(callback)
+        self.general_preferences.disable_import_callbacks.released.connect(
+            self.need_update_callbacks.emit)
+        self.hotkeys_editor = HotkeysEditor()
+        self.hotkeys_editor.hotkey_changed.connect(self.hotkey_changed.emit)
+
+        tab = QtWidgets.QTabWidget()
+        tab.addTab(self.general_preferences, 'General')
+        tab.addTab(self.hotkeys_editor, 'Hotkeys')
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.addWidget(tab)
+
+
+class GeneralPreferences(QtWidgets.QWidget):
+
+    def __init__(self, callback=None, parent=None):
+        super(GeneralPreferences, self).__init__(parent)
         self.callback = callback
 
         text = "Display namespace toolbar."
