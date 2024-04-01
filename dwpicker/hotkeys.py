@@ -20,6 +20,6 @@ def set_hotkey_config(function, key_sequence, enabled):
 
 def save_hotkey_config(config):
     value = ';'.join([
-        f'{function}={data["key_sequence"]},{int(data["enabled"])}'
+        '{0}={1},{2}'.format(function, data['key_sequence'], int(data['enabled']))
         for function, data in config.items()])
     save_optionvar(DEFAULT_HOTKEYS, value)
