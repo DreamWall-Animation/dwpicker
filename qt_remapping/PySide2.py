@@ -12,4 +12,3 @@ QtGui.QMouseEvent.globalPos = QtGui.QMouseEvent.globalPosition
 QtGui.QWheelEvent.pos = QtGui.QWheelEvent.position
 
 QtCore.Qt.BackgroundColorRole = QtCore.Qt.BackgroundRole
-
