@@ -40,7 +40,7 @@ dwpicker.show()
 ### FAQ
 
 #### Does it runs with Maya 2025 ?
-No ! As soon as our multiples rushes are over, we are going to provide a PySide6 version of the picker.
+No ! As soon as our multiples rushes are over, we are going to provide a PySide6 version of the picker.  However, if it is crucial for you to work with Maya2025, a work-around is available in the folder qt_remapping.
 
 #### My rig contains multiples namespaces or has nested namespace.
 This function isn't currently supported. The picker was designed to offer flexibility with a single level of namespace, allowing for one picker to serve multiple instances of the same rig within a scene. Switching the picker's namespace is straightforward. However, despite our efforts to maintain this flexibility, we haven't yet discovered a straightforward method to support nested namespaces. While there are potential solutions, they all appear rather complex to implement and understand for the user. Perhaps a brilliant idea will emerge in the future, but for now, this feature is not on our roadmap.
