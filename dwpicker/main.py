@@ -653,8 +653,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             data['action.targets'] = targets
         else:
             dialog = CommandButtonDialog()
-            result = dialog.exec_()
-            if result != QtWidgets.QDialog.Accepted:
+            if not dialog.exec_():
                 return
             data.update(dialog.values)
 
@@ -731,8 +730,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def change_namespace_dialog(self):
         dialog = NamespaceDialog()
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
+        if not dialog.exec_():
             return
         namespace = dialog.namespace
         self.change_namespace(namespace)

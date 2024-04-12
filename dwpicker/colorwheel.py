@@ -51,7 +51,7 @@ class ColorWheel(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ColorWheel, self).__init__(parent)
         self._is_clicked = False
-        self._rect = QtCore.QRect(25, 25, 50, 50)
+        self._rect = QtCore.QRectF(25, 25, 50, 50)
         self._current_color = QtGui.QColor(WHITE)
         self._color_point = QtCore.QPoint(150, 50)
         self._current_tool = None
@@ -123,7 +123,7 @@ class ColorWheel(QtWidgets.QWidget):
             6, 6, (self.width() - 12), (self.height() - 12),
             self.width(), self.height())
 
-        painter.setBrush(self.palette().color(QtGui.QPalette.Background))
+        painter.setBrush(self.palette().color(QtGui.QPalette.Window))
         painter.drawRoundedRect(
             12.5, 12.5, (self.width() - 25), (self.height() - 25),
             self.width(), self.height())

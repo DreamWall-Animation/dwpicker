@@ -20,8 +20,7 @@ def ensure_images_path_exists(pickers):
     if not missing_images:
         return
     dialog = MissingImages(missing_images)
-    result = dialog.exec_()
-    if result != dialog.Accepted:
+    if not dialog.exec_():
         return
     for picker_data in pickers:
         for shape in picker_data['shapes']:

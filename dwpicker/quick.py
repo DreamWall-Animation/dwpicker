@@ -88,8 +88,7 @@ class ColorButton(QtWidgets.QAbstractButton):
 
     def pick_color(self):
         dialog = ColorDialog(self.name)
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
+        if not dialog.exec_():
             return
         self.name = dialog.colorname()
         self.colorChanged.emit()

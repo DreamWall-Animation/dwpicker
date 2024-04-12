@@ -124,8 +124,7 @@ class ColorEdit(QtWidgets.QWidget):
     def pick_color(self):
         color = self.text.text() or None
         dialog = ColorDialog(color)
-        result = dialog.exec_()
-        if result == QtWidgets.QDialog.Accepted:
+        if dialog.exec_():
             self.text.setText(dialog.colorname())
             self.apply()
 

@@ -156,8 +156,7 @@ class PickerEditor(QtWidgets.QWidget):
 
     def paste_settings(self):
         dialog = SettingsPaster()
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
+        if not dialog.exec_():
             return
         settings = clipboard.get_settings()
         settings = {k: v for k, v in settings.items() if k in dialog.settings}
@@ -387,8 +386,7 @@ class PickerEditor(QtWidgets.QWidget):
 
     def search_and_replace(self):
         dialog = SearchAndReplaceDialog()
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
+        if not dialog.exec_():
             return False
 
         if dialog.filter == 0:  # Search on all shapes.

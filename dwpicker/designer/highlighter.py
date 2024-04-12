@@ -7,6 +7,7 @@ MELKEYWORDS = [
     'if', 'else', 'int', 'float', 'double', 'string', 'array'
     'var', 'return', 'case', 'then', 'continue', 'break', 'global', 'proc']
 
+
 TEXT_STYLES = {
     'keyword': {
         'color': 'white',
@@ -65,17 +66,19 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 color=properties['color'],
                 bold=properties['bold'],
                 italic=properties['italic'])
-            self.rules.append(
-                (QtCore.QRegExp(self.PATTERNS[name]), text_format))
+
+            rule = QtCore.QRegularExpression(self.PATTERNS[name]), text_format
+            self.rules.append(rule)
 
     def highlightBlock(self, text):
         for pattern, format_ in self.rules:
-            expression = QtCore.QRegExp(pattern)
-            index = expression.indexIn(text)
-            while index >= 0:
-                length = expression.matchedLength()
+            expression = QtCore.QRegularExpression(pattern)
+            iterator = expression.globalMatch(text)
+            while iterator.hasNext():
+                match = iterator.next()
+                index = match.capturedStart()
+                length = match.capturedLength()
                 self.setFormat(index, length, format_)
-                index = expression.indexIn(text, index + length)
 
 
 class PythonHighlighter(Highlighter):
