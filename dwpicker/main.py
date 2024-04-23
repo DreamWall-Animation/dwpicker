@@ -179,7 +179,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'undo': (self.call_undo, self.menubar.undo),
             'redo': (self.call_redo, self.menubar.redo),
             'edit': (self.call_edit, self.menubar.advanced_edit),
-            'next_tab': (self.call_next_tab, None)}
+            'next_tab': (self.call_next_tab, None),
+            'previous_tab': (self.call_previous_tab, None),
+            }
         for function_name, sc in self.shortcuts.items():
             sc.activated.disconnect(function_names_actions[function_name][0])
             seq = QtGui.QKeySequence()
@@ -605,6 +607,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         index = self.tab.currentIndex() + 1
         if index == self.tab.count():
             index = 0
+        self.tab.setCurrentIndex(index)
+
+    def call_previous_tab(self):
+        index = self.tab.currentIndex() - 1
+        if index < 0:
+            index = self.tab.count() - 1
         self.tab.setCurrentIndex(index)
 
     def set_editable(self, state):
