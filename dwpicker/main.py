@@ -178,7 +178,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'close': (self.close, self.menubar.exit),
             'undo': (self.call_undo, self.menubar.undo),
             'redo': (self.call_redo, self.menubar.redo),
-            'edit': (self.call_edit, self.menubar.advanced_edit)}
+            'edit': (self.call_edit, self.menubar.advanced_edit),
+            'next_tab': (self.call_next_tab, None)}
         for function_name, sc in self.shortcuts.items():
             sc.activated.disconnect(function_names_actions[function_name][0])
             seq = QtGui.QKeySequence()
@@ -194,6 +195,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
                 continue
             method = function_names_actions[function_name][0]
             ks = data['key_sequence']
+            if ks is None:
+                continue
             sc = set_shortcut(ks, self, method, shortcut_context)
             self.shortcuts[function_name] = sc
             # HACK: Need to implement twice the shortcut to display key
@@ -597,6 +600,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.editors[index] = editor
 
         self.editors[index].show()
+
+    def call_next_tab(self):
+        index = self.tab.currentIndex() + 1
+        if index == self.tab.count():
+            index = 0
+        self.tab.setCurrentIndex(index)
 
     def set_editable(self, state):
         self.editable = state

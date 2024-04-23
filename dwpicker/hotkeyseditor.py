@@ -17,10 +17,23 @@ class HotkeysEditor(QtWidgets.QWidget):
             self.selection_changed)
         self.hotkey_editor = HotkeyEditor()
         self.hotkey_editor.hotkey_edited.connect(self.update_hotkeys)
+        self.clear = QtWidgets.QPushButton('Clear')
+        self.clear.released.connect(self.do_clear)
+
+        hotkey_layout = QtWidgets.QVBoxLayout()
+        hotkey_layout.setContentsMargins(0, 0, 0, 0)
+        hotkey_layout.addWidget(self.hotkey_editor)
+        hotkey_layout.addWidget(self.clear)
+        hotkey_layout.addStretch(1)
 
         layout = QtWidgets.QHBoxLayout(self)
         layout.addWidget(self.table)
-        layout.addWidget(self.hotkey_editor)
+        layout.addLayout(hotkey_layout)
+
+    def do_clear(self):
+        self.hotkey_editor.clear_values()
+        self.update_hotkeys()
+        self.hotkey_changed.emit()
 
     def update_hotkeys(self):
         self.model.set_keysequence(
@@ -64,14 +77,17 @@ class HotkeyEditor(QtWidgets.QWidget):
         layout.addWidget(self.function_name_label)
         layout.addLayout(modifiers)
         layout.addWidget(self.string)
-        layout.addStretch()
 
     def clear(self):
         self.function_name = None
+        self.clear_values()
         self.function_name_label.setText('')
+
+    def clear_values(self):
         self.ctrl.setChecked(False)
         self.alt.setChecked(False)
         self.shift.setChecked(False)
+        self.string.setText('')
 
     def emit_hotkey_edited(self, *_):
         self.hotkey_edited.emit()
@@ -92,6 +108,12 @@ class HotkeyEditor(QtWidgets.QWidget):
     def set_key_sequence(self, function_name, key_sequence):
         self.function_name = function_name
         self.function_name_label.setText(function_name.title())
+        if key_sequence is None:
+            self.ctrl.setChecked(False)
+            self.alt.setChecked(False)
+            self.shift.setChecked(False)
+            self.string.setText('')
+            return
         self.ctrl.setChecked('ctrl' in key_sequence.lower())
         self.alt.setChecked('alt' in key_sequence.lower())
         self.shift.setChecked('shift' in key_sequence.lower())
@@ -129,6 +151,8 @@ class HotkeysTableModel(QtCore.QAbstractTableModel):
     def set_keysequence(self, function_name, key_sequence):
         self.layoutAboutToBeChanged.emit()
         self.config[function_name]['key_sequence'] = key_sequence
+        if key_sequence is None:
+            self.config[function_name]['enabled'] = False
         save_hotkey_config(self.config)
         self.layoutChanged.emit()
         self.hotkey_changed.emit()
