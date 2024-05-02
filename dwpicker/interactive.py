@@ -173,8 +173,6 @@ class Shape():
         self.options['action.targets'] = targets
 
     def is_interactive(self):
-        # if self.targets():
-        #     return False
         return any([self.options['action.right'], self.options['action.left']])
 
     def is_background(self):
@@ -182,6 +180,9 @@ class Shape():
             bool(self.targets()),
             self.options['action.right'],
             self.options['action.left']])
+
+    def visibility_layer(self):
+        return self.options['visibility_layer']
 
     def synchronize_image(self):
         path = expand_path(self.options['image.path'])

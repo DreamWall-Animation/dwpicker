@@ -82,6 +82,7 @@ class PickerView(QtWidgets.QWidget):
         self.mode_manager = ModeManager()
         self.viewportmapper = ViewportMapper()
         self.selection_square = SelectionSquare()
+        self.layers_menu = VisibilityLayersMenu()
         self.setMouseTracking(True)
         self.shapes = None
         self.clicked_shape = None
@@ -108,12 +109,20 @@ class PickerView(QtWidgets.QWidget):
     def set_shapes(self, shapes):
         self.shapes = shapes
         self.mode_manager.shapes = shapes
+        self.layers_menu.set_shapes(shapes)
         self.repaint()
 
+    def visible_shapes(self):
+        return [
+            s for s in self.shapes if
+            not s.visibility_layer()
+            or s.visibility_layer() not in self.layers_menu.hidden_layers]
+
     def reset(self):
-        shapes_rects = [s.rect for s in self.shapes if s.selected]
+        shapes = self.visible_shapes()
+        shapes_rects = [s.rect for s in shapes if s.selected]
         if not shapes_rects:
-            shapes_rects = [s.rect for s in self.shapes]
+            shapes_rects = [s.rect for s in shapes]
         if not shapes_rects:
             self.repaint()
             return
@@ -278,6 +287,8 @@ class PickerView(QtWidgets.QWidget):
         method = self.deleteButtonRequested.emit
         self.context_menu.delete_selected.triggered.connect(method)
 
+        if self.layers_menu.displayed:
+            self.context_menu.addMenu(self.layers_menu)
         self.context_menu.exec_(QtGui.QCursor.pos())
 
     def add_button(self, position, button_type=0):
@@ -297,7 +308,13 @@ class PickerView(QtWidgets.QWidget):
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
             if not self.shapes:
                 return
+            hidden_layers = self.layers_menu.hidden_layers
             for shape in self.shapes:
+                visible = (
+                    not shape.visibility_layer() or
+                    not shape.visibility_layer() in hidden_layers)
+                if not visible:
+                    continue
                 draw_shape(painter, shape, self.viewportmapper)
             self.selection_square.draw(painter)
         except BaseException:
@@ -406,3 +423,29 @@ class ModeManager:
             button == 'left' and self.left_click_pressed,
             button == 'middle' and self.middle_click_pressed,
             button == 'right' and self.right_click_pressed))
+
+
+class VisibilityLayersMenu(QtWidgets.QMenu):
+    def __init__(self, parent=None):
+        super(VisibilityLayersMenu, self).__init__('Visibility layers', parent)
+        self.hidden_layers = []
+        self.displayed = False
+
+    def set_shapes(self, shapes):
+        layers = sorted(
+            {s.visibility_layer() for s in shapes if s.visibility_layer()})
+        self.clear()
+        action = QtWidgets.QAction('Show all')
+        for layer in layers:
+            action = QtWidgets.QAction(layer, self)
+            action.setCheckable(True)
+            action.setChecked(layer not in self.hidden_layers)
+            action.toggled.connect(partial(self.set_hidden_layer, layer))
+            self.addAction(action)
+        self.displayed = bool(layers)
+
+    def set_hidden_layer(self, layer, state):
+        if state is False and layer not in self.hidden_layers:
+            self.hidden_layers.append(layer)
+        if state is True and layer in self.hidden_layers:
+            self.hidden_layers.remove(layer)

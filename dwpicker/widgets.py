@@ -189,7 +189,6 @@ class FloatEdit(LineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
 
-
     def value(self):
         if self.text() == '':
             return None
@@ -236,3 +235,29 @@ class CommandButton(QtWidgets.QWidget):
         self.layout.setSpacing(2)
         self.layout.addWidget(self.mainbutton)
         self.layout.addWidget(self.playbutton)
+
+
+class LayerEdit(QtWidgets.QWidget):
+    valueSet = QtCore.Signal(object)
+
+    def __init__(self, parent=None):
+        super(LayerEdit, self).__init__(parent)
+        self.layer = QtWidgets.QLineEdit()
+        self.layer.setReadOnly(True)
+        self.reset = QtWidgets.QPushButton('x')
+        self.reset.released.connect(self.do_reset)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+        self.layout.addWidget(self.layer)
+        self.layout.addWidget(self.reset)
+
+    def set_layer(self, text):
+        self.layer.setText(text or '')
+
+    def do_reset(self):
+        if not self.layer.text():
+            return
+        self.layer.setText('')
+        self.valueSet.emit(None)

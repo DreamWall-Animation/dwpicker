@@ -21,7 +21,13 @@ def ensure_retro_compatibility(picker_data):
     if tuple(version) < (0, 3, 0):
         # Add new options added to version 0, 3, 0.
         picker_data['general']['zoom_locked'] = False
+
     if tuple(version) < (0, 4, 0):
         picker_data['general'].pop('centerx')
         picker_data['general'].pop('centery')
+
+    if tuple(version) < (0, 10, 0):
+        for shape in picker_data['shapes']:
+            shape['visibility_layer'] = None
+
     return picker_data

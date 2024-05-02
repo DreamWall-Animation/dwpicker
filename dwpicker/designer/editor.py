@@ -107,10 +107,13 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.attribute_editor = AttributeEditor()
         self.attribute_editor.set_generals(self.options)
+        self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
         self.attribute_editor.generalOptionSet.connect(self.generals_modified)
         self.attribute_editor.optionSet.connect(self.option_set)
         self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
+        self.attribute_editor.removeLayer.connect(self.remove_layer)
+        self.attribute_editor.selectLayerContent.connect(self.select_layer)
 
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
@@ -183,6 +186,7 @@ class PickerEditor(QtWidgets.QWidget):
         data = self.undo_manager.data
         self.set_picker_data(data)
         self.pickerDataModified.emit(self.picker_data())
+        self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
 
     def deselect_all(self):
         self.shape_editor.selection.clear()
@@ -231,6 +235,8 @@ class PickerEditor(QtWidgets.QWidget):
             shape.options[option] = value
         self.shape_editor.repaint()
         self.set_data_modified()
+        if option == 'visibility_layer':
+            self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
 
     def editor_size_changed(self):
         size = self.menu.get_size()
@@ -488,5 +494,64 @@ class PickerEditor(QtWidgets.QWidget):
         menu.addAction(button)
         menu.addAction(button2)
         menu.addAction(button3)
+        menu.addSection('Visibility Layers')
 
+        layers = sorted(list({
+            s.visibility_layer()
+            for s in self.shape_editor.shapes
+            if s.visibility_layer()}))
+
+        add_selection = QtWidgets.QMenu('Assign to layer', self)
+        add_selection.setEnabled(bool(layers))
+        menu.addMenu(add_selection)
+        for layer in layers:
+            action = QtWidgets.QAction(layer, self)
+            action.triggered.connect(partial(self.set_visibility_layer, layer))
+            add_selection.addAction(action)
+
+        remove_selection = QtWidgets.QAction('Remove assigned layer', self)
+        remove_selection.setEnabled(bool(self.shape_editor.selection.shapes))
+        remove_selection.triggered.connect(self.set_visibility_layer)
+        menu.addAction(remove_selection)
+
+        create_layer = QtWidgets.QAction('Create layer from selection', self)
+        create_layer.triggered.connect(self.create_visibility_layer)
+        create_layer.setEnabled(bool(self.shape_editor.selection.shapes))
+
+        menu.addAction(create_layer)
         menu.exec_(self.shape_editor.mapToGlobal(position))
+
+    def set_visibility_layer(self, layer=''):
+        for shape in self.shape_editor.selection:
+            shape.options['visibility_layer'] = layer
+        self.layers_modified()
+
+    def layers_modified(self):
+        self.set_data_modified()
+        self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
+        self.selection_changed()
+
+    def create_visibility_layer(self):
+        text, result = QtWidgets.QInputDialog.getText(
+            self, 'Create visibility layer', 'Layer name')
+        if not text or not result:
+            return
+
+        for shape in self.shape_editor.selection:
+            shape.options['visibility_layer'] = text
+        self.layers_modified()
+
+    def select_layer(self, layer):
+        shapes = [
+            shape for shape in self.shape_editor.shapes
+            if shape.visibility_layer() == layer]
+        self.shape_editor.selection.set(shapes)
+        self.shape_editor.update_selection()
+        self.shape_editor.repaint()
+        self.selection_changed()
+
+    def remove_layer(self, layer):
+        for shape in self.shape_editor.shapes:
+            if shape.visibility_layer() == layer:
+                shape.options['visibility_layer'] = None
+        self.layers_modified()

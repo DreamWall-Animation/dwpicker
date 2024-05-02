@@ -5,10 +5,10 @@ from PySide2 import QtCore, QtWidgets
 from dwpicker.languages import MEL, PYTHON
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.designer.highlighter import get_highlighter
+from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.widgets import (
-    BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit,
+    BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
     TextEdit, Title, WidgetToggler)
-
 
 LEFT_CELL_WIDTH = 80
 SHAPE_TYPES = 'square', 'round', 'rounded_rect'
@@ -20,6 +20,8 @@ class AttributeEditor(QtWidgets.QWidget):
     imageModified = QtCore.Signal()
     optionSet = QtCore.Signal(str, object)
     rectModified = QtCore.Signal(str, float)
+    removeLayer = QtCore.Signal(str)
+    selectLayerContent = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(AttributeEditor, self).__init__(parent)
@@ -27,6 +29,9 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.generals = GeneralSettings()
         self.generals.optionModified.connect(self.generalOptionSet.emit)
+        self.generals.layers.removeLayer.connect(self.removeLayer.emit)
+        mtd = self.selectLayerContent.emit
+        self.generals.layers.selectLayerContent.connect(mtd)
         self.generals_toggler = WidgetToggler('Picker options', self.generals)
 
         self.shape = ShapeSettings()
@@ -105,13 +110,23 @@ class GeneralSettings(QtWidgets.QWidget):
         self.name.valueSet.connect(self.name_changed)
         self.zoom_locked = BoolCombo(False)
         self.zoom_locked.valueSet.connect(self.zoom_changed)
+        self.layers = VisibilityLayersEditor()
 
-        self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setHorizontalSpacing(5)
-        self.layout.addRow('Name', self.name)
-        self.layout.addRow('Zoom-locked', self.zoom_locked)
+        form_layout = QtWidgets.QFormLayout()
+        form_layout.setSpacing(0)
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setHorizontalSpacing(5)
+        form_layout.addRow('Name', self.name)
+        form_layout.addRow('Zoom-locked', self.zoom_locked)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addLayout(form_layout)
+        layout.addWidget(QtWidgets.QLabel('Visibility Layers'))
+        layout.addWidget(self.layers)
+
+    def set_shapes(self, shapes):
+        self.layers.set_shapes(shapes)
 
     def set_options(self, options):
         self.name.setText(options['name'])
@@ -133,6 +148,10 @@ class ShapeSettings(QtWidgets.QWidget):
         self.shape = QtWidgets.QComboBox()
         self.shape.addItems(SHAPE_TYPES)
         self.shape.currentIndexChanged.connect(self.shape_changed)
+
+        self.layer = LayerEdit()
+        method = partial(self.optionSet.emit, 'visibility_layer')
+        self.layer.valueSet.connect(method)
 
         self.left = IntEdit(minimum=0)
         method = partial(self.rectModified.emit, 'shape.left')
@@ -158,6 +177,7 @@ class ShapeSettings(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Shape', self.shape)
+        self.layout.addRow('Visibility layer', self.layer)
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addRow(Title('Dimensions'))
         self.layout.addRow('left', self.left)
@@ -174,6 +194,10 @@ class ShapeSettings(QtWidgets.QWidget):
         self.optionSet.emit('shape', self.shape.currentText())
 
     def set_options(self, options):
+        values = list({option['visibility_layer'] for option in options})
+        value = values[0] if len(values) == 1 else '' if not values else '...'
+        self.layer.set_layer(value)
+
         values = list({option['shape'] for option in options})
         value = values[0] if len(values) == 1 else '...'
         self.shape.setCurrentText(value)
@@ -393,7 +417,6 @@ class ActionSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'action.left')
         self._lactive.valueSet.connect(method)
         self._lactive.valueSet.connect(self.set_left_enabled)
-
 
         self._llanguage = QtWidgets.QComboBox()
         method = partial(self.language_changed, 'left')
