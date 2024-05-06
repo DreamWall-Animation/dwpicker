@@ -20,7 +20,7 @@ Authors: Lionel Brouyère, Olivier Evers
 
 
 ### Installation
-place the "dwpicker" folder into the maya script folder
+place the folder named "dwpicker" (not dwpicker-main) into the maya script folder
 
 | os       | path                                                  |
 | ------   | ------                                                |
