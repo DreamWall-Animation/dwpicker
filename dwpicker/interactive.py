@@ -176,7 +176,8 @@ class Shape():
         self.options['action.targets'] = targets
 
     def is_interactive(self):
-        return bool(c for c in self.options['action.commands'] if c['enabled'])
+        return bool(
+            [c for c in self.options['action.commands'] if c['enabled']])
 
     def is_background(self):
         return not any([
