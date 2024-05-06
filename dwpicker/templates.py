@@ -29,13 +29,8 @@ BUTTON = {
     'text.color': '#FFFFFF',
     'text.valign': 'center',  # or 'top' or bottom
     'text.halign': 'center',  # or 'left' or 'right'
-    'action.left': True,
-    'action.left.language': 'python',  # or mel
-    'action.left.command': '',
     'action.targets': [],
-    'action.right': False,
-    'action.right.language': 'python',  # or mel
-    'action.right.command': '',
+    'action.commands': [],
     'image.path': '',
     'image.fit': True,
     'image.height': 32,
@@ -71,12 +66,7 @@ TEXT = {
     'text.valign': 'top',  # or 'top' or bottom
     'text.halign': 'left',  # or 'left' or 'right'
     'action.targets': [],
-    'action.left': False,
-    'action.left.language': 'python',  # or mel
-    'action.left.command': '',
-    'action.right': False,
-    'action.right.language': 'python',  # or mel
-    'action.right.command': '',
+    'action.commands': [],
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
@@ -111,19 +101,24 @@ BACKGROUND = {
     'text.color': '#FFFFFF',
     'text.valign': 'center',  # or 'top' or bottom
     'text.halign': 'center',  # or 'left' or 'right'
-    'action.type': 'select',  # 'select' or 'command'
     'action.targets': [],
-    'action.namespace': [],
-    'action.left': False,
-    'action.left.language': 'python',  # or mel
-    'action.left.command': '',
-    'action.right': False,
-    'action.right.language': 'python',  # or mel
-    'action.right.command': '',
+    'action.commands': [],
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
     'image.width': 32}
+
+
+COMMAND = {
+    'enabled': True,
+    'button': 'left',  # right
+    'language': 'python',  # or mel
+    'command': '',
+    'ctrl': False,
+    'shift': False,
+    'deferred': False,
+    'force_compact_undo': False,
+}
 
 
 PICKER = {

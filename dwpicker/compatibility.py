@@ -18,6 +18,7 @@ def ensure_retro_compatibility(picker_data):
     #     picker_data = your code update
     version = picker_data['general'].get('version') or (0, 0, 0)
     picker_data['general']['version'] = VERSION
+
     if tuple(version) < (0, 3, 0):
         # Add new options added to version 0, 3, 0.
         picker_data['general']['zoom_locked'] = False
@@ -30,4 +31,54 @@ def ensure_retro_compatibility(picker_data):
         for shape in picker_data['shapes']:
             shape['visibility_layer'] = None
 
+    if tuple(version) < (0, 11, 0):
+        for shape in picker_data['shapes']:
+            update_shape_actions_for_v0_11_0(shape)
+
     return picker_data
+
+
+def update_shape_actions_for_v0_11_0(shape):
+    """
+    With release 0.11.0 comes a new configurable action system.
+    """
+    if 'action.namespace' in shape:
+        del shape['action.namespace']
+    if 'action.type' in shape:
+        del shape['action.type']
+
+    shape['action.commands'] = []
+
+    if shape['action.left.command']:
+        import pprint
+        pprint.pprint(shape)
+        shape['action.commands'].append({
+            'enabled': shape['action.left'],
+            'button': 'left',
+            'language': shape['action.left.language'],
+            'command': shape['action.left.command'],
+            'alt': False,
+            'ctrl': False,
+            'shift': False,
+            'deferred': False,
+            'force_compact_undo': False})
+
+    if shape['action.right.command']:
+        shape['action.commands'].append({
+            'enabled': shape['action.right'],
+            'button': 'left',
+            'language': shape['action.right.language'],
+            'command': shape['action.right.command'],
+            'alt': False,
+            'ctrl': False,
+            'shift': False,
+            'deferred': False,
+            'force_compact_undo': False})
+
+    keys_to_clear = (
+        'action.left', 'action.left.language',
+        'action.left.command', 'action.right', 'action.right.language',
+        'action.right.command')
+
+    for key in keys_to_clear:
+        del shape[key]

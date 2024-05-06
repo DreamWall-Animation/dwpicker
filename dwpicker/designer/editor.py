@@ -411,14 +411,14 @@ class PickerEditor(QtWidgets.QWidget):
                 s.options['action.targets'] = targets
                 continue
 
-            keys = (['text.content'],
-                    ['action.left.command',
-                    'action.right.command'],
-                    ['image.path'])[dialog.field - 1]
-
-            for key in keys:
+            if dialog.field <= 2:
+                key = ('text.content', 'image.path')[dialog.field - 1]
                 result = s.options[key].replace(pattern, replace)
                 s.options[key] = result
+            else:  # Command code
+                for command in s.options['action.commands']:
+                    result = command['command'].replace(pattern, replace)
+                    command['command'] = result
 
         self.set_data_modified()
         self.shape_editor.repaint()

@@ -2,9 +2,8 @@ import maya.cmds as cmds
 from functools import partial
 from PySide2 import QtCore, QtWidgets
 
-from dwpicker.languages import MEL, PYTHON
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.designer.highlighter import get_highlighter
+from dwpicker.commands import CommandsEditor
 from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.widgets import (
     BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
@@ -12,7 +11,6 @@ from dwpicker.widgets import (
 
 LEFT_CELL_WIDTH = 80
 SHAPE_TYPES = 'square', 'round', 'rounded_rect'
-ACTION_TYPES = 'select', 'command'
 
 
 class AttributeEditor(QtWidgets.QWidget):
@@ -52,7 +50,6 @@ class AttributeEditor(QtWidgets.QWidget):
         self.text_toggler = WidgetToggler('Text', self.text)
 
         self.action = ActionSettings()
-        self.action.set_languages([MEL, PYTHON])
         self.action.optionSet.connect(self.optionSet.emit)
         self.action_toggler = WidgetToggler('Action', self.action)
 
@@ -122,7 +119,7 @@ class GeneralSettings(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addLayout(form_layout)
-        layout.addWidget(QtWidgets.QLabel('Visibility Layers'))
+        layout.addWidget(Title('Visibility Layers'))
         layout.addWidget(self.layers)
 
     def set_shapes(self, shapes):
@@ -413,32 +410,6 @@ class ActionSettings(QtWidgets.QWidget):
         self._targets = QtWidgets.QLineEdit()
         self._targets.returnPressed.connect(self.targets_changed)
 
-        self._lactive = BoolCombo(False)
-        method = partial(self.optionSet.emit, 'action.left')
-        self._lactive.valueSet.connect(method)
-        self._lactive.valueSet.connect(self.set_left_enabled)
-
-        self._llanguage = QtWidgets.QComboBox()
-        method = partial(self.language_changed, 'left')
-        self._llanguage.currentIndexChanged.connect(method)
-        self._lcommand = QtWidgets.QPlainTextEdit()
-        self._lcommand.setFixedHeight(100)
-        self._lsave = QtWidgets.QPushButton('save command')
-        self._lsave.released.connect(partial(self.save_command, 'left'))
-
-        self._ractive = BoolCombo(False)
-        method = partial(self.optionSet.emit, 'action.right')
-        self._ractive.valueSet.connect(method)
-        self._ractive.valueSet.connect(self.set_right_enabled)
-
-        self._rlanguage = QtWidgets.QComboBox()
-        method = partial(self.language_changed, 'right')
-        self._rlanguage.currentIndexChanged.connect(method)
-        self._rcommand = QtWidgets.QPlainTextEdit()
-        self._rcommand.setFixedHeight(100)
-        self._rsave = QtWidgets.QPushButton('save command')
-        self._rsave.released.connect(partial(self.save_command, 'right'))
-
         self._add_targets = QtWidgets.QPushButton('Add')
         self._remove_targets = QtWidgets.QPushButton('Remove')
         self._replace_targets = QtWidgets.QPushButton('Replace')
@@ -451,24 +422,23 @@ class ActionSettings(QtWidgets.QWidget):
         self._remove_targets.clicked.connect(self.call_remove_targets)
         self._replace_targets.clicked.connect(self.call_replace_targets)
 
-        self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setHorizontalSpacing(5)
-        self.layout.addRow(Title('Selection'))
-        self.layout.addRow('Targets', self._targets)
-        self.layout.addRow('Add Selected', self._targets_layout)
+        self._commands = CommandsEditor()
+        method = partial(self.optionSet.emit, 'action.commands')
+        self._commands.valueSet.connect(method)
 
-        self.layout.addRow(Title('Left click'))
-        self.layout.addRow('Has command', self._lactive)
-        self.layout.addRow('Language', self._llanguage)
-        self.layout.addRow(self._lcommand)
-        self.layout.addRow(self._lsave)
-        self.layout.addRow(Title('Right click'))
-        self.layout.addRow('Has command', self._ractive)
-        self.layout.addRow('Language', self._rlanguage)
-        self.layout.addRow(self._rcommand)
-        self.layout.addRow(self._rsave)
+        form = QtWidgets.QFormLayout()
+        form.setSpacing(0)
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setHorizontalSpacing(5)
+        form.addRow(Title('Selection'))
+        form.addRow('Targets', self._targets)
+        form.addRow('Add Selected', self._targets_layout)
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+        self.layout.addLayout(form)
+        self.layout.addWidget(Title('Scripts'))
+        self.layout.addWidget(self._commands)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
@@ -517,75 +487,10 @@ class ActionSettings(QtWidgets.QWidget):
         values = [t.strip(" ") for t in self._targets.text().split(",")]
         self.optionSet.emit('action.targets', values)
 
-    def set_languages(self, languages):
-        self.blockSignals(True)
-        self._llanguage.addItems(languages)
-        self._rlanguage.addItems(languages)
-        self.blockSignals(False)
-
-    def language_changed(self, side, *_):
-        option = 'action.' + side + '.language'
-        combo = self._llanguage if side == 'left' else self._rlanguage
-        text_edit = self._lcommand if side == 'left' else self._rcommand
-        language = combo.currentText()
-        highlighter = get_highlighter(language)
-        highlighter(text_edit.document())
-        self.optionSet.emit(option, language)
-
-    def save_command(self, side):
-        text_edit = self._lcommand if side == 'left' else self._rcommand
-        option = 'action.' + side + '.command'
-        self.optionSet.emit(option, text_edit.toPlainText())
-
     def set_options(self, options):
         values = list({o for opt in options for o in opt['action.targets']})
-        value = values[0] if len(values) == 1 else ""
         self._targets.setText(", ".join(sorted(values)))
-
-        values = list({option['action.left'] for option in options})
-        value = values[0] if len(values) == 1 else None
-        self._lactive.setCurrentText(str(value))
-        self.set_left_enabled(bool(value))
-
-        values = list({option['action.left.language'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self._llanguage.setCurrentText(value)
-
-        if not options or len(options) > 1 or not options[0]['action.left']:
-            self._lcommand.setPlainText('')
-            self._lcommand.setEnabled(False)
-            self._lsave.setEnabled(False)
-        else:
-            self._lcommand.setPlainText(options[0]['action.left.command'])
-            self._lcommand.setEnabled(True)
-            self._lsave.setEnabled(True)
-
-        values = list({option['action.right'] for option in options})
-        value = values[0] if len(values) == 1 else None
-        self._ractive.setCurrentText(str(value))
-        self.set_right_enabled(bool(value))
-        values = list({option['action.right.language'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self._rlanguage.setCurrentText(value)
-
-        if not options or len(options) > 1 or not options[0]['action.right']:
-            self._rcommand.setPlainText('')
-            self._rcommand.setEnabled(False)
-            self._rsave.setEnabled(False)
-        else:
-            self._rcommand.setPlainText(options[0]['action.right.command'])
-            self._rcommand.setEnabled(True)
-            self._rsave.setEnabled(True)
-
-    def set_left_enabled(self, state):
-        self._llanguage.setEnabled(state)
-        self._lcommand.setEnabled(state)
-        self._lsave.setEnabled(state)
-
-    def set_right_enabled(self, state):
-        self._rlanguage.setEnabled(state)
-        self._rcommand.setEnabled(state)
-        self._rsave.setEnabled(state)
+        self._commands.set_options(options)
 
 
 class TextSettings(QtWidgets.QWidget):
@@ -594,7 +499,7 @@ class TextSettings(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(TextSettings, self).__init__(parent)
         self.text = TextEdit()
-        method = partial(self.optionSet.emit,'text.content')
+        method = partial(self.optionSet.emit, 'text.content')
         self.text.valueSet.connect(method)
 
         self.size = FloatEdit(minimum=0.0)

@@ -4,16 +4,18 @@ import os
 from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 
+from dwpicker.designer.highlighter import get_highlighter
 from dwpicker.optionvar import (
-    save_optionvar, CHECK_FOR_UPDATE, LAST_COMMAND_LANGUAGE,
+    save_optionvar, CHECK_FOR_UPDATE,
     SEARCH_FIELD_INDEX, LAST_IMAGE_DIRECTORY_USED, SETTINGS_GROUP_TO_COPY,
     SHAPES_FILTER_INDEX, SETTINGS_TO_COPY)
+from dwpicker.languages import MEL, PYTHON
 from dwpicker.path import get_image_directory
 from dwpicker.namespace import selected_namespace
 from dwpicker.templates import BUTTON
 
 
-SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Command', 'Image path'
+SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Image path', 'Command'
 SHAPES_FILTERS = 'All shapes', 'Selected shapes'
 
 
@@ -81,69 +83,6 @@ class NamespaceDialog(QtWidgets.QDialog):
 
     def call_detect_selection(self):
         self.namespace_combo.setCurrentText(selected_namespace())
-
-
-class CommandButtonDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super(CommandButtonDialog, self).__init__(parent=parent)
-        self.setWindowTitle('Create command button')
-        self.label = QtWidgets.QLineEdit()
-
-        self.python = QtWidgets.QRadioButton('Python')
-        self.mel = QtWidgets.QRadioButton('Mel')
-        self.language = QtWidgets.QWidget()
-        self.language_layout = QtWidgets.QVBoxLayout(self.language)
-        self.language_layout.setContentsMargins(0, 0, 0, 0)
-        self.language_layout.addWidget(self.python)
-        self.language_layout.addWidget(self.mel)
-
-        self.language_buttons = QtWidgets.QButtonGroup()
-        self.language_buttons.buttonReleased.connect(self.change_state)
-        self.language_buttons.addButton(self.python, 0)
-        self.language_buttons.addButton(self.mel, 1)
-
-        self.command = QtWidgets.QPlainTextEdit()
-
-        self.options_layout = QtWidgets.QFormLayout()
-        self.options_layout.addRow('Label: ', self.label)
-        self.options_layout.addRow('Language: ', self.language)
-        self.options_layout.addRow('Command: ', self.command)
-
-        self.ok = QtWidgets.QPushButton('Ok')
-        self.ok.released.connect(self.accept)
-        self.cancel = QtWidgets.QPushButton('Cancel')
-        self.cancel.released.connect(self.reject)
-
-        self.button_layout = QtWidgets.QHBoxLayout()
-        self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.addStretch(1)
-        self.button_layout.addWidget(self.ok)
-        self.button_layout.addWidget(self.cancel)
-
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.addLayout(self.options_layout)
-        self.layout.addLayout(self.button_layout)
-
-        self.set_ui_states()
-
-    def set_ui_states(self):
-        index = cmds.optionVar(query=LAST_COMMAND_LANGUAGE)
-        button = self.language_buttons.button(index)
-        button.setChecked(True)
-
-    @property
-    def values(self):
-        language = 'python' if self.python.isChecked() else 'mel'
-        return {
-            'action.left.language': language,
-            'text.content': self.label.text(),
-            'action.left.command': self.command.toPlainText(),
-        }
-
-    def change_state(self, *_):
-        save_optionvar(
-            LAST_COMMAND_LANGUAGE,
-            self.language_buttons.checkedId())
 
 
 class SettingsPaster(QtWidgets.QDialog):
@@ -419,3 +358,88 @@ class UpdateAvailableDialog(QtWidgets.QDialog):
 
     def change_check_for_update_preference(self):
         save_optionvar(CHECK_FOR_UPDATE, int(self.check_cb.isChecked()))
+
+
+class CommandEditorDialog(QtWidgets.QDialog):
+
+    def __init__(self, command, parent=None):
+        super(CommandEditorDialog, self).__init__(parent)
+        self.setWindowTitle('Edit/Create command')
+        self.languages = QtWidgets.QComboBox()
+        self.languages.addItems([MEL, PYTHON])
+        self.languages.setCurrentText(command['language'])
+        self.languages.currentIndexChanged.connect(self.language_changed)
+
+        self.button = QtWidgets.QComboBox()
+        self.button.addItems(['left', 'right'])
+        self.button.setCurrentText(command['button'])
+
+        self.enabled = QtWidgets.QCheckBox('Enabled')
+        self.enabled.setChecked(command['enabled'])
+
+        self.ctrl = QtWidgets.QCheckBox('Ctrl')
+        self.ctrl.setChecked(command['ctrl'])
+        self.shift = QtWidgets.QCheckBox('Shift')
+        self.shift.setChecked(command['shift'])
+        self.eval_deferred = QtWidgets.QCheckBox('Eval deferred (python only)')
+        self.eval_deferred.setChecked(command['deferred'])
+        self.unique_undo = QtWidgets.QCheckBox('Unique undo')
+        self.unique_undo.setChecked(command['force_compact_undo'])
+
+        self.command = QtWidgets.QTextEdit()
+        self.command.setFixedHeight(100)
+        self.command.setPlainText(command['command'])
+
+        self.ok = QtWidgets.QPushButton('Ok')
+        self.ok.released.connect(self.accept)
+        self.cancel = QtWidgets.QPushButton('Cancel')
+        self.cancel.released.connect(self.reject)
+
+        form = QtWidgets.QFormLayout()
+        form.setSpacing(0)
+        form.addRow('Language', self.languages)
+        form.addRow('Mouse button', self.button)
+
+        modifiers_group = QtWidgets.QGroupBox('Modifiers')
+        modifiers_layout = QtWidgets.QVBoxLayout(modifiers_group)
+        modifiers_layout.addWidget(self.ctrl)
+        modifiers_layout.addWidget(self.shift)
+
+        options_group = QtWidgets.QGroupBox('Options')
+        options_layout = QtWidgets.QVBoxLayout(options_group)
+        options_layout.addWidget(self.eval_deferred)
+        options_layout.addWidget(self.unique_undo)
+        options_layout.addLayout(form)
+
+        code = QtWidgets.QGroupBox('Code')
+        code_layout = QtWidgets.QVBoxLayout(code)
+        code_layout.setSpacing(0)
+        code_layout.addWidget(self.command)
+
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addStretch(1)
+        buttons_layout.addWidget(self.ok)
+        buttons_layout.addWidget(self.cancel)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(options_group)
+        layout.addWidget(modifiers_group)
+        layout.addWidget(code)
+        layout.addLayout(buttons_layout)
+        self.language_changed()
+
+    def language_changed(self, *_):
+        language = self.languages.currentText()
+        highlighter = get_highlighter(language)
+        highlighter(self.command.document())
+
+    def command_data(self):
+        return {
+            'enabled': self.enabled.isChecked(),
+            'button': self.button.currentText(),
+            'language': self.languages.currentText(),
+            'command': self.command.toPlainText(),
+            'ctrl': self.ctrl.isChecked(),
+            'shift': self.shift.isChecked(),
+            'deferred': self.eval_deferred.isChecked(),
+            'force_compact_undo': self.unique_undo.isChecked()}

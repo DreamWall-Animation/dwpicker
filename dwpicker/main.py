@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
-from functools import partial
 import os
 import json
 import webbrowser
+from copy import deepcopy
+from functools import partial
 
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -13,8 +13,9 @@ import maya.OpenMaya as om
 from dwpicker.appinfos import VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE
 from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.designer.editor import PickerEditor
+from dwpicker.dialog import CommandEditorDialog
 from dwpicker.dialog import (
-    warning, question, get_image_path, CommandButtonDialog, NamespaceDialog)
+    warning, question, get_image_path, NamespaceDialog)
 from dwpicker.ingest import animschool
 from dwpicker.interactive import Shape
 from dwpicker.hotkeys import get_hotkeys_config
@@ -25,9 +26,9 @@ from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
     AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
     DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, save_optionvar,
-    append_recent_filename, save_opened_filenames)
+    LAST_IMPORT_DIRECTORY, LAST_COMMAND_LANGUAGE, LAST_SAVE_DIRECTORY,
+    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
+    save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.path import get_import_directory, get_open_directory
 from dwpicker.picker import PickerView, list_targets
 from dwpicker.preference import PreferencesWindow
@@ -37,7 +38,7 @@ from dwpicker.references import ensure_images_path_exists
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
-from dwpicker.templates import BUTTON, PICKER, BACKGROUND
+from dwpicker.templates import BUTTON, PICKER, BACKGROUND, COMMAND
 from dwpicker.undo import UndoManager
 
 
@@ -669,10 +670,22 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if button_type == 0:
             data['action.targets'] = targets
         else:
-            dialog = CommandButtonDialog()
+            text, result = (
+                QtWidgets.QInputDialog.getText(self, 'Button text', 'text'))
+            if not result:
+                return
+            data['text.content'] = text
+            command = deepcopy(COMMAND)
+            languages = ['python', 'mel']
+            language = languages[cmds.optionVar(query=LAST_COMMAND_LANGUAGE)]
+            command['language'] = language
+            dialog = CommandEditorDialog(command)
             if not dialog.exec_():
                 return
-            data.update(dialog.values)
+            command = dialog.command_data()
+            index = languages.index(command['language'])
+            save_optionvar(LAST_COMMAND_LANGUAGE, index)
+            data['action.commands'] = [command]
 
         width = max([data['shape.width'], len(data['text.content']) * 7])
         data['shape.width'] = width

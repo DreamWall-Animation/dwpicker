@@ -97,6 +97,11 @@ class ColorEdit(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ColorEdit, self).__init__(parent)
 
+        self.pixmap = QtWidgets.QLabel()
+        self.pixmap.setFixedSize(21, 21)
+        color = QtWidgets.QApplication.palette().color(
+            QtGui.QPalette.Base)
+        self.pixmap.setPixmap(_color_pixmap(color, self.pixmap.size()))
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
         self.text.focusInEvent = self.focusInEvent
@@ -108,8 +113,12 @@ class ColorEdit(QtWidgets.QWidget):
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
+        self.layout.addWidget(self.pixmap)
         self.layout.addWidget(self.text)
         self.layout.addWidget(self.button)
+        self.layout.setStretchFactor(self.pixmap, 1)
+        self.layout.setStretchFactor(self.text, 5)
+        self.layout.setStretchFactor(self.button, 1)
 
         self._value = self.value()
 
@@ -121,11 +130,17 @@ class ColorEdit(QtWidgets.QWidget):
         self.apply()
         return super(ColorEdit, self).focusOutEvent(event)
 
+    def showEvent(self, event):
+        super(ColorEdit, self).showEvent(event)
+        self.pixmap.setFixedSize(21, 21)
+
     def pick_color(self):
         color = self.text.text() or None
         dialog = ColorDialog(color)
         if dialog.exec_():
             self.text.setText(dialog.colorname())
+            self.pixmap.setPixmap(
+                _color_pixmap(dialog.colorname(), self.pixmap.size()))
             self.apply()
 
     def apply(self):
@@ -137,8 +152,21 @@ class ColorEdit(QtWidgets.QWidget):
         value = self.text.text()
         return value if value != '' else None
 
-    def set_color(self, color):
+    def set_color(self, color=None):
         self.text.setText(color)
+        color = color or QtWidgets.QApplication.palette().color(
+            QtGui.QPalette.Base)
+        self.pixmap.setPixmap(_color_pixmap(color, self.pixmap.size()))
+
+
+def _color_pixmap(colorname, qsize):
+    pixmap = QtGui.QPixmap(qsize)
+    painter = QtGui.QPainter(pixmap)
+    painter.setBrush(QtGui.QColor(colorname))
+    painter.setPen(QtCore.Qt.black)
+    painter.drawRect(0, 0, qsize.width(), qsize.height())
+    painter.end()
+    return pixmap
 
 
 class LineEdit(QtWidgets.QLineEdit):

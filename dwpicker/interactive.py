@@ -13,10 +13,10 @@ from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
 
 
-EXCECUTION_WARNING = (
-"""Code execution failed for shape: "{name}"
+EXCECUTION_WARNING = """\
+Code execution failed for shape: "{name}"
 {error}.
-""")
+"""
 
 
 class SelectionSquare():
@@ -149,19 +149,22 @@ class Shape():
             return proportional_rect(self.rect, 70)
         return self.rect
 
-    def execute(self, left=False, right=False):
-        side = 'left' if left else 'right' if right else None
-        if not side or not self.options['action.' + side]:
-            return
-        code = self.options['action.{}.command'.format(side)]
-        language = self.options['action.{}.language'.format(side)]
-        try:
-            execute_code(language, code)
-        except Exception as e:
-            import traceback
-            print(EXCECUTION_WARNING.format(
-                name=self.options['text.content'], error=e))
-            print(traceback.format_exc())
+    def execute(self, button, shift=False, ctrl=False):
+        commands = _find_commands(
+            self.options['action.commands'],
+            button, shift=shift, ctrl=ctrl)
+        for command in commands:
+            try:
+                execute_code(
+                    language=command['language'],
+                    code=command['command'],
+                    deferred=command['deferred'],
+                    compact_undo=command['force_compact_undo'])
+            except Exception as e:
+                import traceback
+                print(EXCECUTION_WARNING.format(
+                    name=self.options['text.content'], error=e))
+                print(traceback.format_exc())
 
     def select(self, selection_mode='replace'):
         select_targets([self], selection_mode=selection_mode)
@@ -173,13 +176,12 @@ class Shape():
         self.options['action.targets'] = targets
 
     def is_interactive(self):
-        return any([self.options['action.right'], self.options['action.left']])
+        return bool(c for c in self.options['action.commands'] if c['enabled'])
 
     def is_background(self):
         return not any([
             bool(self.targets()),
-            self.options['action.right'],
-            self.options['action.left']])
+            bool(self.options['action.commands'])])
 
     def visibility_layer(self):
         return self.options['visibility_layer']
@@ -196,3 +198,15 @@ class Shape():
             self.options['image.width'],
             self.options['image.height'])
         self.image_rect.moveCenter(self.rect.center())
+
+
+def _find_commands(commands, button, ctrl=False, shift=False):
+    result = []
+    for command in commands:
+        conditions = (
+            command['button'] == button and
+            command['ctrl'] == ctrl and
+            command['shift'] == shift)
+        if conditions:
+            result.append(command)
+    return result

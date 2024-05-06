@@ -82,7 +82,7 @@ def clean_stray_picker_holder_nodes():
             continue
         try:
             cmds.delete(node)
-        except:
+        except BaseException:
             # Node is locked or in reference and cannot be removed.
             # As we cant remove it, we reset his data to avoid double pickers.
             cmds.setAttr(

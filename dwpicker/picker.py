@@ -176,20 +176,28 @@ class PickerView(QtWidgets.QWidget):
                 warning('Selection Error', str(e), parent=self)
                 self.release(event)
                 return
-
         if not self.clicked_shape:
             if self.mode_manager.right_click_pressed:
                 self.call_context_menu()
 
         elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
-            if self.mode_manager.right_click_pressed:
+            show_context = (
+                self.mode_manager.right_click_pressed and
+                not self.clicked_shape.is_interactive())
+            left_clicked = self.mode_manager.left_click_pressed
+            if show_context:
                 self.call_context_menu()
-            elif self.clicked_shape.targets():
+            elif left_clicked and self.clicked_shape.targets():
                 self.clicked_shape.select(selection_mode)
+
             if interact:
+                button = (
+                    'left' if self.mode_manager.left_click_pressed
+                    else 'right')
                 self.clicked_shape.execute(
-                    left=self.mode_manager.left_click_pressed,
-                    right=self.mode_manager.right_click_pressed)
+                    button=button,
+                    ctrl=self.mode_manager.ctrl_pressed,
+                    shift=self.mode_manager.shift_pressed)
 
         self.release(event)
 
