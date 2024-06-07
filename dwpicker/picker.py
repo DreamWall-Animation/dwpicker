@@ -35,7 +35,7 @@ def frame_shapes(shapes):
         shape.synchronize_image()
 
 
-def set_shapes_hovered(shapes, cursor, selection_rect=None):
+def set_shapes_hovered(shapes, cursor, hidden_layers=None, selection_rect=None):
     """
     It set hovered the shape if his rect contains the cursor.
     """
@@ -44,10 +44,15 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
     cursor = cursor.toPoint()
     selection_rect = selection_rect or QtCore.QRect(cursor, cursor)
     selection_shapes = [s for s in shapes if s.targets()]
-    selection_shapes_hovered = [
+    selection_shapes_intersect_selection = [
         s for s in selection_shapes
         if s.rect.contains(cursor) or
         s.rect.intersects(selection_rect)]
+    selection_shapes_hovered = [
+        s for s in selection_shapes_intersect_selection if
+        not s.visibility_layer() or
+        not hidden_layers or
+        s.visibility_layer() not in hidden_layers]
     targets = list_targets(selection_shapes_hovered)
 
     for s in selection_shapes:
@@ -235,6 +240,7 @@ class PickerView(QtWidgets.QWidget):
         set_shapes_hovered(
             self.shapes,
             self.viewportmapper.to_units_coords(event.pos()),
+            self.layers_menu.hidden_layers,
             selection_rect)
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
