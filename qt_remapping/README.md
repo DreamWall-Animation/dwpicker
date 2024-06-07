@@ -1,7 +1,0 @@
-#  Thanks Simon Leykamm for the compatibility analyse !
-
-The DreamWall picker isn't quite ready for the transition to Maya 2025 just yet. The latest update to Maya 2025 introduces a significant change with its move to Qt6. The Picker heavily relies on UI functionality, it's proving difficult to maintain compatibility across both Qt5 (for Maya versions 17 to 24) and Qt6 (for Maya 25 onwards).
-
-At present, we lack a clear strategy, and time is limited to address this issue, especially considering Maya 2025 hasn't yet seen widespread adoption across projects. However, in the interim, animators still require a viable solution. Currently, we've made some adjustments to the picker code to begin preparing for compatibility, but it's not yet sufficient. We're currently employing a workaround to trick Maya into believing it's interacting with Qt5.
-
-To implement this workaround, you can manually copy two files, namely /qt_remapping/PySide2.py and /qt_remapping/shiboken2.py, into the Maya script folder. It's important to note that this method isn't officially endorsed and may pose compatibility issues with other scripts. Exercise caution to ensure you're not overwriting any existing files in your directory. Proceed with this workaround at your own discretion and risk.
