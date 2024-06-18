@@ -50,8 +50,6 @@ def update_shape_actions_for_v0_11_0(shape):
     shape['action.commands'] = []
 
     if shape['action.left.command']:
-        import pprint
-        pprint.pprint(shape)
         shape['action.commands'].append({
             'enabled': shape['action.left'],
             'button': 'left',
