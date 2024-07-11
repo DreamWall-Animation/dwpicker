@@ -101,7 +101,7 @@ def draw_shape(painter, shape, viewportmapper=None):
     painter.drawText(content_rect, flags, text)
 
 
-def draw_selection_square(painter, rect, viewportmapper=None):
+def draw_selection_square(painter, rect, cursor=None,viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     rect = viewportmapper.to_viewport_rect(rect)
     bordercolor = QtGui.QColor(SELECTION_COLOR)
@@ -112,8 +112,9 @@ def draw_selection_square(painter, rect, viewportmapper=None):
     painter.drawRect(rect)
 
 
-def draw_manipulator(painter, manipulator, cursor, viewportmapper=None):
+def draw_manipulator(painter, manipulator, cursor=None, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
+    scaled_cursor = viewportmapper.to_viewport_coords_int(cursor)
     hovered = manipulator.hovered_rects(cursor)
 
     if manipulator.rect in hovered:

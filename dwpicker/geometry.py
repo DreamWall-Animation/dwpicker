@@ -39,6 +39,10 @@ class ViewportMapper():
             self.to_viewport(units_point.x()) - self.origin.x(),
             self.to_viewport(units_point.y()) - self.origin.y())
 
+    def to_viewport_coords_int(self, units_point):
+        return QtCore.QPoint(
+            self.to_viewport(units_point.x()) - self.origin.x(),
+            self.to_viewport(units_point.y()) - self.origin.y())
     def to_units_coords(self, pixels_point):
         return QtCore.QPointF(
             self.to_units(pixels_point.x() + self.origin.x()),

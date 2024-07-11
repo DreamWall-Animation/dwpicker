@@ -8,10 +8,10 @@ from dwpicker.geometry import (
     get_top_side_rect, get_bottom_side_rect, proportional_rect)
 from dwpicker.languages import execute_code
 from dwpicker.painting import (
-    draw_selection_square, draw_manipulator, get_hovered_path)
+    draw_selection_square, draw_manipulator, get_hovered_path, ViewportMapper)
 from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
-
+import traceback
 
 EXCECUTION_WARNING = """\
 Code execution failed for shape: "{name}"
@@ -40,10 +40,10 @@ class SelectionSquare():
             return False
         return self.rect.intersects(rect)
 
-    def draw(self, painter):
+    def draw(self, painter, viewportmapper=None):
         if self.rect is None:
             return
-        draw_selection_square(painter, self.rect)
+        draw_selection_square(painter, self.rect, viewportmapper)
 
 
 class Manipulator():
@@ -61,6 +61,7 @@ class Manipulator():
         self._b_side_rect = None
 
         self.hovered_path = None
+        self.viewportmapper = ViewportMapper()
 
     @property
     def rect(self):
@@ -73,27 +74,41 @@ class Manipulator():
             self._t_side_rect, self._b_side_rect]
 
     def get_direction(self, cursor):
+
         if self.rect is None:
             return None
         for i, rect in enumerate(self.handler_rects()):
             if rect.contains(cursor):
                 return DIRECTIONS[i]
 
-    def hovered_rects(self, cursor):
+    def hovered_rects(self, cursor,viewportmapper=None):
+        try:
+            scaled_cursor = cursor
+            viewportmapper = viewportmapper or self.viewportmapper
+            viewportmapper = self.viewportmapper or ViewportMapper()
+            viewport_rect = viewportmapper.to_viewport_rect(self._rect)
+            scaled_cursor = viewportmapper.to_viewport_coords_int(cursor)
+        except:
+            traceback.print_exc()
+
         rects = []
-        for rect in self.handler_rects() + [self.rect]:
+        for rect in self.handler_rects() + [self._rect]:
             if not rect:
                 continue
             if rect.contains(cursor):
                 rects.append(rect)
         return rects
 
-    def set_rect(self, rect):
-        self._rect = rect
-        self.update_geometries()
+    def set_rect(self, rect, viewportmapper=None):
+        if viewportmapper != None:
+            self.viewportmapper=viewportmapper
 
-    def update_geometries(self):
+        self._rect = rect
+        self.update_geometries(viewportmapper=self.viewportmapper)
+
+    def update_geometries(self, viewportmapper=None):
         rect = self.rect
+
         self._tl_corner_rect = get_topleft_rect(rect) if rect else None
         self._bl_corner_rect = get_bottomleft_rect(rect) if rect else None
         self._tr_corner_rect = get_topright_rect(rect) if rect else None
@@ -102,11 +117,13 @@ class Manipulator():
         self._r_side_rect = get_right_side_rect(rect) if rect else None
         self._t_side_rect = get_top_side_rect(rect) if rect else None
         self._b_side_rect = get_bottom_side_rect(rect) if rect else None
-        self.hovered_path = get_hovered_path(rect) if rect else None
+        self.hovered_path = get_hovered_path(rect,viewportmapper=viewportmapper) if rect else None
 
-    def draw(self, painter, cursor):
+    def draw(self, painter, cursor, viewportmapper=None):
         if self.rect is not None and all(self.handler_rects()):
-            draw_manipulator(painter, self, cursor)
+            draw_manipulator(painter, self, cursor,viewportmapper=viewportmapper)
+        else:
+            pass
 
 
 def get_shape_rect_from_options(options):
