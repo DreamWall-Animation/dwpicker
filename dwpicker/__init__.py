@@ -11,6 +11,7 @@ if int(cmds.about(majorVersion=True)) >= 2025:
 
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
+from dwpicker.namespace import detect_picker_namespace
 from dwpicker.qtutils import remove_workspace_control
 from dwpicker.updatechecker import warn_if_update_available
 
@@ -132,3 +133,10 @@ def open_picker_file(filepath):
         return cmds.warning('Please open picker first.')
     _dwpicker.add_picker_from_file(filepath)
     _dwpicker.store_local_pickers_data()
+
+
+def current_namespace():
+    picker = current()
+    if not picker:
+        return ':'
+    return detect_picker_namespace(picker.shapes)
