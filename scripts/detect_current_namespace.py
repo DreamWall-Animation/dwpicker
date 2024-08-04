@@ -1,5 +1,5 @@
 import dwpicker
-from dwpicker.picker import detect_picker_namespace
+from dwpicker.namespace import detect_picker_namespace
 
 
 picker = dwpicker.current()
