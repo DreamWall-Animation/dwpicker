@@ -35,7 +35,7 @@ def frame_shapes(shapes):
         shape.synchronize_image()
 
 
-def set_shapes_hovered(shapes, cursor, hidden_layers=None, selection_rect=None):
+def set_shapes_hovered(shapes, cursor, selection_rect=None):
     """
     It set hovered the shape if his rect contains the cursor.
     """
@@ -43,20 +43,22 @@ def set_shapes_hovered(shapes, cursor, hidden_layers=None, selection_rect=None):
         return
     cursor = cursor.toPoint()
     selection_rect = selection_rect or QtCore.QRect(cursor, cursor)
-    selection_shapes = [s for s in shapes if s.targets()]
+    shapes = [s for s in shapes if s.is_interactive() or s.targets()]
     selection_shapes_intersect_selection = [
-        s for s in selection_shapes
+        s for s in shapes
         if s.rect.contains(cursor) or
         s.rect.intersects(selection_rect)]
-    selection_shapes_hovered = [
-        s for s in selection_shapes_intersect_selection if
-        not s.visibility_layer() or
-        not hidden_layers or
-        s.visibility_layer() not in hidden_layers]
-    targets = list_targets(selection_shapes_hovered)
 
-    for s in selection_shapes:
-        state = next((False for t in s.targets() if t not in targets), True)
+    targets = list_targets(selection_shapes_intersect_selection)
+    for s in shapes:
+        if s.targets():
+            # Set all buttons hovered from his targets contents.
+            # I the physically hovered buttons contains targets, this will
+            # highlight all buttons containing similare targets.
+            state = next((False for t in s.targets() if t not in targets), True)
+        elif s.is_interactive():
+            # Simple highlighting method for the interactive buttons.
+            state = s in selection_shapes_intersect_selection
         s.hovered = state
 
 
@@ -240,9 +242,8 @@ class PickerView(QtWidgets.QWidget):
             selection_rect = selection_rect.toRect()
 
         set_shapes_hovered(
-            self.shapes,
+            self.visible_shapes(),
             self.viewportmapper.to_units_coords(event.pos()),
-            self.layers_menu.hidden_layers,
             selection_rect)
 
         if self.mode_manager.mode == ModeManager.DRAGGING:
