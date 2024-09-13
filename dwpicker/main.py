@@ -23,8 +23,8 @@ from dwpicker.namespace import (
     switch_namespace, selected_namespace, detect_picker_namespace,
     pickers_namespaces)
 from dwpicker.optionvar import (
-    AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
-    AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
+    AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, AUTO_RESIZE_NAMESPACE_COMBO,
+    CHECK_IMAGES_PATHS, AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
     DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
     LAST_IMPORT_DIRECTORY, LAST_COMMAND_LANGUAGE, LAST_SAVE_DIRECTORY,
     NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
@@ -48,7 +48,8 @@ DreamWall Picker
     Version: {version}
     Release date: {release}
     Authors: Lionel Brouyère, Olivier Evers
-    Contributor(s): Herizoran
+    Contributor(s):
+        Herizoran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk)
 
 Features:
     Animation picker widget.
@@ -85,6 +86,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
         self.shortcuts = {}
+        self.replace_namespace_custom_function = None
 
         self.editable = True
         self.callbacks = []
@@ -103,7 +105,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
-        self.namespace_combo.setFixedWidth(235)
+        self.namespace_combo.setMinimumWidth(235)
         method = self.change_namespace_combo
         self.namespace_combo.currentIndexChanged.connect(method)
         self.namespace_refresh = QtWidgets.QPushButton("")
@@ -227,6 +229,17 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_combo.addItem("*Root*")
         self.namespace_combo.addItems(namespaces)
         self.namespace_combo.blockSignals(False)
+
+        # Auto update namespace combo to namespace size.
+        if not cmds.optionVar(query=AUTO_RESIZE_NAMESPACE_COMBO):
+            return
+        max_width = 0
+        for i in range(self.namespace_combo.count()):
+            t = self.namespace_combo.itemText(i)
+            width = self.namespace_combo.fontMetrics().horizontalAdvance(t)
+            max_width = max(max_width, width)
+        width = max_width + 20 # padding
+        self.namespace_combo.setFixedWidth(max((200, width)))
 
     def tab_index_changed(self, index):
         if not self.pickers:
@@ -777,10 +790,16 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def change_namespace(self, namespace):
         picker = self.tab.currentWidget()
+        if not picker:
+            return
+        switch_namespace_function = (
+            self.replace_namespace_custom_function or switch_namespace)
         for shape in picker.shapes:
             if not shape.targets():
                 continue
-            targets = [switch_namespace(t, namespace) for t in shape.targets()]
+            targets = [
+                switch_namespace_function(t, namespace)
+                for t in shape.targets()]
             shape.options['action.targets'] = targets
 
         self.data_changed_from_picker(picker)

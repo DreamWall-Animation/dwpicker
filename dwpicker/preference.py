@@ -4,14 +4,15 @@ from maya import cmds
 from dwpicker.hotkeyseditor import HotkeysEditor
 from dwpicker.optionvar import (
     save_optionvar,
-    AUTO_COLLAPSE_IMG_PATH_FROM_ENV, AUTO_FOCUS_BEHAVIOR, AUTO_SET_NAMESPACE,
-    AUTO_FOCUS_BEHAVIORS, AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS,
-    CUSTOM_PROD_PICKER_DIRECTORY, CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS,
-    DISABLE_IMPORT_CALLBACKS, OVERRIDE_PROD_PICKER_DIRECTORY_ENV,
-    INSERT_TAB_AFTER_CURRENT, NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION,
-    TRIGGER_REPLACE_ON_MIRROR, USE_BASE64_DATA_ENCODING,
-    USE_PROD_PICKER_DIR_AS_DEFAULT, USE_ICON_FOR_UNSAVED_TAB,
-    WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY, ZOOM_BUTTON, ZOOM_BUTTONS)
+    AUTO_COLLAPSE_IMG_PATH_FROM_ENV, AUTO_FOCUS_BEHAVIOR,
+    AUTO_RESIZE_NAMESPACE_COMBO, AUTO_SET_NAMESPACE, AUTO_FOCUS_BEHAVIORS,
+    AUTO_SWITCH_TAB, CHECK_IMAGES_PATHS, CUSTOM_PROD_PICKER_DIRECTORY,
+    CHECK_FOR_UPDATE, DISPLAY_QUICK_OPTIONS, DISABLE_IMPORT_CALLBACKS,
+    OVERRIDE_PROD_PICKER_DIRECTORY_ENV, INSERT_TAB_AFTER_CURRENT,
+    NAMESPACE_TOOLBAR, SYNCHRONYZE_SELECTION, TRIGGER_REPLACE_ON_MIRROR,
+    USE_BASE64_DATA_ENCODING, USE_PROD_PICKER_DIR_AS_DEFAULT,
+    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED, ZOOM_SENSITIVITY,
+    ZOOM_BUTTON, ZOOM_BUTTONS)
 from dwpicker.path import unix_path
 
 
@@ -57,6 +58,9 @@ class GeneralPreferences(QtWidgets.QWidget):
         text = "Auto switch namespace."
         self.autoswitch_namespace = QtWidgets.QCheckBox(text)
         self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
+        text = "Auto resize namespace combo."
+        self.auto_resize_namespace_combo = QtWidgets.QCheckBox(text)
+        self.sychronize = QtWidgets.QCheckBox("Synchronize picker selection.")
         text = "Missing images warning."
         self.check_images_paths = QtWidgets.QCheckBox(text)
         text = "Disable callback at import time. (Use with Studio Library)"
@@ -73,6 +77,7 @@ class GeneralPreferences(QtWidgets.QWidget):
         self.ui_layout.addWidget(self.quick_options)
         self.ui_layout.addWidget(self.disable_import_callbacks)
         self.ui_layout.addWidget(self.autoswitch_namespace)
+        self.ui_layout.addWidget(self.auto_resize_namespace_combo)
         self.ui_layout.addWidget(self.autoswitch_tab)
         self.ui_layout.addWidget(self.sychronize)
         self.ui_layout.addWidget(self.check_images_paths)
@@ -170,6 +175,7 @@ class GeneralPreferences(QtWidgets.QWidget):
         self.auto_collapse_path.released.connect(self.save_ui_states)
         self.autoswitch_tab.released.connect(self.save_ui_states)
         self.autoswitch_namespace.released.connect(self.save_ui_states)
+        self.auto_resize_namespace_combo.released.connect(self.save_ui_states)
         self.auto_focus.currentIndexChanged.connect(self.save_ui_states)
         self.check_for_update.released.connect(self.save_ui_states)
         self.check_images_paths.released.connect(self.save_ui_states)
@@ -197,6 +203,8 @@ class GeneralPreferences(QtWidgets.QWidget):
         value = cmds.optionVar(query=AUTO_FOCUS_BEHAVIOR)
         text = {v: k for k, v in AUTO_FOCUSES.items()}[value]
         self.auto_focus.setCurrentText(text)
+        state = bool(cmds.optionVar(query=AUTO_RESIZE_NAMESPACE_COMBO))
+        self.auto_resize_namespace_combo.setChecked(state)
         state = bool(cmds.optionVar(query=AUTO_SET_NAMESPACE))
         self.autoswitch_namespace.setChecked(state)
         state = bool(cmds.optionVar(query=AUTO_SWITCH_TAB))
@@ -241,6 +249,8 @@ class GeneralPreferences(QtWidgets.QWidget):
         save_optionvar(AUTO_COLLAPSE_IMG_PATH_FROM_ENV, value)
         value = AUTO_FOCUSES[self.auto_focus.currentText()]
         save_optionvar(AUTO_FOCUS_BEHAVIOR, value)
+        value = int(self.auto_resize_namespace_combo.isChecked())
+        save_optionvar(AUTO_RESIZE_NAMESPACE_COMBO, value)
         value = int(self.autoswitch_namespace.isChecked())
         save_optionvar(AUTO_SET_NAMESPACE, value)
         value = int(self.autoswitch_tab.isChecked())

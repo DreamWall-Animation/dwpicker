@@ -19,17 +19,32 @@ from dwpicker.updatechecker import warn_if_update_available
 _dwpicker = None
 
 
-def show(editable=True, pickers=None, ignore_scene_pickers=False):
+def show(
+        editable=True,
+        pickers=None,
+        ignore_scene_pickers=False,
+        replace_namespace_function=None):
     """
     This is the dwpicker default startup function.
-    editable: bool
-        This allow users to do local edit on their picker. This is NOT
-        affecting the original file.
-    pickers: list[str]
-        Path to pickers to open. If scene contains already pickers,
-        they are going to be ignored.
-    ignore_scene_pickers:
-        This is loading the picker empty, ignoring the scene content.
+    kwargs:
+        editable: bool
+            This allow users to do local edit on their picker. This is NOT
+            affecting the original file.
+
+        pickers: list[str]
+            Path to pickers to open. If scene contains already pickers,
+            they are going to be ignored.
+
+        ignore_scene_pickers: bool
+            This is loading the picker empty, ignoring the scene content.
+
+        replace_namespace_function: callable
+            Function used when on each target when a namespace switch is
+            triggered. Function must follow this templace:
+                def function(target: str, namespace: str)
+                    -> new_target_name: str
+    return:
+        DwPicker: window
     """
     ensure_optionvars_exists()
     global _dwpicker
@@ -48,8 +63,12 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
     if not ignore_scene_pickers and not pickers:
         _dwpicker.load_saved_pickers()
 
+    if replace_namespace_function:
+        _dwpicker.replace_namespace_custom_function = (
+            replace_namespace_function)
+
     if not pickers:
-        return
+        return _dwpicker
 
     _dwpicker.clear()
     for filename in pickers:
@@ -61,6 +80,7 @@ def show(editable=True, pickers=None, ignore_scene_pickers=False):
             print("Not able to load: {}".format(filename))
             print(traceback.format_exc())
     _dwpicker.store_local_pickers_data()
+    return _dwpicker
 
 
 def toggle():
@@ -136,6 +156,9 @@ def open_picker_file(filepath):
 
 
 def current_namespace():
+    """
+    Returns the namespace of the current displayed picker.
+    """
     picker = current()
     if not picker:
         return ':'
