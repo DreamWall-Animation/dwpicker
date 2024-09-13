@@ -52,7 +52,7 @@ class BrowseEdit(QtWidgets.QWidget):
         self.apply()
 
     def browse(self):
-        filename = get_image_path(self)
+        filename = get_image_path(self) or ''
         format_path(filename)
         if not filename:
             return
