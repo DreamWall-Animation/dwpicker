@@ -163,3 +163,32 @@ def current_namespace():
     if not picker:
         return ':'
     return detect_picker_namespace(picker.shapes)
+
+
+def set_layer_visible(layername, visible=True):
+    if not _dwpicker:
+        return cmds.warning('Please open picker first.')
+    picker = current()
+    if not picker:
+        return
+    if visible:
+        if layername in picker.layers_menu.hidden_layers:
+            picker.layers_menu.hidden_layers.remove(layername)
+            picker.repaint()
+        return
+    if layername not in picker.layers_menu.hidden_layers:
+        picker.layers_menu.hidden_layers.append(layername)
+        picker.repaint()
+
+
+def toggle_layer_visibility(layername):
+    if not _dwpicker:
+        return cmds.warning('Please open picker first.')
+    picker = current()
+    if not picker:
+        return
+    if layername in picker.layers_menu.hidden_layers:
+        picker.layers_menu.hidden_layers.remove(layername)
+    else:
+        picker.layers_menu.hidden_layers.append(layername)
+    picker.repaint()
