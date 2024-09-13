@@ -147,7 +147,8 @@ class PickerView(QtWidgets.QWidget):
         self.setFocus(QtCore.Qt.MouseFocusReason)
         self.shapes.extend(self.drag_shapes)
         cursor = self.viewportmapper.to_units_coords(event.pos()).toPoint()
-        self.clicked_shape = detect_hovered_shape(self.shapes, cursor)
+        shapes = self.visible_shapes()
+        self.clicked_shape = detect_hovered_shape(shapes, cursor)
         hsh = any(s.hovered for s in self.shapes)
         self.mode_manager.update(
             event,
@@ -161,9 +162,10 @@ class PickerView(QtWidgets.QWidget):
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
         cursor = self.viewportmapper.to_units_coords(event.pos()).toPoint()
         zoom = self.mode_manager.zoom_button_pressed
+        shapes = self.visible_shapes()
         interact = (
             self.clicked_shape and
-            self.clicked_shape is detect_hovered_shape(self.shapes, cursor) and
+            self.clicked_shape is detect_hovered_shape(shapes, cursor) and
             self.clicked_shape.is_interactive())
 
         if zoom and self.mode_manager.alt_pressed:
@@ -315,7 +317,7 @@ class PickerView(QtWidgets.QWidget):
         position = self.viewportmapper.to_units_coords(position).toPoint()
         self.addButtonRequested.emit(position.x(), position.y(), button_type)
 
-    def paintEvent(self, event):
+    def paintEvent(self, _):
         try:
             painter = QtGui.QPainter()
             painter.begin(self)
