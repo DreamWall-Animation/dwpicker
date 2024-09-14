@@ -35,6 +35,12 @@ def ensure_retro_compatibility(picker_data):
         for shape in picker_data['shapes']:
             update_shape_actions_for_v0_11_0(shape)
 
+    if tuple(version) < (0, 11, 3):
+        for shape in picker_data['shapes']:
+            shape['background'] = not (
+                any(cmd['enabled'] for cmd in shape['action.commands']) or
+                shape['action.targets'])
+
     return picker_data
 
 

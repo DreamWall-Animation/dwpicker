@@ -43,7 +43,7 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
         return
     cursor = cursor.toPoint()
     selection_rect = selection_rect or QtCore.QRect(cursor, cursor)
-    shapes = [s for s in shapes if s.is_interactive() or s.targets()]
+    shapes = [s for s in shapes if not s.is_background()]
     selection_shapes_intersect_selection = [
         s for s in shapes
         if s.rect.contains(cursor) or
@@ -66,9 +66,7 @@ def detect_hovered_shape(shapes, cursor):
     if not shapes:
         return
     for shape in reversed(shapes):
-        if not (shape.is_interactive() or shape.targets()):
-            continue
-        if shape.rect.contains(cursor):
+        if shape.rect.contains(cursor) and not shape.is_background():
             return shape
 
 

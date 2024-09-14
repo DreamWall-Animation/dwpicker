@@ -2,6 +2,7 @@ from dwpicker.appinfos import VERSION
 
 
 BUTTON = {
+    'background': False,
     'visibility_layer': None,
     'shape': 'square',  # or round
     'shape.left': 0.0,
@@ -38,6 +39,7 @@ BUTTON = {
 
 
 TEXT = {
+    'background': False,
     'visibility_layer': None,
     'shape': 'square',  # or round
     'shape.left': 0.0,
@@ -74,6 +76,7 @@ TEXT = {
 
 
 BACKGROUND = {
+    'background': True,
     'visibility_layer': None,
     'shape': 'square',  # or round or rounded_rect
     'shape.left': 0.0,

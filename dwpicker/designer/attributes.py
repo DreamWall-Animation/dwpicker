@@ -150,6 +150,10 @@ class ShapeSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'visibility_layer')
         self.layer.valueSet.connect(method)
 
+        self.background = BoolCombo()
+        method = partial(self.optionSet.emit, 'background')
+        self.background.valueSet.connect(method)
+
         self.left = IntEdit(minimum=0)
         method = partial(self.rectModified.emit, 'shape.left')
         self.left.valueSet.connect(method)
@@ -173,6 +177,7 @@ class ShapeSettings(QtWidgets.QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
+        self.layout.addRow('Background', self.background)
         self.layout.addRow('Shape', self.shape)
         self.layout.addRow('Visibility layer', self.layer)
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
@@ -191,6 +196,10 @@ class ShapeSettings(QtWidgets.QWidget):
         self.optionSet.emit('shape', self.shape.currentText())
 
     def set_options(self, options):
+        values = list({option['background'] for option in options})
+        value = str(values[0]) if len(values) == 1 else None
+        self.background.setCurrentText(value)
+
         values = list({option['visibility_layer'] for option in options})
         value = values[0] if len(values) == 1 else '' if not values else '...'
         self.layer.set_layer(value)

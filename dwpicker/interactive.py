@@ -177,12 +177,10 @@ class Shape():
 
     def is_interactive(self):
         return bool(
-            [c for c in self.options['action.commands'] if c['enabled']])
+            [cmd for cmd in self.options['action.commands'] if cmd['enabled']])
 
     def is_background(self):
-        return not any([
-            bool(self.targets()),
-            bool(self.options['action.commands'])])
+        return self.options['background']
 
     def visibility_layer(self):
         return self.options['visibility_layer']
