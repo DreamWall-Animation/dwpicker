@@ -24,6 +24,11 @@ def node_namespace(node):
     return basename.split(":")[0]
 
 
+def node_full_namespace(node):
+    basename = node.split('|')[-1]
+    return (basename.rsplit(':', 1)[:-1] or [None])[-1]
+
+
 @contextmanager
 def maya_namespace(
         namespace='', create_if_missing=True, restore_current_namespace=True):

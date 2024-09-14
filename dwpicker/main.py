@@ -222,7 +222,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def update_namespaces(self, *_):
         namespaces = sorted(list(set(
-            (cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)) +
+            (cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True) or []) +
             (pickers_namespaces(self.pickers)))))
         self.namespace_combo.blockSignals(True)
         self.namespace_combo.clear()
