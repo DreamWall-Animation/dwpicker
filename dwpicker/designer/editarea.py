@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.geometry import Transform, get_combined_rects

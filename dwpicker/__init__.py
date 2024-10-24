@@ -3,12 +3,6 @@ import os
 import sys
 from maya import cmds
 
-
-if int(cmds.about(majorVersion=True)) >= 2025:
-    print('>> PySide6 Maya version found. PySide2 remap activated.')
-    sys.path.append('{}/qt_remapping'.format(os.path.dirname(__file__)))
-
-
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME
 from dwpicker.optionvar import ensure_optionvars_exists
 from dwpicker.namespace import detect_picker_namespace

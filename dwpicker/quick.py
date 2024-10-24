@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore
 from maya import cmds
 
 from dwpicker.colorwheel import ColorDialog

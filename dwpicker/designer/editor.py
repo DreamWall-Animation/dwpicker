@@ -1,7 +1,7 @@
 from functools import partial
 from math import ceil
 
-from PySide2 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 from maya import cmds
 
 from dwpicker import clipboard
@@ -468,7 +468,7 @@ class PickerEditor(QtWidgets.QWidget):
 
     def call_context_menu(self, position):
         targets = cmds.ls(selection=True)
-        button = QtWidgets.QAction('Add selection button', self)
+        button = QtGui.QAction('Add selection button', self)
         method = partial(
             self.create_shape, BUTTON.copy(),
             position=position, targets=targets)
@@ -479,14 +479,14 @@ class PickerEditor(QtWidgets.QWidget):
             self.create_shape, template,
             position=position, targets=targets)
         text = 'Add selection button (using settings clipboard)'
-        button2 = QtWidgets.QAction(text, self)
+        button2 = QtGui.QAction(text, self)
         button2.triggered.connect(method)
 
         cursor = get_cursor(self.shape_editor)
         shape = self.shape_editor.get_hovered_shape(cursor)
         method = partial(self.update_targets, shape)
         text = 'Update targets'
-        button3 = QtWidgets.QAction(text, self)
+        button3 = QtGui.QAction(text, self)
         button3.setEnabled(bool(shape))
         button3.triggered.connect(method)
 
@@ -505,16 +505,16 @@ class PickerEditor(QtWidgets.QWidget):
         add_selection.setEnabled(bool(layers))
         menu.addMenu(add_selection)
         for layer in layers:
-            action = QtWidgets.QAction(layer, self)
+            action = QtGui.QAction(layer, self)
             action.triggered.connect(partial(self.set_visibility_layer, layer))
             add_selection.addAction(action)
 
-        remove_selection = QtWidgets.QAction('Remove assigned layer', self)
+        remove_selection = QtGui.QAction('Remove assigned layer', self)
         remove_selection.setEnabled(bool(self.shape_editor.selection.shapes))
         remove_selection.triggered.connect(self.set_visibility_layer)
         menu.addAction(remove_selection)
 
-        create_layer = QtWidgets.QAction('Create layer from selection', self)
+        create_layer = QtGui.QAction('Create layer from selection', self)
         create_layer.triggered.connect(self.create_visibility_layer)
         create_layer.setEnabled(bool(self.shape_editor.selection.shapes))
 

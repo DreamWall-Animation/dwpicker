@@ -1,11 +1,11 @@
 import inspect
 import os
 import sys
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 from maya import cmds
 import maya.OpenMayaUI as omui
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
-import shiboken2
+import shiboken6
 
 
 # Ensure backward compatibility.
@@ -50,7 +50,7 @@ def get_cursor(widget):
 
 
 def set_shortcut(keysequence, parent, method, context=None):
-    shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(keysequence), parent)
+    shortcut = QtGui.QShortcut(QtGui.QKeySequence(keysequence), parent)
     shortcut.setContext(context or QtCore.Qt.WidgetWithChildrenShortcut)
     shortcut.activated.connect(method)
     return shortcut
@@ -64,7 +64,7 @@ def remove_workspace_control(control_name):
 def maya_main_window():
     ptr = omui.MQtUtil.mainWindow()
     if ptr is not None:
-        return shiboken2.wrapInstance(long(ptr), QtWidgets.QWidget)
+        return shiboken6.wrapInstance(long(ptr), QtWidgets.QWidget)
 
 
 class DockableBase(MayaQWidgetDockableMixin):

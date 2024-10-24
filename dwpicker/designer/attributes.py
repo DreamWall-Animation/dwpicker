@@ -1,6 +1,6 @@
 import maya.cmds as cmds
 from functools import partial
-from PySide2 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.commands import CommandsEditor

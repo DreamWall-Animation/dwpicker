@@ -5,7 +5,7 @@ import webbrowser
 from copy import deepcopy
 from functools import partial
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 
 from maya import cmds
 import maya.OpenMaya as om
@@ -824,25 +824,25 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 class DwPickerMenu(QtWidgets.QMenuBar):
     def __init__(self, parent=None):
         super(DwPickerMenu, self).__init__(parent)
-        self.new = QtWidgets.QAction('&New', parent)
-        self.open = QtWidgets.QAction('&Open', parent)
-        self.import_ = QtWidgets.QAction('&Import', parent)
-        self.save = QtWidgets.QAction('&Save', parent)
-        self.save_as = QtWidgets.QAction('&Save as', parent)
-        self.exit = QtWidgets.QAction('Exit', parent)
+        self.new = QtGui.QAction('&New', parent)
+        self.open = QtGui.QAction('&Open', parent)
+        self.import_ = QtGui.QAction('&Import', parent)
+        self.save = QtGui.QAction('&Save', parent)
+        self.save_as = QtGui.QAction('&Save as', parent)
+        self.exit = QtGui.QAction('Exit', parent)
 
-        self.undo = QtWidgets.QAction('Undo', parent)
-        self.redo = QtWidgets.QAction('Redo', parent)
+        self.undo = QtGui.QAction('Undo', parent)
+        self.redo = QtGui.QAction('Redo', parent)
 
-        self.advanced_edit = QtWidgets.QAction('Advanced &editing', parent)
-        self.preferences = QtWidgets.QAction('Preferences', parent)
-        self.change_title = QtWidgets.QAction('Change picker title', parent)
-        self.change_namespace = QtWidgets.QAction('Change namespace', parent)
-        self.add_background = QtWidgets.QAction('Add background item', parent)
+        self.advanced_edit = QtGui.QAction('Advanced &editing', parent)
+        self.preferences = QtGui.QAction('Preferences', parent)
+        self.change_title = QtGui.QAction('Change picker title', parent)
+        self.change_namespace = QtGui.QAction('Change namespace', parent)
+        self.add_background = QtGui.QAction('Add background item', parent)
 
-        self.tools = QtWidgets.QAction('Other DreamWall &tools', parent)
-        self.dw = QtWidgets.QAction('&About DreamWall', parent)
-        self.about = QtWidgets.QAction('&About DwPicker', parent)
+        self.tools = QtGui.QAction('Other DreamWall &tools', parent)
+        self.dw = QtGui.QAction('&About DreamWall', parent)
+        self.about = QtGui.QAction('&About DwPicker', parent)
 
         self.file = QtWidgets.QMenu('&File', parent)
         self.file.addAction(self.new)

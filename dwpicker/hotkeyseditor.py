@@ -1,5 +1,5 @@
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 from dwpicker.hotkeys import get_hotkeys_config, save_hotkey_config
 
 

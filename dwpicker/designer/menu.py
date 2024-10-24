@@ -1,6 +1,6 @@
 from functools import partial
 from maya import cmds
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 
 from dwpicker.optionvar import (
     BG_LOCKED, SNAP_ITEMS, SNAP_GRID_X, SNAP_GRID_Y, save_optionvar)
@@ -37,40 +37,40 @@ class MenuWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
 
-        self.delete = QtWidgets.QAction(icon('delete.png'), '', self)
+        self.delete = QtGui.QAction(icon('delete.png'), '', self)
         self.delete.setToolTip('Delete selection')
         self.delete.triggered.connect(self.deleteRequested.emit)
 
-        self.copy = QtWidgets.QAction(icon('copy.png'), '', self)
+        self.copy = QtGui.QAction(icon('copy.png'), '', self)
         self.copy.setToolTip('Copy selection')
         self.copy.triggered.connect(self.copyRequested.emit)
 
-        self.paste = QtWidgets.QAction(icon('paste.png'), '', self)
+        self.paste = QtGui.QAction(icon('paste.png'), '', self)
         self.paste.setToolTip('Paste')
         self.paste.triggered.connect(self.pasteRequested.emit)
 
-        self.undo = QtWidgets.QAction(icon('undo.png'), '', self)
+        self.undo = QtGui.QAction(icon('undo.png'), '', self)
         self.undo.setToolTip('Undo')
         self.undo.triggered.connect(self.undoRequested.emit)
-        self.redo = QtWidgets.QAction(icon('redo.png'), '', self)
+        self.redo = QtGui.QAction(icon('redo.png'), '', self)
         self.redo.setToolTip('Redo')
         self.redo.triggered.connect(self.redoRequested.emit)
 
         icon_ = icon('copy_settings.png')
-        self.copy_settings = QtWidgets.QAction(icon_, '', self)
+        self.copy_settings = QtGui.QAction(icon_, '', self)
         self.copy_settings.setToolTip('Copy settings')
         self.copy_settings.triggered.connect(self.copySettingsRequested.emit)
         icon_ = icon('paste_settings.png')
-        self.paste_settings = QtWidgets.QAction(icon_, '', self)
+        self.paste_settings = QtGui.QAction(icon_, '', self)
         self.paste_settings.setToolTip('Paste settings')
         self.paste_settings.triggered.connect(self.pasteSettingsRequested.emit)
 
-        self.search = QtWidgets.QAction(icon('search.png'), '', self)
+        self.search = QtGui.QAction(icon('search.png'), '', self)
         self.search.triggered.connect(self.searchAndReplaceRequested.emit)
         self.search.setToolTip('Search and replace')
 
         icon_ = icon('lock-non-interactive.png')
-        self.lock_bg = QtWidgets.QAction(icon_, '', self)
+        self.lock_bg = QtGui.QAction(icon_, '', self)
         self.lock_bg.setToolTip('Lock background items')
         self.lock_bg.setCheckable(True)
         self.lock_bg.triggered.connect(self.save_ui_states)
@@ -86,7 +86,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.picker_height.setValidator(validator)
         self.picker_height.textEdited.connect(self.size_changed)
 
-        self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
+        self.snap = QtGui.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
         self.snap.setCheckable(True)
         self.snap.triggered.connect(self.snap_toggled)
@@ -105,72 +105,72 @@ class MenuWidget(QtWidgets.QWidget):
         self.snap.toggled.connect(self.snapy.setEnabled)
 
         icon_ = icon('addbutton.png')
-        self.addbutton = QtWidgets.QAction(icon_, '', self)
+        self.addbutton = QtGui.QAction(icon_, '', self)
         self.addbutton.setToolTip('Add button')
         self.addbutton.triggered.connect(self.addButtonRequested.emit)
-        self.addtext = QtWidgets.QAction(icon('addtext.png'), '', self)
+        self.addtext = QtGui.QAction(icon('addtext.png'), '', self)
         self.addtext.setToolTip('Add text')
         self.addtext.triggered.connect(self.addTextRequested.emit)
-        self.addbg = QtWidgets.QAction(icon('addbg.png'), '', self)
+        self.addbg = QtGui.QAction(icon('addbg.png'), '', self)
         self.addbg.setToolTip('Add background shape')
         self.addbg.triggered.connect(self.addBackgroundRequested.emit)
 
-        self.frame_shapes = QtWidgets.QAction(icon('frame.png'), '', self)
+        self.frame_shapes = QtGui.QAction(icon('frame.png'), '', self)
         self.frame_shapes.setToolTip('Frame buttons')
         self.frame_shapes.triggered.connect(self.frameShapes.emit)
 
         icon_ = icon('onbottom.png')
-        self.onbottom = QtWidgets.QAction(icon_, '', self)
+        self.onbottom = QtGui.QAction(icon_, '', self)
         self.onbottom.setToolTip('Set selected shapes on bottom')
         self.onbottom.triggered.connect(self.onBottomRequested.emit)
         icon_ = icon('movedown.png')
-        self.movedown = QtWidgets.QAction(icon_, '', self)
+        self.movedown = QtGui.QAction(icon_, '', self)
         self.movedown.setToolTip('Move down selected shapes')
         self.movedown.triggered.connect(self.moveDownRequested.emit)
-        self.moveup = QtWidgets.QAction(icon('moveup.png'), '', self)
+        self.moveup = QtGui.QAction(icon('moveup.png'), '', self)
         self.moveup.setToolTip('Move up selected shapes')
         self.moveup.triggered.connect(self.moveUpRequested.emit)
-        self.ontop = QtWidgets.QAction(icon('ontop.png'), '', self)
+        self.ontop = QtGui.QAction(icon('ontop.png'), '', self)
         self.ontop.setToolTip('Set selected shapes on top')
         self.ontop.triggered.connect(self.onTopRequested.emit)
 
-        self.hsymmetry = QtWidgets.QAction(icon('h_symmetry.png'), '', self)
+        self.hsymmetry = QtGui.QAction(icon('h_symmetry.png'), '', self)
         method = partial(self.symmetryRequested.emit, True)
         self.hsymmetry.triggered.connect(method)
-        self.vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), '', self)
+        self.vsymmetry = QtGui.QAction(icon('v_symmetry.png'), '', self)
         method = partial(self.symmetryRequested.emit, False)
         self.vsymmetry.triggered.connect(method)
 
         method = partial(self.alignRequested.emit, 'left')
-        self.align_left = QtWidgets.QAction(icon('align_left.png'), '', self)
+        self.align_left = QtGui.QAction(icon('align_left.png'), '', self)
         self.align_left.triggered.connect(method)
         file_ = 'align_h_center.png'
         method = partial(self.alignRequested.emit, 'h_center')
-        self.align_h_center = QtWidgets.QAction(icon(file_), '', self)
+        self.align_h_center = QtGui.QAction(icon(file_), '', self)
         self.align_h_center.triggered.connect(method)
         method = partial(self.alignRequested.emit, 'right')
-        self.align_right = QtWidgets.QAction(icon('align_right.png'), '', self)
+        self.align_right = QtGui.QAction(icon('align_right.png'), '', self)
         self.align_right.triggered.connect(method)
         method = partial(self.alignRequested.emit, 'top')
-        self.align_top = QtWidgets.QAction(icon('align_top.png'), '', self)
+        self.align_top = QtGui.QAction(icon('align_top.png'), '', self)
         self.align_top.triggered.connect(method)
         file_ = 'align_v_center.png'
-        self.align_v_center = QtWidgets.QAction(icon(file_), '', self)
+        self.align_v_center = QtGui.QAction(icon(file_), '', self)
         method = partial(self.alignRequested.emit, 'v_center')
         self.align_v_center.triggered.connect(method)
         file_ = 'align_bottom.png'
         method = partial(self.alignRequested.emit, 'bottom')
-        self.align_bottom = QtWidgets.QAction(icon(file_), '', self)
+        self.align_bottom = QtGui.QAction(icon(file_), '', self)
         self.align_bottom.triggered.connect(method)
 
         file_ = 'arrange_h.png'
         method = partial(self.arrangeRequested.emit, 'horizontal')
-        self.arrange_horizontal = QtWidgets.QAction(icon(file_), '', self)
+        self.arrange_horizontal = QtGui.QAction(icon(file_), '', self)
         self.arrange_horizontal.triggered.connect(method)
 
         file_ = 'arrange_v.png'
         method = partial(self.arrangeRequested.emit, 'vertical')
-        self.arrange_vertical = QtWidgets.QAction(icon(file_), '', self)
+        self.arrange_vertical = QtGui.QAction(icon(file_), '', self)
         self.arrange_vertical.triggered.connect(method)
 
         self.toolbar = QtWidgets.QToolBar()

@@ -1,5 +1,5 @@
 import os
-from PySide2 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.hotkeyseditor import HotkeysEditor
 from dwpicker.optionvar import (

@@ -6,7 +6,7 @@ import json
 from dwpicker.interactive import Shape
 from dwpicker.picker import PickerView
 from dwpicker.qtutils import set_shortcut
-from PySide2 import QtCore
+from PySide6 import QtCore
 
 with open('-picker_file_path-', 'r') as f:
     data = json.load(f)
