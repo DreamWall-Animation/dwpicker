@@ -82,11 +82,15 @@ def build_multiple_shapes(targets, override):
 
 
 class DwPicker(DockableBase, QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(
+            self,
+            replace_namespace_function=None,
+            list_namespaces_function=None):
         super(DwPicker, self).__init__(control_name=WINDOW_CONTROL_NAME)
         self.setWindowTitle(WINDOW_TITLE)
         self.shortcuts = {}
-        self.replace_namespace_custom_function = None
+        self.replace_namespace_custom_function = replace_namespace_function
+        self.list_namespaces_function = list_namespaces_function
 
         self.editable = True
         self.callbacks = []
@@ -220,13 +224,20 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def close_event(self):
         self.preferences_window.close()
 
+    def list_scene_namespaces(self):
+        if self.list_namespaces_function:
+            ns = self.list_namespaces_function()
+        else:
+            ns = cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True)
+            ns = ns or []
+        namespaces = ns + pickers_namespaces(self.pickers)
+        return sorted(list(set(namespaces)))
+
     def update_namespaces(self, *_):
-        namespaces = sorted(list(set(
-            (cmds.namespaceInfo(listOnlyNamespaces=True, recurse=True) or []) +
-            (pickers_namespaces(self.pickers)))))
         self.namespace_combo.blockSignals(True)
         self.namespace_combo.clear()
         self.namespace_combo.addItem("*Root*")
+        namespaces = self.list_scene_namespaces()
         self.namespace_combo.addItems(namespaces)
         self.namespace_combo.blockSignals(False)
 

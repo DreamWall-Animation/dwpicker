@@ -23,7 +23,8 @@ def show(
         editable=True,
         pickers=None,
         ignore_scene_pickers=False,
-        replace_namespace_function=None):
+        replace_namespace_function=None,
+        list_namespaces_function=None):
     """
     This is the dwpicker default startup function.
     kwargs:
@@ -43,6 +44,15 @@ def show(
             triggered. Function must follow this templace:
                 def function(target: str, namespace: str)
                     -> new_target_name: str
+
+        list_namespaces_function: callable
+            Function used when the picker is listing the scene existing
+            namespace. The default behavior list all the scene namespaces, but
+            in some studios, lot of namespace are not relevant to list, this
+            by this way you can customize how it does works.
+                def function():
+                    -> List[str]
+
     return:
         DwPicker: window
     """
@@ -50,8 +60,9 @@ def show(
     global _dwpicker
     if not _dwpicker:
         warn_if_update_available()
-        _dwpicker = DwPicker()
-
+        _dwpicker = DwPicker(
+            replace_namespace_function=replace_namespace_function,
+            list_namespaces_function=list_namespaces_function)
     try:
         _dwpicker.show(dockable=True)
     except RuntimeError:
@@ -62,10 +73,6 @@ def show(
     _dwpicker.set_editable(editable)
     if not ignore_scene_pickers and not pickers:
         _dwpicker.load_saved_pickers()
-
-    if replace_namespace_function:
-        _dwpicker.replace_namespace_custom_function = (
-            replace_namespace_function)
 
     if not pickers:
         return _dwpicker
