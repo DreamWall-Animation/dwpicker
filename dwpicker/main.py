@@ -105,7 +105,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
-        self.namespace_combo.setMinimumWidth(235)
+        self.namespace_combo.setMinimumWidth(200)
         method = self.change_namespace_combo
         self.namespace_combo.currentIndexChanged.connect(method)
         self.namespace_refresh = QtWidgets.QPushButton("")
@@ -232,6 +232,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         # Auto update namespace combo to namespace size.
         if not cmds.optionVar(query=AUTO_RESIZE_NAMESPACE_COMBO):
+            self.namespace_combo.setSizePolicy(
+                QtWidgets.QSizePolicy.MinimumExpanding,
+                QtWidgets.QSizePolicy.Minimum)
+            self.namespace_combo.setMinimumWidth(200)
             return
         max_width = 0
         for i in range(self.namespace_combo.count()):
