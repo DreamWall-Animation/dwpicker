@@ -2,7 +2,7 @@ from functools import partial
 
 from maya import cmds
 import maya.OpenMaya as om
-from PySide2 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore
 
 from dwpicker.interactive import SelectionSquare
 from dwpicker.dialog import warning
@@ -342,12 +342,12 @@ class PickerView(QtWidgets.QWidget):
 class PickerMenu(QtWidgets.QMenu):
     def __init__(self, parent=None):
         super(PickerMenu, self).__init__(parent)
-        self.add_single = QtWidgets.QAction('Add single button', self)
-        self.add_multiple = QtWidgets.QAction('Add multiple buttons', self)
-        self.update_button = QtWidgets.QAction('Update button', self)
-        self.add_command = QtWidgets.QAction('Add command', self)
+        self.add_single = QtGui.QAction('Add single button', self)
+        self.add_multiple = QtGui.QAction('Add multiple buttons', self)
+        self.update_button = QtGui.QAction('Update button', self)
+        self.add_command = QtGui.QAction('Add command', self)
         text = 'Delete selected button(s)'
-        self.delete_selected = QtWidgets.QAction(text, self)
+        self.delete_selected = QtGui.QAction(text, self)
 
         self.addAction(self.add_single)
         self.addAction(self.add_multiple)
@@ -450,9 +450,9 @@ class VisibilityLayersMenu(QtWidgets.QMenu):
         layers = sorted(
             {s.visibility_layer() for s in shapes if s.visibility_layer()})
         self.clear()
-        action = QtWidgets.QAction('Show all')
+        action = QtGui.QAction('Show all')
         for layer in layers:
-            action = QtWidgets.QAction(layer, self)
+            action = QtGui.QAction(layer, self)
             action.setCheckable(True)
             action.setChecked(layer not in self.hidden_layers)
             action.toggled.connect(partial(self.set_hidden_layer, layer))

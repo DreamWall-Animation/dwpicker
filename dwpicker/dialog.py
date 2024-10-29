@@ -1,7 +1,7 @@
 from functools import partial
 import os
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker.designer.highlighter import get_highlighter
