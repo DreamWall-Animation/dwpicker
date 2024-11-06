@@ -50,6 +50,12 @@ ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 WARN_ON_TAB_CLOSED = 'dwpicker_warn_on_tab_closed'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
 
+try:
+    check_for_update = int(cmds.about(majorVersion=True) != '2023')
+# cmds.about command for Maya prio 2022 does not have majorVersion argument.
+except TypeError:
+    check_for_update = 0
+
 
 OPTIONVARS = {
     AUTO_FOCUS_BEHAVIOR: AUTO_FOCUS_BEHAVIORS[-1],
@@ -62,7 +68,7 @@ OPTIONVARS = {
     # We disable this default feature for maya 2023. It seems that the github
     # request can cause a maya crash due to an incompatibility with the python
     # with this specific version of Maya.
-    CHECK_FOR_UPDATE: int(cmds.about(majorVersion=True) != '2023'),
+    CHECK_FOR_UPDATE: check_for_update,
     CUSTOM_PROD_PICKER_DIRECTORY: '',
     DEFAULT_BG_COLOR: '#777777',
     DEFAULT_HEIGHT: 20,
