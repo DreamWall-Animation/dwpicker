@@ -41,6 +41,10 @@ def ensure_retro_compatibility(picker_data):
                 any(cmd['enabled'] for cmd in shape['action.commands']) or
                 shape['action.targets'])
 
+    if tuple(version) < (0, 12, 0):
+        for shape in picker_data['shapes']:
+            shape['action.menu_commands'] = []
+
     return picker_data
 
 

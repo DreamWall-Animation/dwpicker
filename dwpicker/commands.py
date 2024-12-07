@@ -1,12 +1,58 @@
 from copy import deepcopy
 from PySide2 import QtWidgets, QtCore
-from dwpicker.templates import COMMAND
+from dwpicker.templates import COMMAND, MENU_COMMAND
 from dwpicker.qtutils import icon
-from dwpicker.dialog import CommandEditorDialog
+from dwpicker.dialog import CommandEditorDialog, MenuCommandEditorDialog
+
+
+class CommandItemWidget(QtWidgets.QWidget):
+    editRequested = QtCore.Signal(object)
+    deletedRequested = QtCore.Signal(object)
+
+    def __init__(self, command, parent=None):
+        super(CommandItemWidget, self).__init__(parent)
+
+        self.command = command
+        self.label = QtWidgets.QLabel(self.get_label())
+        self.edit = QtWidgets.QPushButton(icon('edit2.png'), '')
+        self.edit.released.connect(lambda: self.editRequested.emit(self))
+        self.delete = QtWidgets.QPushButton(icon('delete2.png'), '')
+        self.delete.released.connect(lambda: self.deletedRequested.emit(self))
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.label)
+        layout.addStretch()
+        layout.addWidget(self.edit)
+        layout.addWidget(self.delete)
+
+    def get_label(self):
+        print(self, self.command)
+        language = '<a style="color: #FFFF00"><i>({0})</i></a>'.format(
+            self.command['language'])
+        touchs = [self.command['button'] + 'Click']
+        touchs.extend([m for m in ('ctrl', 'shift') if self.command[m]])
+        return '{} {}'.format('+'.join(touchs), language)
+
+    def update_label(self):
+        self.label.setText(self.get_label())
+
+
+class MenuCommandItemWidget(CommandItemWidget):
+
+    def get_label(self):
+        language = '<a style="color: #FFFF00"><i>({0})</i></a>'.format(
+            self.command['language'])
+        return '{} {}'.format(self.command['caption'], language)
 
 
 class CommandsEditor(QtWidgets.QWidget):
     valueSet = QtCore.Signal(object)
+    edit_dialog_constructor = CommandEditorDialog
+    picker_command_key = 'action.commands'
+    template = COMMAND
+    item_constructor = CommandItemWidget
 
     def __init__(self, parent=None):
         super(CommandsEditor, self).__init__(parent)
@@ -37,19 +83,20 @@ class CommandsEditor(QtWidgets.QWidget):
             return
         self.warning.setVisible(False)
         self.add_command.setEnabled(True)
-        for command in options[0]['action.commands']:
+        for command in options[0][self.picker_command_key]:
+            # print(self, self.picker_command_key, command)
             self.call_add_command(command)
 
     def call_create_command(self):
-        command = deepcopy(COMMAND)
-        dialog = CommandEditorDialog(command)
+        command = deepcopy(self.template)
+        dialog = self.edit_dialog_constructor(command)
         if not dialog.exec_():
             return
         self.call_add_command(dialog.command_data())
         self.valueSet.emit(self.commands_data())
 
     def call_add_command(self, command=None):
-        widget = CommandItemWidget(command)
+        widget = self.item_constructor(command)
         widget.editRequested.connect(self.edit_command)
         widget.deletedRequested.connect(self.delete_command)
         item = QtWidgets.QListWidgetItem()
@@ -67,7 +114,7 @@ class CommandsEditor(QtWidgets.QWidget):
             item = self.commands.item(r)
             if item.widget != widget:
                 continue
-            dialog = CommandEditorDialog(item.widget.command)
+            dialog = self.edit_dialog_constructor(item.widget.command)
             if not dialog.exec_():
                 return
             widget.command = dialog.command_data()
@@ -89,34 +136,8 @@ class CommandsEditor(QtWidgets.QWidget):
             for r in range(self.commands.count())]
 
 
-class CommandItemWidget(QtWidgets.QWidget):
-    editRequested = QtCore.Signal(object)
-    deletedRequested = QtCore.Signal(object)
-
-    def __init__(self, command, parent=None):
-        super(CommandItemWidget, self).__init__(parent)
-
-        self.command = command
-        self.label = QtWidgets.QLabel(self.get_label())
-        self.edit = QtWidgets.QPushButton(icon('edit2.png'), '')
-        self.edit.released.connect(lambda: self.editRequested.emit(self))
-        self.delete = QtWidgets.QPushButton(icon('delete2.png'), '')
-        self.delete.released.connect(lambda: self.deletedRequested.emit(self))
-
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(self.label)
-        layout.addStretch()
-        layout.addWidget(self.edit)
-        layout.addWidget(self.delete)
-
-    def get_label(self):
-        language = '<a style="color: #FFFF00"><i>({0})</i></a>'.format(
-            self.command['language'])
-        touchs = [self.command['button'] + 'Click']
-        touchs.extend([m for m in ('ctrl', 'shift') if self.command[m]])
-        return '{} {}'.format('+'.join(touchs), language)
-
-    def update_label(self):
-        self.label.setText(self.get_label())
+class MenuCommandsEditor(CommandsEditor):
+    edit_dialog_constructor = MenuCommandEditorDialog
+    picker_command_key = 'action.menu_commands'
+    template = MENU_COMMAND
+    item_constructor = MenuCommandItemWidget

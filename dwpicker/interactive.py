@@ -6,17 +6,11 @@ from dwpicker.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,
     get_bottomright_rect, get_left_side_rect, get_right_side_rect,
     get_top_side_rect, get_bottom_side_rect, proportional_rect)
-from dwpicker.languages import execute_code
+from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.painting import (
     draw_selection_square, draw_manipulator, get_hovered_path)
 from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
-
-
-EXCECUTION_WARNING = """\
-Code execution failed for shape: "{name}"
-{error}.
-"""
 
 
 class SelectionSquare():
@@ -162,8 +156,10 @@ class Shape():
                     compact_undo=command['force_compact_undo'])
             except Exception as e:
                 import traceback
-                print(EXCECUTION_WARNING.format(
-                    name=self.options['text.content'], error=e))
+                print(EXECUTION_WARNING.format(
+                    object='shape',
+                    name=self.options['text.content'],
+                    error=e))
                 print(traceback.format_exc())
 
     def select(self, selection_mode='replace'):
@@ -178,6 +174,11 @@ class Shape():
     def is_interactive(self):
         return bool(
             [cmd for cmd in self.options['action.commands'] if cmd['enabled']])
+
+    def has_right_click_command(self):
+        return bool([
+            cmd for cmd in self.options['action.commands']
+            if cmd['enabled'] and cmd['button'] == 'right'])
 
     def is_background(self):
         return self.options['background']

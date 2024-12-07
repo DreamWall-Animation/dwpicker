@@ -7,6 +7,7 @@ from PySide2 import QtWidgets, QtGui, QtCore
 from dwpicker.interactive import SelectionSquare
 from dwpicker.dialog import warning
 from dwpicker.geometry import split_line, get_combined_rects
+from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
 from dwpicker.painting import ViewportMapper, draw_shape
@@ -14,7 +15,6 @@ from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
     NameclashError)
-
 
 def align_shapes_on_line(shapes, point1, point2):
     centers = split_line(point1, point2, len(shapes))
@@ -56,9 +56,11 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
             # I the physically hovered buttons contains targets, this will
             # highlight all buttons containing similare targets.
             state = next((False for t in s.targets() if t not in targets), True)
-        elif s.is_interactive():
+        elif not s.is_background():
             # Simple highlighting method for the interactive buttons.
             state = s in selection_shapes_intersect_selection
+        else:
+            state = False
         s.hovered = state
 
 
@@ -190,7 +192,7 @@ class PickerView(QtWidgets.QWidget):
         elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
             show_context = (
                 self.mode_manager.right_click_pressed and
-                not self.clicked_shape.is_interactive())
+                not self.clicked_shape.has_right_click_command())
             left_clicked = self.mode_manager.left_click_pressed
             if show_context:
                 self.call_context_menu()
@@ -279,7 +281,7 @@ class PickerView(QtWidgets.QWidget):
         if not self.editable:
             return
 
-        self.context_menu = PickerMenu()
+        self.context_menu = PickerMenu(self.clicked_shape)
         position = get_cursor(self)
 
         method = partial(self.add_button, position, button_type=0)
@@ -304,7 +306,23 @@ class PickerView(QtWidgets.QWidget):
 
         if self.layers_menu.displayed:
             self.context_menu.addMenu(self.layers_menu)
-        self.context_menu.exec_(QtGui.QCursor.pos())
+
+        action = self.context_menu.exec_(QtGui.QCursor.pos())
+        if isinstance(action, CommandAction):
+            self.execute_menu_command(action.command)
+
+    def execute_menu_command(self, command):
+        try:
+            execute_code(
+                language=command['language'],
+                code=command['command'],
+                deferred=command['deferred'],
+                compact_undo=command['force_compact_undo'])
+        except Exception as e:
+            import traceback
+            print(EXECUTION_WARNING.format(
+                name=self.options['text.content'], error=e))
+            print(traceback.format_exc())
 
     def add_button(self, position, button_type=0):
         """
@@ -339,9 +357,21 @@ class PickerView(QtWidgets.QWidget):
             painter.end()
 
 
+class CommandAction(QtWidgets.QAction):
+    def __init__(self, command, parent=None):
+        super().__init__(command['caption'], parent)
+        self.command = command
+
+
 class PickerMenu(QtWidgets.QMenu):
-    def __init__(self, parent=None):
+    def __init__(self, shape=None, parent=None):
         super(PickerMenu, self).__init__(parent)
+
+        if shape and shape.options['action.menu_commands']:
+            for command in shape.options['action.menu_commands']:
+                self.addAction(CommandAction(command, self))
+            self.addSeparator()
+
         self.add_single = QtWidgets.QAction('Add single button', self)
         self.add_multiple = QtWidgets.QAction('Add multiple buttons', self)
         self.update_button = QtWidgets.QAction('Update button', self)

@@ -3,7 +3,7 @@ from functools import partial
 from PySide2 import QtCore, QtWidgets
 
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.commands import CommandsEditor
+from dwpicker.commands import CommandsEditor, MenuCommandsEditor
 from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.widgets import (
     BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
@@ -435,6 +435,10 @@ class ActionSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'action.commands')
         self._commands.valueSet.connect(method)
 
+        self._menu = MenuCommandsEditor()
+        method = partial(self.optionSet.emit, 'action.menu_commands')
+        self._menu.valueSet.connect(method)
+
         form = QtWidgets.QFormLayout()
         form.setSpacing(0)
         form.setContentsMargins(0, 0, 0, 0)
@@ -451,6 +455,8 @@ class ActionSettings(QtWidgets.QWidget):
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
+        self.layout.addWidget(Title('Right Click Menu'))
+        self.layout.addWidget(self._menu)
 
     def targets(self):
         targets = str(self._targets.text())
@@ -499,7 +505,7 @@ class ActionSettings(QtWidgets.QWidget):
     def set_options(self, options):
         values = list({o for opt in options for o in opt['action.targets']})
         self._targets.setText(", ".join(sorted(values)))
-        self._commands.set_options(options)
+        self._menu.set_options(options)
 
 
 class TextSettings(QtWidgets.QWidget):

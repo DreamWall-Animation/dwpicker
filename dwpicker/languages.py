@@ -24,6 +24,12 @@ undoInfo -closeChunk;
 """
 
 
+EXECUTION_WARNING = """\
+Code execution failed for {object}: "{name}"
+{error}.
+"""
+
+
 def execute_code(language, code, deferred=False, compact_undo=False):
     return EXECUTORS[language](code, deferred, compact_undo)
 

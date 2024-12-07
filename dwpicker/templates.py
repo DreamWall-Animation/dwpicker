@@ -32,6 +32,7 @@ BUTTON = {
     'text.halign': 'center',  # or 'left' or 'right'
     'action.targets': [],
     'action.commands': [],
+    'action.menu_commands': [],
     'image.path': '',
     'image.fit': True,
     'image.height': 32,
@@ -69,6 +70,7 @@ TEXT = {
     'text.halign': 'left',  # or 'left' or 'right'
     'action.targets': [],
     'action.commands': [],
+    'action.menu_commands': [],
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
@@ -106,6 +108,7 @@ BACKGROUND = {
     'text.halign': 'center',  # or 'left' or 'right'
     'action.targets': [],
     'action.commands': [],
+    'action.menu_commands': [],
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
@@ -119,6 +122,15 @@ COMMAND = {
     'command': '',
     'ctrl': False,
     'shift': False,
+    'deferred': False,
+    'force_compact_undo': False,
+}
+
+
+MENU_COMMAND = {
+    'caption': '',
+    'language': 'python',  # or mel
+    'command': '',
     'deferred': False,
     'force_compact_undo': False,
 }

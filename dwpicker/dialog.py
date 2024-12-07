@@ -443,3 +443,71 @@ class CommandEditorDialog(QtWidgets.QDialog):
             'shift': self.shift.isChecked(),
             'deferred': self.eval_deferred.isChecked(),
             'force_compact_undo': self.unique_undo.isChecked()}
+
+
+class MenuCommandEditorDialog(QtWidgets.QDialog):
+
+    def __init__(self, command, parent=None):
+        super(MenuCommandEditorDialog, self).__init__(parent)
+        self.setWindowTitle('Edit/Create command')
+        self.languages = QtWidgets.QComboBox()
+        self.languages.addItems([MEL, PYTHON])
+        self.languages.setCurrentText(command['language'])
+        self.languages.currentIndexChanged.connect(self.language_changed)
+
+        self.eval_deferred = QtWidgets.QCheckBox('Eval deferred (python only)')
+        self.eval_deferred.setChecked(command['deferred'])
+        self.unique_undo = QtWidgets.QCheckBox('Unique undo')
+        self.unique_undo.setChecked(command['force_compact_undo'])
+
+        self.caption = QtWidgets.QLineEdit()
+        self.caption.setText(command['caption'])
+
+        self.command = QtWidgets.QTextEdit()
+        self.command.setFixedHeight(100)
+        self.command.setPlainText(command['command'])
+
+        self.ok = QtWidgets.QPushButton('Ok')
+        self.ok.released.connect(self.accept)
+        self.cancel = QtWidgets.QPushButton('Cancel')
+        self.cancel.released.connect(self.reject)
+
+        form = QtWidgets.QFormLayout()
+        form.setSpacing(0)
+        form.addRow('Caption', self.caption)
+        form.addRow('Language', self.languages)
+
+        options_group = QtWidgets.QGroupBox('Options')
+        options_layout = QtWidgets.QVBoxLayout(options_group)
+        options_layout.addWidget(self.eval_deferred)
+        options_layout.addWidget(self.unique_undo)
+        options_layout.addLayout(form)
+
+        code = QtWidgets.QGroupBox('Code')
+        code_layout = QtWidgets.QVBoxLayout(code)
+        code_layout.setSpacing(0)
+        code_layout.addWidget(self.command)
+
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addStretch(1)
+        buttons_layout.addWidget(self.ok)
+        buttons_layout.addWidget(self.cancel)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(options_group)
+        layout.addWidget(code)
+        layout.addLayout(buttons_layout)
+        self.language_changed()
+
+    def language_changed(self, *_):
+        language = self.languages.currentText()
+        highlighter = get_highlighter(language)
+        highlighter(self.command.document())
+
+    def command_data(self):
+        return {
+            'caption': self.caption.text(),
+            'language': self.languages.currentText(),
+            'command': self.command.toPlainText(),
+            'deferred': self.eval_deferred.isChecked(),
+            'force_compact_undo': self.unique_undo.isChecked()}
