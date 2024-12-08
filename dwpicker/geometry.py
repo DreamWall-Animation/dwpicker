@@ -413,8 +413,8 @@ def resize_rect_with_direction(rect, cursor, direction, force_square=False):
 
 
 class Transform:
-    def __init__(self):
-        self.snap = None
+    def __init__(self, snap=None):
+        self.snap = snap
         self.direction = None
         self.rect = None
         self.mode = None
@@ -483,7 +483,7 @@ class Transform:
 def snap(x, y, snap):
     x = snap[0] * round(x / snap[0])
     y = snap[1] * round(y / snap[1])
-    return x, y
+    return round(x), round(y)
 
 
 def get_combined_rects(rects):

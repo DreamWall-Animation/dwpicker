@@ -140,6 +140,4 @@ PICKER = {
     'name': 'Untitled',
     'version': VERSION,
     'zoom_locked': False,
-    'width': 900,
-    'height': 600,
 }

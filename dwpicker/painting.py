@@ -17,30 +17,76 @@ def factor_sensitivity(factor):
 
 def draw_editor(painter, rect, snap=None, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
-    rect = viewportmapper.to_viewport_rect(rect)
-    # draw border
     pen = QtGui.QPen(QtGui.QColor('#333333'))
-    pen.setStyle(QtCore.Qt.DashDotLine)
-    pen.setWidthF(viewportmapper.to_viewport(3))
+    pen.setWidthF(2)
     brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
     painter.setPen(pen)
     painter.setBrush(brush)
     painter.drawRect(rect)
-
     if snap is None:
         return
-    # draw snap grid
-    snap = viewportmapper.to_viewport(snap[0]), viewportmapper.to_viewport(snap[1])
+
+    if viewportmapper.zoom < 0.5:
+        snap = snap[0] * 2, snap[1] * 2
+
     pen = QtGui.QPen(QtGui.QColor('red'))
+    pen.setWidth(1 if viewportmapper.zoom < 1 else 2 if viewportmapper.zoom < 3 else 3)
     painter.setPen(pen)
-    x = 0
-    y = 0
-    while y < rect.bottom():
-        painter.drawPoint(x, y)
+    rect = viewportmapper.to_units_rect(rect)
+    x_start = ((rect.left() // snap[0]) * snap[0])
+    if x_start < rect.left():
+        x_start += snap[0]
+
+    y_start = ((rect.top() // snap[1]) * snap[1])
+    if y_start < rect.top():
+        y_start += snap[1]
+
+    x = x_start
+    while x <= rect.right():
+        if x >= rect.left():
+            y = y_start
+            while y <= rect.bottom():
+                if y >= rect.top():
+                    point = QtCore.QPoint(*(x, y))
+                    painter.drawPoint(viewportmapper.to_viewport_coords(point))
+                y += snap[1]
         x += snap[0]
-        if x > rect.right():
-            x = 0
-            y += snap[1]
+
+
+def points_intersection_grille(rectangle_pos, rectangle_width, rectangle_height, horizontal_spacing, vertical_spacing):
+    """
+    Calcule les points d'intersection de la grille à l'intérieur d'un rectangle donné.
+
+    Args:
+    - rectangle_pos (tuple): Coordonnées du coin supérieur gauche du rectangle (x, y).
+    - rectangle_width (float): Largeur du rectangle.
+    - rectangle_height (float): Hauteur du rectangle.
+    - horizontal_spacing (float): Écart entre les lignes verticales de la grille.
+    - vertical_spacing (float): Écart entre les lignes horizontales de la grille.
+
+    Returns:
+    - list[tuple]: Liste des points d'intersection (x, y) qui se trouvent à l'intérieur du rectangle.
+    """
+    x_min, y_min = rectangle_pos
+    x_max = x_min + rectangle_width
+    y_max = y_min + rectangle_height
+
+    points = []
+
+    # Itérer sur les coordonnées x de la grille
+    x = 0
+    while x <= x_max:
+        if x >= x_min:  # Vérifie si x est dans la portée horizontale du rectangle
+            # Itérer sur les coordonnées y de la grille
+            y = 0
+            while y <= y_max:
+                if y >= y_min:  # Vérifie si y est dans la portée verticale du rectangle
+                    points.append((x, y))
+                y += vertical_spacing
+        x += horizontal_spacing
+
+    return points
+
 
 
 def draw_shape(painter, shape, viewportmapper=None):
@@ -114,6 +160,7 @@ def draw_selection_square(painter, rect, viewportmapper=None):
 
 def draw_manipulator(painter, manipulator, cursor, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
+    cursor = viewportmapper.to_units_coords(cursor).toPoint()
     hovered = manipulator.hovered_rects(cursor)
 
     if manipulator.rect in hovered:
@@ -122,7 +169,8 @@ def draw_manipulator(painter, manipulator, cursor, viewportmapper=None):
         brush.setStyle(QtCore.Qt.FDiagPattern)
         painter.setPen(pen)
         painter.setBrush(brush)
-        painter.drawPath(manipulator.hovered_path)
+        rect = viewportmapper.to_viewport_rect(manipulator.rect)
+        painter.drawPath(get_hovered_path(rect))
 
     pen = QtGui.QPen(QtGui.QColor('black'))
     brush = QtGui.QBrush(QtGui.QColor('white'))

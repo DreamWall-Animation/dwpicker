@@ -49,12 +49,13 @@ DreamWall Picker
     Release date: {release}
     Authors: Lionel Brouyère, Olivier Evers
     Contributor(s):
-        Herizoran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk)
+        Herizoran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk),
+        Markus Ng, Jerome Drese
 
 Features:
     Animation picker widget.
     Quick picker creation.
-    Advanced picker editin.
+    Advanced picker editing.
     Read AnimSchoolPicker files (december 2021 version and latest)
     Free and open source, today and forever.
 
@@ -631,6 +632,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.editors[index] = editor
 
         self.editors[index].show()
+        self.editors[index].shape_editor.focus()
 
     def call_next_tab(self):
         index = self.tab.currentIndex() + 1

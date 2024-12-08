@@ -13,7 +13,6 @@ from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
 from dwpicker.interactive import Shape, get_shape_rect_from_options
 from dwpicker.geometry import get_combined_rects, rect_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
-from dwpicker.picker import frame_shapes
 from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
@@ -44,31 +43,18 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.selectedShapesChanged.connect(self.selection_changed)
         method = self.set_data_modified
         self.shape_editor.increaseUndoStackRequested.connect(method)
-        self.scrollarea = QtWidgets.QScrollArea()
-        alignment = QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter
-        self.scrollarea.setFocusPolicy(QtCore.Qt.NoFocus)
-        policy = QtWidgets.QSizePolicy.Expanding
-        self.scrollarea.setSizePolicy(policy, policy)
-        # HACK: Stupid hack to force scroll area to fix layout size.
-        self.scrollarea.sizeHint = lambda: QtCore.QSize(10000, 10000)
-        self.scrollarea.setAlignment(alignment)
-        self.scrollarea.setWidget(self.shape_editor)
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
         self.menu.copySettingsRequested.connect(self.copy_settings)
         self.menu.deleteRequested.connect(self.delete_selection)
-        self.menu.frameShapes.connect(self.frame_shapes)
         self.menu.pasteRequested.connect(self.paste)
         self.menu.pasteSettingsRequested.connect(self.paste_settings)
-        self.menu.sizeChanged.connect(self.editor_size_changed)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
 
         method = self.shape_editor.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
-        width, height = self.options['width'], self.options['height']
-        self.menu.set_size_values(width, height)
         self.menu.undoRequested.connect(self.undo)
         self.menu.redoRequested.connect(self.redo)
         method = partial(self.create_shape, BUTTON)
@@ -100,6 +86,7 @@ class PickerEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+D", self.shape_editor, self.deselect_all)
         set_shortcut("Ctrl+A", self.shape_editor, self.select_all)
         set_shortcut("Ctrl+I", self.shape_editor, self.invert_selection)
+        set_shortcut("F", self.shape_editor, self.shape_editor.focus)
         for direction in ['Left', 'Right', 'Up', 'Down']:
             method = partial(self.move_selection, direction)
             shortcut = set_shortcut(direction, self.shape_editor, method)
@@ -118,9 +105,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.hlayout.setContentsMargins(0, 0, 0, 0)
-        self.hlayout.addStretch(1)
-        self.hlayout.addWidget(self.scrollarea)
-        self.hlayout.addStretch(1)
+        self.hlayout.addWidget(self.shape_editor)
         self.hlayout.addWidget(self.attribute_editor)
 
         self.vlayout = QtWidgets.QVBoxLayout(self)
@@ -155,7 +140,7 @@ class PickerEditor(QtWidgets.QWidget):
         shapes = self.shape_editor.shapes[-len(clipboard.get()):]
         self.shape_editor.selection.replace(shapes)
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def paste_settings(self):
         dialog = SettingsPaster()
@@ -170,7 +155,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.set_data_modified()
         self.selection_changed()
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def undo(self):
         result = self.undo_manager.undo()
@@ -191,13 +176,13 @@ class PickerEditor(QtWidgets.QWidget):
     def deselect_all(self):
         self.shape_editor.selection.clear()
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def select_all(self):
         shapes = self.shape_editor.list_shapes()
         self.shape_editor.selection.add(shapes)
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def invert_selection(self):
         self.shape_editor.selection.invert(self.shape_editor.shapes)
@@ -207,7 +192,7 @@ class PickerEditor(QtWidgets.QWidget):
                 if not s.is_background()]
             self.shape_editor.selection.set(shapes)
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def set_data_modified(self):
         self.undo_manager.set_data_modified(self.picker_data())
@@ -216,12 +201,12 @@ class PickerEditor(QtWidgets.QWidget):
     def use_snap(self, state):
         snap = self.menu.snap_values() if state else None
         self.shape_editor.transform.snap = snap
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def snap_value_changed(self):
         self.shape_editor.transform.snap = self.menu.snap_values()
         self.set_data_modified()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def generals_modified(self, key, value):
         self.options[key] = value
@@ -233,17 +218,10 @@ class PickerEditor(QtWidgets.QWidget):
     def option_set(self, option, value):
         for shape in self.shape_editor.selection:
             shape.options[option] = value
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
         if option == 'visibility_layer':
             self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
-
-    def editor_size_changed(self):
-        size = self.menu.get_size()
-        self.shape_editor.setFixedSize(size)
-        self.options['width'] = size.width()
-        self.options['height'] = size.height()
-        self.set_data_modified()
 
     def rect_modified(self, option, value):
         shapes = self.shape_editor.selection
@@ -277,26 +255,17 @@ class PickerEditor(QtWidgets.QWidget):
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
 
-    def frame_shapes(self):
-        shapes = self.shape_editor.shapes
-        width = self.options['width']
-        height = self.options['height']
-        frame_shapes(shapes)
-        width = int(ceil(max(s.rect.right() for s in shapes)))
-        height = int(ceil(max(s.rect.bottom() for s in shapes)))
-        self.shape_editor.repaint()
-        self.update_manipulator_rect()
-        # This mark data as changed, no need to repeat.
-        self.menu.set_size_values(width, height)
-
     def create_shape(
             self, template, before=False, position=None, targets=None):
         options = template.copy()
         shape = Shape(options)
         if not position:
-            shape.rect.moveCenter(self.shape_editor.rect().center())
+            center = self.shape_editor.rect().center()
+            center = self.shape_editor.viewportmapper.to_units_coords(center)
+            shape.rect.moveCenter(center)
         else:
-            shape.rect.moveTopLeft(position)
+            tl = self.shape_editor.viewportmapper.to_units_coords(position)
+            shape.rect.moveTopLeft(tl)
         if targets:
             shape.set_targets(targets)
         shape.synchronize_rect()
@@ -304,39 +273,38 @@ class PickerEditor(QtWidgets.QWidget):
             self.shape_editor.shapes.insert(0, shape)
         else:
             self.shape_editor.shapes.append(shape)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def update_targets(self, shape):
-        # shape = self.shape_editor.selection[0]
         shape.set_targets(cmds.ls(selection=True))
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def image_modified(self):
         for shape in self.shape_editor.selection:
             shape.synchronize_image()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def set_selection_move_down(self):
         array = self.shape_editor.shapes
         elements = self.shape_editor.selection
         move_down_array_elements(array, elements)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def set_selection_move_up(self):
         array = self.shape_editor.shapes
         elements = self.shape_editor.selection
         move_up_array_elements(array, elements)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def set_selection_on_top(self):
         array = self.shape_editor.shapes
         elements = self.shape_editor.selection
         self.shape_editor.shapes = move_elements_to_array_end(array, elements)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def set_selection_on_bottom(self):
@@ -344,7 +312,7 @@ class PickerEditor(QtWidgets.QWidget):
         elements = self.shape_editor.selection
         shapes = move_elements_to_array_begin(array, elements)
         self.shape_editor.shapes = shapes
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.set_data_modified()
 
     def delete_selection(self):
@@ -358,7 +326,7 @@ class PickerEditor(QtWidgets.QWidget):
         rects = [shape.rect for shape in self.shape_editor.selection]
         rect = get_combined_rects(rects)
         self.shape_editor.manipulator.set_rect(rect)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
 
     def picker_data(self):
         return {
@@ -371,7 +339,7 @@ class PickerEditor(QtWidgets.QWidget):
         shapes = [Shape(options) for options in picker_data['shapes']]
         self.shape_editor.shapes = shapes
         self.shape_editor.manipulator.set_rect(None)
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         if reset_stacks is True:
             self.undo_manager.reset_stacks()
 
@@ -383,7 +351,7 @@ class PickerEditor(QtWidgets.QWidget):
                 point=self.shape_editor.manipulator.rect.center(),
                 horizontal=horizontal)
             shape.synchronize_rect()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         if not cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR):
             self.set_data_modified()
             return
@@ -421,7 +389,7 @@ class PickerEditor(QtWidgets.QWidget):
                     command['command'] = result
 
         self.set_data_modified()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         return True
 
     def move_selection(self, direction):
@@ -437,7 +405,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.manipulator.update_geometries()
         for shape in self.shape_editor.selection:
             shape.synchronize_rect()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.shape_editor.selectedShapesChanged.emit()
         self.pickerDataModified.emit(self.picker_data())
 
@@ -448,7 +416,7 @@ class PickerEditor(QtWidgets.QWidget):
         rects = [s.rect for s in self.shape_editor.selection]
         self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
         self.shape_editor.manipulator.update_geometries()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.shape_editor.selectedShapesChanged.emit()
         self.pickerDataModified.emit(self.picker_data())
 
@@ -462,7 +430,7 @@ class PickerEditor(QtWidgets.QWidget):
         rects = [s.rect for s in self.shape_editor.selection]
         self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
         self.shape_editor.manipulator.update_geometries()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.shape_editor.selectedShapesChanged.emit()
         self.pickerDataModified.emit(self.picker_data())
 
@@ -547,7 +515,7 @@ class PickerEditor(QtWidgets.QWidget):
             if shape.visibility_layer() == layer]
         self.shape_editor.selection.set(shapes)
         self.shape_editor.update_selection()
-        self.shape_editor.repaint()
+        self.shape_editor.update()
         self.selection_changed()
 
     def remove_layer(self, layer):

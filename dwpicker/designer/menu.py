@@ -17,7 +17,6 @@ class MenuWidget(QtWidgets.QWidget):
     copySettingsRequested = QtCore.Signal()
     deleteRequested = QtCore.Signal()
     editCenterToggled = QtCore.Signal(bool)
-    frameShapes = QtCore.Signal()
     lockBackgroundShapeToggled = QtCore.Signal(bool)
     moveDownRequested = QtCore.Signal()
     moveUpRequested = QtCore.Signal()
@@ -27,7 +26,6 @@ class MenuWidget(QtWidgets.QWidget):
     pasteSettingsRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     searchAndReplaceRequested = QtCore.Signal()
-    sizeChanged = QtCore.Signal()
     snapValuesChanged = QtCore.Signal()
     symmetryRequested = QtCore.Signal(bool)
     undoRequested = QtCore.Signal()
@@ -76,16 +74,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.lock_bg.triggered.connect(self.save_ui_states)
         self.lock_bg.toggled.connect(self.lockBackgroundShapeToggled.emit)
 
-        validator = QtGui.QIntValidator()
-        self.picker_width = QtWidgets.QLineEdit('600')
-        self.picker_width.setFixedWidth(35)
-        self.picker_width.setValidator(validator)
-        self.picker_width.textEdited.connect(self.size_changed)
-        self.picker_height = QtWidgets.QLineEdit('300')
-        self.picker_height.setFixedWidth(35)
-        self.picker_height.setValidator(validator)
-        self.picker_height.textEdited.connect(self.size_changed)
-
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
         self.snap.setCheckable(True)
@@ -114,10 +102,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.addbg = QtWidgets.QAction(icon('addbg.png'), '', self)
         self.addbg.setToolTip('Add background shape')
         self.addbg.triggered.connect(self.addBackgroundRequested.emit)
-
-        self.frame_shapes = QtWidgets.QAction(icon('frame.png'), '', self)
-        self.frame_shapes.setToolTip('Frame buttons')
-        self.frame_shapes.triggered.connect(self.frameShapes.emit)
 
         icon_ = icon('onbottom.png')
         self.onbottom = QtWidgets.QAction(icon_, '', self)
@@ -191,15 +175,9 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addWidget(self.snapx)
         self.toolbar.addWidget(self.snapy)
         self.toolbar.addSeparator()
-        self.toolbar.addWidget(QtWidgets.QLabel('size'))
-        self.toolbar.addWidget(self.picker_width)
-        self.toolbar.addWidget(self.picker_height)
-        self.toolbar.addSeparator()
         self.toolbar.addAction(self.addbutton)
         self.toolbar.addAction(self.addtext)
         self.toolbar.addAction(self.addbg)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.frame_shapes)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.hsymmetry)
         self.toolbar.addAction(self.vsymmetry)
@@ -258,13 +236,3 @@ class MenuWidget(QtWidgets.QWidget):
     def snap_value_changed(self, _):
         self.snapValuesChanged.emit()
         self.save_ui_states()
-
-    def set_size_values(self, width, height):
-        self.picker_width.setText(str(width))
-        self.picker_height.setText(str(height))
-        self.sizeChanged.emit()
-
-    def get_size(self):
-        width = int(self.picker_width.text()) if self.picker_width.text() else 1
-        height = int(self.picker_height.text()) if self.picker_height.text() else 1
-        return QtCore.QSize(width, height)

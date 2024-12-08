@@ -45,6 +45,10 @@ def ensure_retro_compatibility(picker_data):
         for shape in picker_data['shapes']:
             shape['action.menu_commands'] = []
 
+    if tuple(version) < (0, 12, 1):
+        picker_data['general'].pop('width')
+        picker_data['general'].pop('height')
+
     return picker_data
 
 

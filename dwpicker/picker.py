@@ -4,12 +4,13 @@ from maya import cmds
 import maya.OpenMaya as om
 from PySide2 import QtWidgets, QtGui, QtCore
 
-from dwpicker.interactive import SelectionSquare
 from dwpicker.dialog import warning
+from dwpicker.interactive import SelectionSquare
+from dwpicker.interactionmanager import InteractionManager
 from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
-    SYNCHRONYZE_SELECTION, ZOOM_BUTTON, ZOOM_SENSITIVITY)
+    SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
 from dwpicker.painting import ViewportMapper, draw_shape
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
@@ -21,18 +22,6 @@ def align_shapes_on_line(shapes, point1, point2):
     for center, shape in zip(centers, shapes):
         shape.rect.moveCenter(center)
         shape.synchronize_rect()
-
-
-def frame_shapes(shapes):
-    offset_x = min(shape.rect.left() for shape in shapes)
-    offset_y = min(shape.rect.top() for shape in shapes)
-    offset = -min([offset_x, 0]), -min([offset_y, 0])
-
-    for shape in shapes:
-        shape.rect.moveLeft(shape.rect.left() + offset[0])
-        shape.rect.moveTop(shape.rect.top() + offset[1])
-        shape.synchronize_rect()
-        shape.synchronize_image()
 
 
 def set_shapes_hovered(shapes, cursor, selection_rect=None):
@@ -86,7 +75,7 @@ class PickerView(QtWidgets.QWidget):
         super(PickerView, self).__init__(parent)
         self.callbacks = []
         self.editable = editable
-        self.mode_manager = ModeManager()
+        self.interaction_manager = InteractionManager()
         self.viewportmapper = ViewportMapper()
         self.selection_square = SelectionSquare()
         self.layers_menu = VisibilityLayersMenu()
@@ -111,13 +100,13 @@ class PickerView(QtWidgets.QWidget):
         if not cmds.optionVar(query=SYNCHRONYZE_SELECTION):
             return
         select_shapes_from_selection(self.shapes)
-        self.repaint()
+        self.update()
 
     def set_shapes(self, shapes):
         self.shapes = shapes
-        self.mode_manager.shapes = shapes
+        self.interaction_manager.shapes = shapes
         self.layers_menu.set_shapes(shapes)
-        self.repaint()
+        self.update()
 
     def visible_shapes(self):
         return [
@@ -131,19 +120,19 @@ class PickerView(QtWidgets.QWidget):
         if not shapes_rects:
             shapes_rects = [s.rect for s in shapes]
         if not shapes_rects:
-            self.repaint()
+            self.update()
             return
         self.viewportmapper.viewsize = self.size()
         rect = get_combined_rects(shapes_rects)
         self.viewportmapper.focus(rect)
-        self.repaint()
+        self.update()
 
     def resizeEvent(self, event):
         self.viewportmapper.viewsize = self.size()
         size = (event.size() - event.oldSize()) / 2
         offset = QtCore.QPointF(size.width(), size.height())
         self.viewportmapper.origin -= offset
-        self.repaint()
+        self.update()
 
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)
@@ -152,69 +141,71 @@ class PickerView(QtWidgets.QWidget):
         shapes = self.visible_shapes()
         self.clicked_shape = detect_hovered_shape(shapes, cursor)
         hsh = any(s.hovered for s in self.shapes)
-        self.mode_manager.update(
+        self.interaction_manager.update(
             event,
             pressed=True,
             has_shape_hovered=hsh,
             dragging=bool(self.drag_shapes))
 
     def mouseReleaseEvent(self, event):
-        shift = self.mode_manager.shift_pressed
-        ctrl = self.mode_manager.ctrl_pressed
+        shift = self.interaction_manager.shift_pressed
+        ctrl = self.interaction_manager.ctrl_pressed
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
         cursor = self.viewportmapper.to_units_coords(event.pos()).toPoint()
-        zoom = self.mode_manager.zoom_button_pressed
+        zoom = self.interaction_manager.zoom_button_pressed
         shapes = self.visible_shapes()
         interact = (
             self.clicked_shape and
             self.clicked_shape is detect_hovered_shape(shapes, cursor) and
             self.clicked_shape.is_interactive())
 
-        if zoom and self.mode_manager.alt_pressed:
+        if zoom and self.interaction_manager.alt_pressed:
             self.release(event)
             return
 
-        if self.mode_manager.mode == ModeManager.DRAGGING:
+        if self.interaction_manager.mode == InteractionManager.DRAGGING:
             self.drag_shapes = []
             self.dataChanged.emit()
 
-        elif self.mode_manager.mode == ModeManager.SELECTION and not interact:
+        elif self.interaction_manager.mode == InteractionManager.SELECTION and not interact:
             try:
                 select_targets(self.shapes, selection_mode=selection_mode)
             except NameclashError as e:
                 warning('Selection Error', str(e), parent=self)
                 self.release(event)
                 return
+
         if not self.clicked_shape:
-            if self.mode_manager.right_click_pressed:
+            if self.interaction_manager.right_click_pressed:
                 self.call_context_menu()
 
         elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
             show_context = (
-                self.mode_manager.right_click_pressed and
+                self.interaction_manager.right_click_pressed and
                 not self.clicked_shape.has_right_click_command())
-            left_clicked = self.mode_manager.left_click_pressed
+            left_clicked = self.interaction_manager.left_click_pressed
             if show_context:
                 self.call_context_menu()
+
             elif left_clicked and self.clicked_shape.targets():
                 self.clicked_shape.select(selection_mode)
 
             if interact:
                 button = (
-                    'left' if self.mode_manager.left_click_pressed
+                    'left' if self.interaction_manager.left_click_pressed
                     else 'right')
                 self.clicked_shape.execute(
                     button=button,
-                    ctrl=self.mode_manager.ctrl_pressed,
-                    shift=self.mode_manager.shift_pressed)
+                    ctrl=self.interaction_manager.ctrl_pressed,
+                    shift=self.interaction_manager.shift_pressed)
 
         self.release(event)
 
     def release(self, event):
-        self.mode_manager.update(event, pressed=False)
+        self.interaction_manager.update(event, pressed=False)
         self.selection_square.release()
         self.clicked_shape = None
-        self.repaint()
+        self.update()
 
     def wheelEvent(self, event):
         # To center the zoom on the mouse, we save a reference mouse position
@@ -223,7 +214,7 @@ class PickerView(QtWidgets.QWidget):
             return
         factor = .25 if event.angleDelta().y() > 0 else -.25
         self.zoom(factor, event.pos())
-        self.repaint()
+        self.update()
 
     def zoom(self, factor, reference):
         abspoint = self.viewportmapper.to_units_coords(reference)
@@ -246,36 +237,36 @@ class PickerView(QtWidgets.QWidget):
             self.viewportmapper.to_units_coords(event.pos()),
             selection_rect)
 
-        if self.mode_manager.mode == ModeManager.DRAGGING:
+        if self.interaction_manager.mode == InteractionManager.DRAGGING:
             point1 = self.viewportmapper.to_units_coords(
-                self.mode_manager.anchor)
+                self.interaction_manager.anchor)
             point2 = self.viewportmapper.to_units_coords(event.pos())
             align_shapes_on_line(self.drag_shapes, point1, point2)
 
-        elif self.mode_manager.mode == ModeManager.SELECTION:
+        elif self.interaction_manager.mode == InteractionManager.SELECTION:
             if not self.selection_square.handeling:
                 self.selection_square.clicked(event.pos())
             self.selection_square.handle(event.pos())
-            return self.repaint()
+            return self.update()
 
-        elif self.mode_manager.mode == ModeManager.ZOOMING:
+        elif self.interaction_manager.mode == InteractionManager.ZOOMING:
             if self.zoom_locked:
-                return self.repaint()
-            offset = self.mode_manager.mouse_offset(event.pos())
-            if offset is not None and self.mode_manager.zoom_anchor:
+                return self.update()
+            offset = self.interaction_manager.mouse_offset(event.pos())
+            if offset is not None and self.interaction_manager.zoom_anchor:
                 sensitivity = float(cmds.optionVar(query=ZOOM_SENSITIVITY))
                 factor = (offset.x() + offset.y()) / sensitivity
-                self.zoom(factor, self.mode_manager.zoom_anchor)
+                self.zoom(factor, self.interaction_manager.zoom_anchor)
 
-        elif self.mode_manager.mode == ModeManager.NAVIGATION:
+        elif self.interaction_manager.mode == InteractionManager.NAVIGATION:
             if self.zoom_locked:
-                return self.repaint()
-            offset = self.mode_manager.mouse_offset(event.pos())
+                return self.update()
+            offset = self.interaction_manager.mouse_offset(event.pos())
             if offset is not None:
                 self.viewportmapper.origin = (
                     self.viewportmapper.origin - offset)
 
-        self.repaint()
+        self.update()
 
     def call_context_menu(self):
         if not self.editable:
@@ -386,88 +377,6 @@ class PickerMenu(QtWidgets.QMenu):
         self.addAction(self.add_command)
         self.addSeparator()
         self.addAction(self.delete_selected)
-
-
-class ModeManager:
-    FLY_OVER = 'fly_over'
-    SELECTION = 'selection'
-    NAVIGATION = 'navigation'
-    DRAGGING = 'dragging'
-    ZOOMING = 'zooming'
-
-    def __init__(self):
-        self.shapes = []
-        self.left_click_pressed = False
-        self.right_click_pressed = False
-        self.middle_click_pressed = False
-        self.mouse_ghost = None
-        self.has_shape_hovered = False
-        self.dragging = False
-        self.anchor = None
-        self.zoom_anchor = None
-
-    @property
-    def ctrl_pressed(self):
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-        return modifiers == (modifiers | QtCore.Qt.ControlModifier)
-
-    @property
-    def shift_pressed(self):
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-        return modifiers == (modifiers | QtCore.Qt.ShiftModifier)
-
-    @property
-    def alt_pressed(self):
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-        return modifiers == (modifiers | QtCore.Qt.AltModifier)
-
-    def update(
-            self,
-            event,
-            pressed=False,
-            has_shape_hovered=False,
-            dragging=False):
-
-        self.dragging = dragging
-        self.has_shape_hovered = has_shape_hovered
-        self.update_mouse(event, pressed)
-
-    def update_mouse(self, event, pressed):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.left_click_pressed = pressed
-            self.anchor = event.pos() if self.dragging else None
-        elif event.button() == QtCore.Qt.RightButton:
-            self.right_click_pressed = pressed
-        elif event.button() == QtCore.Qt.MiddleButton:
-            self.middle_click_pressed = pressed
-        if self.zoom_button_pressed:
-            self.zoom_anchor = event.pos() if pressed else None
-
-    @property
-    def mode(self):
-        if self.dragging:
-            return ModeManager.DRAGGING
-        elif self.zoom_button_pressed and self.alt_pressed:
-            return ModeManager.ZOOMING
-        elif self.middle_click_pressed:
-            return ModeManager.NAVIGATION
-        elif self.left_click_pressed:
-            return ModeManager.SELECTION
-        self.mouse_ghost = None
-        return ModeManager.FLY_OVER
-
-    def mouse_offset(self, position):
-        result = position - self.mouse_ghost if self.mouse_ghost else None
-        self.mouse_ghost = position
-        return result or None
-
-    @property
-    def zoom_button_pressed(self):
-        button = cmds.optionVar(query=ZOOM_BUTTON)
-        return any((
-            button == 'left' and self.left_click_pressed,
-            button == 'middle' and self.middle_click_pressed,
-            button == 'right' and self.right_click_pressed))
 
 
 class VisibilityLayersMenu(QtWidgets.QMenu):

@@ -7,8 +7,6 @@ from dwpicker.geometry import (
     get_bottomright_rect, get_left_side_rect, get_right_side_rect,
     get_top_side_rect, get_bottom_side_rect, proportional_rect)
 from dwpicker.languages import execute_code, EXECUTION_WARNING
-from dwpicker.painting import (
-    draw_selection_square, draw_manipulator, get_hovered_path)
 from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
 
@@ -34,11 +32,6 @@ class SelectionSquare():
             return False
         return self.rect.intersects(rect)
 
-    def draw(self, painter):
-        if self.rect is None:
-            return
-        draw_selection_square(painter, self.rect)
-
 
 class Manipulator():
     def __init__(self):
@@ -53,8 +46,6 @@ class Manipulator():
         self._r_side_rect = None
         self._t_side_rect = None
         self._b_side_rect = None
-
-        self.hovered_path = None
 
     @property
     def rect(self):
@@ -96,11 +87,6 @@ class Manipulator():
         self._r_side_rect = get_right_side_rect(rect) if rect else None
         self._t_side_rect = get_top_side_rect(rect) if rect else None
         self._b_side_rect = get_bottom_side_rect(rect) if rect else None
-        self.hovered_path = get_hovered_path(rect) if rect else None
-
-    def draw(self, painter, cursor):
-        if self.rect is not None and all(self.handler_rects()):
-            draw_manipulator(painter, self, cursor)
 
 
 def get_shape_rect_from_options(options):

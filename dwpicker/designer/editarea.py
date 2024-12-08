@@ -1,10 +1,21 @@
 from PySide2 import QtCore, QtGui, QtWidgets
+from maya import cmds
 
 from dwpicker.interactive import Manipulator, SelectionSquare
-from dwpicker.geometry import Transform, get_combined_rects
-from dwpicker.painting import draw_editor, draw_shape
+from dwpicker.interactionmanager import InteractionManager
+from dwpicker.optionvar import SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS
+from dwpicker.geometry import Transform, ViewportMapper, get_combined_rects
+from dwpicker.painting import draw_editor, draw_shape, draw_manipulator, draw_selection_square
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
+
+
+def load_saved_snap():
+    if not cmds.optionVar(query=SNAP_ITEMS):
+        return
+    return (
+        cmds.optionVar(query=SNAP_GRID_X),
+        cmds.optionVar(query=SNAP_GRID_Y))
 
 
 class ShapeEditArea(QtWidgets.QWidget):
@@ -15,26 +26,55 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
-        self.setFixedSize(750, 550)
         self.setMouseTracking(True)
         self.options = options
+
+        self.viewportmapper = ViewportMapper()
+        self.viewportmapper.viewsize = self.size()
+
+        self.interaction_manager = InteractionManager()
 
         self.selection = Selection()
         self.selection_square = SelectionSquare()
         self.manipulator = Manipulator()
-        self.transform = Transform()
+        self.transform = Transform(load_saved_snap())
 
         self.shapes = []
         self.clicked_shape = None
-        self.clicked = False
-        self.selecting = False
-        self.handeling = False
         self.manipulator_moved = False
         self.increase_undo_on_release = False
         self.lock_background_shape = True
 
         self.ctrl_pressed = False
         self.shit_pressed = False
+
+    def wheelEvent(self, event):
+        # To center the zoom on the mouse, we save a reference mouse position
+        # and compare the offset after zoom computation.
+        factor = .25 if event.angleDelta().y() > 0 else -.25
+        self.zoom(factor, event.pos())
+        self.update()
+
+    def focus(self):
+        shapes = [s for s in self.shapes if s.selected] or self.shapes
+        shapes_rects = [s.rect for s in shapes]
+        if not shapes_rects:
+            self.update()
+            return
+        self.viewportmapper.viewsize = self.size()
+        rect = get_combined_rects(shapes_rects)
+        self.viewportmapper.focus(rect)
+        self.update()
+
+    def zoom(self, factor, reference):
+        abspoint = self.viewportmapper.to_units_coords(reference)
+        if factor > 0:
+            self.viewportmapper.zoomin(abs(factor))
+        else:
+            self.viewportmapper.zoomout(abs(factor))
+        relcursor = self.viewportmapper.to_viewport_coords(abspoint)
+        vector = relcursor - reference
+        self.viewportmapper.origin = self.viewportmapper.origin + vector
 
     def set_lock_background_shape(self, state):
         self.lock_background_shape = state
@@ -53,11 +93,8 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
-        if event.button() != QtCore.Qt.LeftButton:
-            return
 
-        cursor = get_cursor(self)
-        self.clicked = True
+        cursor = self.viewportmapper.to_units_coords(get_cursor(self))
         hovered_shape = self.get_hovered_shape(cursor)
         self.transform.direction = self.manipulator.get_direction(cursor)
 
@@ -80,13 +117,25 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.transform.reference_rect = QtCore.QRect(self.manipulator.rect)
             self.transform.set_reference_point(cursor)
 
-        self.handeling = bool(hovered_shape) or self.transform.direction
-        self.selecting = not self.handeling and self.clicked
-        self.repaint()
+        self.update()
 
-    def mouseMoveEvent(self, _):
-        cursor = get_cursor(self)
-        if self.handeling:
+        self.interaction_manager.update(
+            event,
+            pressed=True,
+            has_shape_hovered=bool(hovered_shape),
+            dragging=bool(hovered_shape) or self.transform.direction)
+
+    def resizeEvent(self, event):
+        self.viewportmapper.viewsize = self.size()
+        size = (event.size() - event.oldSize()) / 2
+        offset = QtCore.QPointF(size.width(), size.height())
+        self.viewportmapper.origin -= offset
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        cursor = self.viewportmapper.to_units_coords(get_cursor(self)).toPoint()
+
+        if self.interaction_manager.mode == InteractionManager.DRAGGING:
             rect = self.manipulator.rect
             if self.transform.direction:
                 self.transform.resize((s.rect for s in self.selection), cursor)
@@ -102,41 +151,45 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.increase_undo_on_release = True
             self.selectedShapesChanged.emit()
 
-        elif self.selecting:
+        elif self.interaction_manager.mode == InteractionManager.SELECTION:
             self.selection_square.handle(cursor)
             for shape in self.list_shapes():
                 shape.hovered = self.selection_square.intersects(shape.rect)
 
+        elif self.interaction_manager.mode == InteractionManager.NAVIGATION:
+            offset = self.interaction_manager.mouse_offset(event.pos())
+            if offset is not None:
+                self.viewportmapper.origin = (
+                    self.viewportmapper.origin - offset)
         else:
             for shape in self.list_shapes():
                 shape.hovered = shape.rect.contains(cursor)
 
-        self.repaint()
+        self.update()
 
     def mouseReleaseEvent(self, event):
         context_menu_condition = (
             event.button() == QtCore.Qt.RightButton and
-            not self.clicked and
-            not self.handeling and
-            not self.selecting)
+            self.interaction_manager.mode == InteractionManager.FLY_OVER)
+
         if context_menu_condition:
+            self.interaction_manager.update(event, pressed=False)
             return self.callContextMenu.emit(event.pos())
 
         if event.button() != QtCore.Qt.LeftButton:
+            self.interaction_manager.update(event, pressed=False)
             return
 
         if self.increase_undo_on_release:
             self.increaseUndoStackRequested.emit()
             self.increase_undo_on_release = False
 
-        if self.selecting:
+        if self.interaction_manager.mode == InteractionManager.SELECTION:
             self.select_shapes()
 
+        self.interaction_manager.update(event, pressed=False)
         self.selection_square.release()
-        self.clicked = False
-        self.handeling = False
-        self.selecting = False
-        self.repaint()
+        self.update()
 
     def select_shapes(self):
         shapes = [
@@ -164,7 +217,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             shift=self.shit_pressed,
             ctrl=self.ctrl_pressed)
 
-        self.repaint()
+        self.update()
 
     def update_selection(self):
         rect = get_combined_rects([shape.rect for shape in self.selection])
@@ -177,6 +230,8 @@ class ShapeEditArea(QtWidgets.QWidget):
             painter.begin(self)
             self.paint(painter)
         except BaseException:
+            import traceback
+            print(traceback.format_exc())
             pass  # avoid crash
             # TODO: log the error
         finally:
@@ -184,8 +239,16 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def paint(self, painter):
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        draw_editor(painter, self.rect(), snap=self.transform.snap)
+        draw_editor(
+            painter, self.rect(),
+            snap=self.transform.snap,
+            viewportmapper=self.viewportmapper)
         for shape in self.shapes:
-            draw_shape(painter, shape)
-        self.manipulator.draw(painter, get_cursor(self))
-        self.selection_square.draw(painter)
+            draw_shape(painter, shape, self.viewportmapper)
+
+        if self.manipulator.rect is not None and all(self.manipulator.handler_rects()):
+            draw_manipulator(painter, self.manipulator, get_cursor(self), self.viewportmapper)
+
+        if self.selection_square.rect:
+            draw_selection_square(
+                painter, self.selection_square.rect, self.viewportmapper)
