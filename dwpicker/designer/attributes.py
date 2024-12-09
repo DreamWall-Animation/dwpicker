@@ -505,6 +505,7 @@ class ActionSettings(QtWidgets.QWidget):
     def set_options(self, options):
         values = list({o for opt in options for o in opt['action.targets']})
         self._targets.setText(", ".join(sorted(values)))
+        self._commands.set_options(options)
         self._menu.set_options(options)
 
 
