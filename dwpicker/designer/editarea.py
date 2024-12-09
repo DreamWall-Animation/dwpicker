@@ -98,6 +98,15 @@ class ShapeEditArea(QtWidgets.QWidget):
         hovered_shape = self.get_hovered_shape(cursor)
         self.transform.direction = self.manipulator.get_direction(cursor)
 
+        if event.button() != QtCore.Qt.LeftButton:
+            self.interaction_manager.update(
+                event,
+                pressed=True,
+                has_shape_hovered=False,
+                dragging=False)
+            self.update()
+            return
+
         conditions = (
             hovered_shape and
             hovered_shape not in self.selection and
@@ -161,6 +170,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             if offset is not None:
                 self.viewportmapper.origin = (
                     self.viewportmapper.origin - offset)
+
         else:
             for shape in self.list_shapes():
                 shape.hovered = shape.rect.contains(cursor)
@@ -168,11 +178,8 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.update()
 
     def mouseReleaseEvent(self, event):
-        context_menu_condition = (
-            event.button() == QtCore.Qt.RightButton and
-            self.interaction_manager.mode == InteractionManager.FLY_OVER)
 
-        if context_menu_condition:
+        if event.button() == QtCore.Qt.RightButton:
             self.interaction_manager.update(event, pressed=False)
             return self.callContextMenu.emit(event.pos())
 
