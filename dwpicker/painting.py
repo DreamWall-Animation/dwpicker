@@ -53,42 +53,6 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
         x += snap[0]
 
 
-def points_intersection_grille(rectangle_pos, rectangle_width, rectangle_height, horizontal_spacing, vertical_spacing):
-    """
-    Calcule les points d'intersection de la grille à l'intérieur d'un rectangle donné.
-
-    Args:
-    - rectangle_pos (tuple): Coordonnées du coin supérieur gauche du rectangle (x, y).
-    - rectangle_width (float): Largeur du rectangle.
-    - rectangle_height (float): Hauteur du rectangle.
-    - horizontal_spacing (float): Écart entre les lignes verticales de la grille.
-    - vertical_spacing (float): Écart entre les lignes horizontales de la grille.
-
-    Returns:
-    - list[tuple]: Liste des points d'intersection (x, y) qui se trouvent à l'intérieur du rectangle.
-    """
-    x_min, y_min = rectangle_pos
-    x_max = x_min + rectangle_width
-    y_max = y_min + rectangle_height
-
-    points = []
-
-    # Itérer sur les coordonnées x de la grille
-    x = 0
-    while x <= x_max:
-        if x >= x_min:  # Vérifie si x est dans la portée horizontale du rectangle
-            # Itérer sur les coordonnées y de la grille
-            y = 0
-            while y <= y_max:
-                if y >= y_min:  # Vérifie si y est dans la portée verticale du rectangle
-                    points.append((x, y))
-                y += vertical_spacing
-        x += horizontal_spacing
-
-    return points
-
-
-
 def draw_shape(painter, shape, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     options = shape.options
