@@ -30,7 +30,9 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
         snap = snap[0] * 2, snap[1] * 2
 
     pen = QtGui.QPen(QtGui.QColor('red'))
-    pen.setWidth(1 if viewportmapper.zoom < 1 else 2 if viewportmapper.zoom < 3 else 3)
+    pen.setWidth(
+        1 if viewportmapper.zoom < 1 else 2 if
+        viewportmapper.zoom < 3 else 3)
     painter.setPen(pen)
     rect = viewportmapper.to_units_rect(rect)
     x_start = ((rect.left() // snap[0]) * snap[0])
