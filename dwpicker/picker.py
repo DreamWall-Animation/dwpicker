@@ -80,7 +80,7 @@ class PickerView(QtWidgets.QWidget):
         self.selection_square = SelectionSquare()
         self.layers_menu = VisibilityLayersMenu()
         self.setMouseTracking(True)
-        self.shapes = None
+        self.shapes = []
         self.clicked_shape = None
         self.context_menu = None
         self.drag_shapes = []
