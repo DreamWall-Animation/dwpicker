@@ -11,7 +11,7 @@ from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
-from dwpicker.painting import ViewportMapper, draw_shape
+from dwpicker.painting import ViewportMapper, draw_shape, draw_selection_square
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
@@ -340,7 +340,9 @@ class PickerView(QtWidgets.QWidget):
                 if not visible:
                     continue
                 draw_shape(painter, shape, self.viewportmapper)
-            self.selection_square.draw(painter)
+            if self.selection_square.rect:
+                draw_selection_square(
+                    painter, self.selection_square.rect)
         except BaseException:
             pass  # avoid crash
             # TODO: log the error
