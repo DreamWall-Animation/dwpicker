@@ -17,6 +17,7 @@ from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
     NameclashError)
 
+
 def align_shapes_on_line(shapes, point1, point2):
     centers = split_line(point1, point2, len(shapes))
     for center, shape in zip(centers, shapes):
