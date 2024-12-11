@@ -1,5 +1,5 @@
 from functools import partial
-from math import ceil
+from copy import deepcopy
 
 from PySide2 import QtWidgets, QtCore
 from maya import cmds
@@ -116,13 +116,13 @@ class PickerEditor(QtWidgets.QWidget):
 
     def copy(self):
         clipboard.set([
-            s.options.copy() for s in self.shape_editor.selection])
+            deepcopy(s.options) for s in self.shape_editor.selection])
 
     def copy_settings(self):
         if len(self.shape_editor.selection) != 1:
             return warning('Copy settings', 'Please select only one shape')
         shape = self.shape_editor.selection[0]
-        clipboard.set_settings(shape.options.copy())
+        clipboard.set_settings(deepcopy(shape.options))
 
     def sizeHint(self):
         return QtCore.QSize(1300, 750)
