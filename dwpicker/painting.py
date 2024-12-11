@@ -4,6 +4,7 @@ from maya import cmds
 from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.geometry import grow_rect, ViewportMapper
+from dwpicker.shapepath import get_painter_path
 
 
 SELECTION_COLOR = '#3388FF'
@@ -87,15 +88,19 @@ def draw_shape(painter, shape, viewportmapper=None):
         painter.drawRect(rect)
     elif options['shape'] == 'round':
         painter.drawEllipse(rect)
-    else:  # 'rounded_rect'
+    elif options['shape'] == 'rounded_rect':
         x = viewportmapper.to_viewport(options['shape.cornersx'])
         y = viewportmapper.to_viewport(options['shape.cornersy'])
         painter.drawRoundedRect(rect, x, y)
+    else:  # custom
+        path = get_painter_path(options['shape.path'], viewportmapper)
+        painter.drawPath(path)
 
     if shape.pixmap is not None:
         rect = shape.image_rect or content_rect
         rect = viewportmapper.to_viewport_rect(rect)
         painter.drawPixmap(rect.toRect(), shape.pixmap)
+
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))

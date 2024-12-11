@@ -2,21 +2,24 @@ import maya.cmds as cmds
 from functools import partial
 from PySide2 import QtCore, QtWidgets
 
-from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.commands import CommandsEditor, MenuCommandsEditor
+from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.designer.layer import VisibilityLayersEditor
+from dwpicker.designer.patheditor import PathEditor
 from dwpicker.widgets import (
     BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
     TextEdit, Title, WidgetToggler)
 
+
 LEFT_CELL_WIDTH = 80
-SHAPE_TYPES = 'square', 'round', 'rounded_rect'
+SHAPE_TYPES = 'square', 'round', 'rounded_rect', 'custom'
 
 
 class AttributeEditor(QtWidgets.QWidget):
     generalOptionSet = QtCore.Signal(str, object)
     imageModified = QtCore.Signal()
     optionSet = QtCore.Signal(str, object)
+    optionsSet = QtCore.Signal(dict, bool)  # all options, affect rect
     rectModified = QtCore.Signal(str, float)
     removeLayer = QtCore.Signal(str)
     selectLayerContent = QtCore.Signal(str)
@@ -34,6 +37,7 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.shape = ShapeSettings()
         self.shape.optionSet.connect(self.optionSet.emit)
+        self.shape.optionsSet.connect(self.optionsSet.emit)
         self.shape.rectModified.connect(self.rectModified.emit)
         self.shape_toggler = WidgetToggler('Shape', self.shape)
 
@@ -138,6 +142,7 @@ class GeneralSettings(QtWidgets.QWidget):
 
 class ShapeSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
+    optionsSet = QtCore.Signal(dict, bool)  # all options, affect rect
     rectModified = QtCore.Signal(str, float)
 
     def __init__(self, parent=None):
@@ -145,6 +150,10 @@ class ShapeSettings(QtWidgets.QWidget):
         self.shape = QtWidgets.QComboBox()
         self.shape.addItems(SHAPE_TYPES)
         self.shape.currentIndexChanged.connect(self.shape_changed)
+        self.path_editor = PathEditor(self)
+        self.path_editor.pathEdited.connect(self.path_edited)
+        self.path_editor.setVisible(False)
+        self.path_editor.setEnabled(False)
 
         self.layer = LayerEdit()
         method = partial(self.optionSet.emit, 'visibility_layer')
@@ -158,7 +167,7 @@ class ShapeSettings(QtWidgets.QWidget):
         method = partial(self.rectModified.emit, 'shape.left')
         self.left.valueSet.connect(method)
         self.top = IntEdit(minimum=0)
-        method = partial(self.rectModified.emit, 'shape.right')
+        method = partial(self.rectModified.emit, 'shape.top')
         self.top.valueSet.connect(method)
         self.width = IntEdit(minimum=0)
         method = partial(self.rectModified.emit, 'shape.width')
@@ -173,26 +182,62 @@ class ShapeSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'shape.cornersy')
         self.cornersy.valueSet.connect(method)
 
-        self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setHorizontalSpacing(5)
-        self.layout.addRow('Background', self.background)
-        self.layout.addRow('Shape', self.shape)
-        self.layout.addRow('Visibility layer', self.layer)
-        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
-        self.layout.addRow(Title('Dimensions'))
-        self.layout.addRow('left', self.left)
-        self.layout.addRow('top', self.top)
-        self.layout.addRow('width', self.width)
-        self.layout.addRow('height', self.height)
-        self.layout.addRow('roundness x', self.cornersx)
-        self.layout.addRow('roundness y', self.cornersy)
+        layout1 = QtWidgets.QFormLayout()
+        layout1.setSpacing(0)
+        layout1.setContentsMargins(0, 0, 0, 0)
+        layout1.setHorizontalSpacing(5)
+        layout1.addRow('Visibility layer', self.layer)
+        layout1.addRow('Background', self.background)
+        layout1.addRow('Shape', self.shape)
+
+        layout2 = QtWidgets.QVBoxLayout()
+        layout2.setSpacing(0)
+        layout2.setContentsMargins(0, 0, 0, 0)
+        layout2.addWidget(self.path_editor)
+
+        layout3 = QtWidgets.QFormLayout()
+        layout3.addItem(QtWidgets.QSpacerItem(0, 8))
+        layout3.addRow(Title('Dimensions'))
+        layout3.addRow('left', self.left)
+        layout3.addRow('top', self.top)
+        layout3.addRow('width', self.width)
+        layout3.addRow('height', self.height)
+        layout3.addRow('roundness x', self.cornersx)
+        layout3.addRow('roundness y', self.cornersy)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addLayout(layout1)
+        layout.addLayout(layout2)
+        layout.addLayout(layout3)
+
+    def path_edited(self):
+        if self.shape.currentText() != 'custom':
+            return
+
+        rect = self.path_editor.path_rect()
+        self.optionsSet.emit({
+            'shape.path': self.path_editor.path(),
+            'shape.left': rect.left(),
+            'shape.top': rect.top(),
+            'shape.width': rect.width(),
+            'shape.height': rect.height()},
+            True)
+        self.left.setText(str(rect.left()))
+        self.top.setText(str(rect.top()))
+        self.width.setText(str(rect.width()))
+        self.height.setText(str(rect.height()))
+
     def shape_changed(self, _):
+        self.path_editor.setEnabled(self.shape.currentText() == 'custom')
+        self.path_editor.setVisible(self.shape.currentText() == 'custom')
+        if self.shape.currentText() == 'custom':
+            self.path_editor.canvas.focus()
+            self.optionSet.emit('shape.path', self.path_editor.path())
         self.optionSet.emit('shape', self.shape.currentText())
 
     def set_options(self, options):
@@ -207,6 +252,15 @@ class ShapeSettings(QtWidgets.QWidget):
         values = list({option['shape'] for option in options})
         value = values[0] if len(values) == 1 else '...'
         self.shape.setCurrentText(value)
+
+        if len(options) == 1:
+            self.path_editor.setEnabled(options[0]['shape'] == 'custom')
+            self.path_editor.setVisible(options[0]['shape'] == 'custom')
+            self.path_editor.set_options(options[0])
+        else:
+            self.path_editor.setEnabled(False)
+            self.path_editor.setVisible(False)
+            self.path_editor.set_options(None)
 
         values = list({int(round((option['shape.left']))) for option in options})
         value = str(values[0]) if len(values) == 1 else None

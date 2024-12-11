@@ -5,10 +5,24 @@ from PySide2 import QtCore, QtGui
 from dwpicker.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,
     get_bottomright_rect, get_left_side_rect, get_right_side_rect,
-    get_top_side_rect, get_bottom_side_rect, proportional_rect)
+    get_global_rect, get_top_side_rect, get_bottom_side_rect,
+    proportional_rect)
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.path import expand_path
 from dwpicker.selection import select_targets
+from dwpicker.shapepath import get_painter_path
+
+
+def cursor_in_shape(shape, cursor):
+    if shape.path and shape.options['shape'] == 'custom':
+        return shape.path.contains(cursor)
+    return shape.rect.contains(cursor)
+
+
+def rect_intersects_shape(shape, rect):
+    if shape.path and shape.options['shape'] == 'custom':
+        return shape.path.intersects(rect)
+    return shape.rect.intersects(rect)
 
 
 class SelectionSquare():
@@ -27,10 +41,10 @@ class SelectionSquare():
         self.handeling = False
         self.rect = None
 
-    def intersects(self, rect):
-        if not rect or not self.rect:
+    def intersects(self, shape):
+        if not shape or not self.rect:
             return False
-        return self.rect.intersects(rect)
+        return rect_intersects_shape(shape, self.rect)
 
 
 class Manipulator():
@@ -90,6 +104,9 @@ class Manipulator():
 
 
 def get_shape_rect_from_options(options):
+    if options['shape'] == 'custom' and options['shape.path']:
+        points = [QtCore.QPointF(*p['point']) for p in options['shape.path']]
+        return get_global_rect(points)
     return QtCore.QRectF(
         options['shape.left'],
         options['shape.top'],
@@ -106,10 +123,8 @@ class Shape():
         self.rect = get_shape_rect_from_options(options)
         self.pixmap = None
         self.image_rect = None
+        self.path = get_painter_path(options['shape.path'])
         self.synchronize_image()
-
-    def set_hovered(self, cursor):
-        self.hovered = self.rect.contains(cursor)
 
     def set_clicked(self, cursor):
         self.clicked = self.rect.contains(cursor)
@@ -117,6 +132,9 @@ class Shape():
     def release(self, cursor):
         self.clicked = False
         self.hovered = self.rect.contains(cursor)
+
+    def update_path(self):
+        self.path = get_painter_path(self.options['shape.path'])
 
     def synchronize_rect(self):
         self.options['shape.left'] = self.rect.left()
@@ -138,6 +156,7 @@ class Shape():
                 execute_code(
                     language=command['language'],
                     code=command['command'],
+                    targets=self.targets(),
                     deferred=command['deferred'],
                     compact_undo=command['force_compact_undo'])
             except Exception as e:

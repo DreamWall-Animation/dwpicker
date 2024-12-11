@@ -1,5 +1,5 @@
 import math
-from PySide2 import QtCore
+from PySide2 import QtCore, QtGui
 
 
 POINT_RADIUS = 8
@@ -79,6 +79,24 @@ class ViewportMapper():
             self.zoom *= 0.7  # lower zoom to add some breathing space
         self.zoom = max(self.zoom, .1)
         self.center_on_point(units_rect.center())
+
+    def to_viewport_transform(self):
+        transform = QtGui.QTransform()
+        transform.scale(self.zoom, self.zoom)
+        transform.translate(-self.origin.x(), -self.origin.y())
+        return transform
+
+    def to_units_transform(self):
+        transform = QtGui.QTransform()
+        transform.translate(self.origin.x(), self.origin.y())
+        transform.scale(1 / self.zoom, 1 / self.zoom)
+        return transform
+
+    def to_viewport_path(self, path):
+        return self.to_viewport_transform().map(path)
+
+    def to_units_path(self, path):
+        return self.to_units_transform().map(path)
 
 
 def get_topleft_rect(rect):
@@ -361,6 +379,25 @@ def resize_rect_with_reference(rect, in_reference_rect, out_reference_rect):
     rect.setCoords(left, top, right, bottom)
 
 
+def resize_path_with_reference(path, in_reference_rect, out_reference_rect):
+    for point in path:
+        for key in ['point', 'tangent_in', 'tangent_out']:
+            if point[key] is not None:
+                x = relative(
+                    point[key][0],
+                    in_min=in_reference_rect.left(),
+                    in_max=in_reference_rect.right(),
+                    out_min=out_reference_rect.left(),
+                    out_max=out_reference_rect.right())
+                y = relative(
+                    point[key][1],
+                    in_min=in_reference_rect.top(),
+                    in_max=in_reference_rect.bottom(),
+                    out_min=out_reference_rect.top(),
+                    out_max=out_reference_rect.bottom())
+                point[key] = [x, y]
+
+
 def resize_rect_with_direction(rect, cursor, direction, force_square=False):
     if direction == 'top_left':
         if cursor.x() < rect.right() and cursor.y() < rect.bottom():
@@ -436,31 +473,33 @@ class Transform:
         self.reference_x = cursor.x() - self.rect.left()
         self.reference_y = cursor.y() - self.rect.top()
 
-    def resize(self, rects, cursor):
+    def resize(self, shapes, cursor):
         if self.snap is not None:
             x, y = snap(cursor.x(), cursor.y(), self.snap)
             cursor.setX(x)
             cursor.setY(y)
         resize_rect_with_direction(
             self.rect, cursor, self.direction, force_square=self.square)
-        self.apply_relative_transformation(rects)
+        self.apply_relative_transformation(shapes)
 
-    def apply_relative_transformation(self, rects):
-        for rect in rects:
+    def apply_relative_transformation(self, shapes):
+        for shape in shapes:
             resize_rect_with_reference(
-                rect, self.reference_rect, self.rect)
+                shape.rect, self.reference_rect, self.rect)
+            resize_path_with_reference(
+                shape.options['shape.path'], self.reference_rect, self.rect)
 
         self.reference_rect = QtCore.QRect(
             self.rect.topLeft(), self.rect.size())
 
-    def move(self, rects, cursor):
+    def move(self, shapes, cursor):
         x = cursor.x() - self.reference_x
         y = cursor.y() - self.reference_y
         if self.snap is not None:
             x, y = snap(x, y, self.snap)
-        self.apply_topleft(rects, x, y)
+        self.apply_topleft(shapes, x, y)
 
-    def shift(self, rects, offset):
+    def shift(self, shapes, offset):
         x, y = offset
         if self.snap is not None:
             x *= self.snap[0]
@@ -469,15 +508,15 @@ class Transform:
         y = self.rect.top() + y
         if self.snap:
             x, y = snap(x, y, self.snap)
-        self.apply_topleft(rects, x, y)
+        self.apply_topleft(shapes, x, y)
 
-    def apply_topleft(self, rects, x, y):
+    def apply_topleft(self, shapes, x, y):
         width = self.rect.width()
         height = self.rect.height()
         self.rect.setTopLeft(QtCore.QPoint(x, y))
         self.rect.setWidth(width)
         self.rect.setHeight(height)
-        self.apply_relative_transformation(rects)
+        self.apply_relative_transformation(shapes)
 
 
 def snap(x, y, snap):
@@ -507,6 +546,14 @@ def get_combined_rects(rects):
     return QtCore.QRect(l, t, r-l, b-t)
 
 
+def get_global_rect(points):
+    left = min(p.x() for p in points)
+    top = min(p.y() for p in points)
+    width = max(p.x() for p in points) - left
+    height = max(p.y() for p in points) - top
+    return QtCore.QRectF(left, top, width, height)
+
+
 def rect_symmetry(rect, point, horizontal=True):
     """
      ______  rect           ______  result
@@ -526,6 +573,17 @@ def rect_symmetry(rect, point, horizontal=True):
     center = rect.center() - vector
     rect.moveCenter(center)
     return rect
+
+
+def path_symmetry(path, center, horizontal=True):
+    for point in path:
+        for key in ['point', 'tangent_in', 'tangent_out']:
+            if point[key] is None:
+                continue
+            if horizontal:
+                point[key][0] = center.x() - (point[key][0] - center.x())
+            else:
+                point[key][1] = center.y() - (point[key][1] - center.y())
 
 
 def split_line(point1, point2, step_number):

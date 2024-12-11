@@ -49,6 +49,10 @@ def ensure_retro_compatibility(picker_data):
         picker_data['general'].pop('width')
         picker_data['general'].pop('height')
 
+    if tuple(version) < (0, 14, 0):
+        for shape in picker_data['shapes']:
+            shape['shape.path'] = []
+
     return picker_data
 
 

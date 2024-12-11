@@ -11,6 +11,7 @@ from dwpicker.optionvar import (
     SHAPES_FILTER_INDEX, SETTINGS_TO_COPY)
 from dwpicker.languages import MEL, PYTHON
 from dwpicker.path import get_image_directory
+from dwpicker.qtutils import icon
 from dwpicker.namespace import selected_namespace
 from dwpicker.templates import BUTTON
 
@@ -230,7 +231,7 @@ class MissingImages(QtWidgets.QDialog):
         self.paths.setVerticalScrollMode(mode)
         self.paths.setModel(self.model)
 
-        self.browse = QtWidgets.QPushButton('B')
+        self.browse = QtWidgets.QPushButton(icon('mini-open.png'))
         self.browse.setFixedWidth(30)
         self.browse.released.connect(self.call_browse)
         self.update = QtWidgets.QPushButton('Update')

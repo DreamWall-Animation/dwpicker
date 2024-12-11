@@ -36,7 +36,8 @@ class BrowseEdit(QtWidgets.QWidget):
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
         self.text.focusOutEvent = self.text_focus_out_event
-        self.button = QtWidgets.QPushButton('B')
+        self.button = QtWidgets.QToolButton(self)
+        self.button.setIcon(icon('mini-open.png'))
         self.button.setFixedSize(21, 21)
         self.button.released.connect(self.browse)
 
@@ -106,7 +107,8 @@ class ColorEdit(QtWidgets.QWidget):
         self.text.returnPressed.connect(self.apply)
         self.text.focusInEvent = self.focusInEvent
         self.text.focusOutEvent = self.focusOutEvent
-        self.button = QtWidgets.QPushButton(icon('picker.png'), '')
+        self.button = QtWidgets.QToolButton(self)
+        self.button.setIcon(icon('picker.png'))
         self.button.setFixedSize(21, 21)
         self.button.released.connect(self.pick_color)
 

@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 from maya import cmds
 
-from dwpicker.interactive import Manipulator, SelectionSquare
+from dwpicker.interactive import Manipulator, SelectionSquare, cursor_in_shape
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.optionvar import SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS
 from dwpicker.geometry import Transform, ViewportMapper, get_combined_rects
@@ -81,7 +81,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def get_hovered_shape(self, cursor):
         for shape in reversed(self.list_shapes()):
-            if shape.rect.contains(cursor):
+            if cursor_in_shape(shape, cursor):
                 return shape
 
     def list_shapes(self):
@@ -147,15 +147,15 @@ class ShapeEditArea(QtWidgets.QWidget):
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
             rect = self.manipulator.rect
             if self.transform.direction:
-                self.transform.resize((s.rect for s in self.selection), cursor)
+                self.transform.resize(self.selection.shapes, cursor)
                 self.manipulator.update_geometries()
             elif rect is not None:
-                self.transform.move((s.rect for s in self.selection), cursor)
+                self.transform.move(shapes=self.selection, cursor=cursor)
                 self.manipulator.update_geometries()
             for shape in self.selection:
                 shape.synchronize_rect()
+                shape.update_path()
                 shape.synchronize_image()
-
             self.manipulator_moved = True
             self.increase_undo_on_release = True
             self.selectedShapesChanged.emit()
@@ -163,7 +163,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         elif self.interaction_manager.mode == InteractionManager.SELECTION:
             self.selection_square.handle(cursor)
             for shape in self.list_shapes():
-                shape.hovered = self.selection_square.intersects(shape.rect)
+                shape.hovered = self.selection_square.intersects(shape)
 
         elif self.interaction_manager.mode == InteractionManager.NAVIGATION:
             offset = self.interaction_manager.mouse_offset(event.pos())
@@ -173,7 +173,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         else:
             for shape in self.list_shapes():
-                shape.hovered = shape.rect.contains(cursor)
+                shape.hovered = cursor_in_shape(shape, cursor)
 
         self.update()
 
@@ -253,8 +253,14 @@ class ShapeEditArea(QtWidgets.QWidget):
         for shape in self.shapes:
             draw_shape(painter, shape, self.viewportmapper)
 
-        if self.manipulator.rect is not None and all(self.manipulator.handler_rects()):
-            draw_manipulator(painter, self.manipulator, get_cursor(self), self.viewportmapper)
+        conditions = (
+            self.manipulator.rect is not None and
+            all(self.manipulator.handler_rects()))
+
+        if conditions:
+            draw_manipulator(
+                painter, self.manipulator,
+                get_cursor(self), self.viewportmapper)
 
         if self.selection_square.rect:
             draw_selection_square(

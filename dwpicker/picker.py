@@ -5,7 +5,8 @@ import maya.OpenMaya as om
 from PySide2 import QtWidgets, QtGui, QtCore
 
 from dwpicker.dialog import warning
-from dwpicker.interactive import SelectionSquare
+from dwpicker.interactive import (
+    SelectionSquare, cursor_in_shape, rect_intersects_shape)
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
@@ -17,11 +18,13 @@ from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
     NameclashError)
 
+
 def align_shapes_on_line(shapes, point1, point2):
     centers = split_line(point1, point2, len(shapes))
     for center, shape in zip(centers, shapes):
         shape.rect.moveCenter(center)
         shape.synchronize_rect()
+        shape.update_path()
 
 
 def set_shapes_hovered(shapes, cursor, selection_rect=None):
@@ -35,8 +38,8 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
     shapes = [s for s in shapes if not s.is_background()]
     selection_shapes_intersect_selection = [
         s for s in shapes
-        if s.rect.contains(cursor) or
-        s.rect.intersects(selection_rect)]
+        if cursor_in_shape(s, cursor) or
+        rect_intersects_shape(s, selection_rect)]
 
     targets = list_targets(selection_shapes_intersect_selection)
     for s in shapes:
@@ -57,7 +60,7 @@ def detect_hovered_shape(shapes, cursor):
     if not shapes:
         return
     for shape in reversed(shapes):
-        if shape.rect.contains(cursor) and not shape.is_background():
+        if cursor_in_shape(shape, cursor) and not shape.is_background():
             return shape
 
 

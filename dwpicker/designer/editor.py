@@ -11,7 +11,7 @@ from dwpicker.arrayutils import (
     move_up_array_elements, move_down_array_elements)
 from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
 from dwpicker.interactive import Shape, get_shape_rect_from_options
-from dwpicker.geometry import get_combined_rects, rect_symmetry
+from dwpicker.geometry import get_combined_rects, rect_symmetry, path_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
@@ -52,7 +52,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.pasteSettingsRequested.connect(self.paste_settings)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
-
         method = self.shape_editor.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
         self.menu.undoRequested.connect(self.undo)
@@ -97,6 +96,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
         self.attribute_editor.generalOptionSet.connect(self.generals_modified)
         self.attribute_editor.optionSet.connect(self.option_set)
+        self.attribute_editor.optionsSet.connect(self.options_set)
         self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
         self.attribute_editor.removeLayer.connect(self.remove_layer)
@@ -215,6 +215,20 @@ class PickerEditor(QtWidgets.QWidget):
             self.setWindowTitle(title)
         self.pickerDataModified.emit(self.picker_data())
 
+    def options_set(self, options, rect_update):
+        for shape in self.shape_editor.selection:
+            shape.options.update(options)
+            if rect_update:
+                shape.rect = QtCore.QRectF(
+                    options['shape.left'],
+                    options['shape.top'],
+                    options['shape.width'],
+                    options['shape.height'])
+                shape.update_path()
+        self.shape_editor.update()
+        self.update_manipulator_rect()
+        self.set_data_modified()
+
     def option_set(self, option, value):
         for shape in self.shape_editor.selection:
             shape.options[option] = value
@@ -269,6 +283,7 @@ class PickerEditor(QtWidgets.QWidget):
         if targets:
             shape.set_targets(targets)
         shape.synchronize_rect()
+        shape.update_path()
         if before is True:
             self.shape_editor.shapes.insert(0, shape)
         else:
@@ -350,7 +365,12 @@ class PickerEditor(QtWidgets.QWidget):
                 rect=shape.rect,
                 point=self.shape_editor.manipulator.rect.center(),
                 horizontal=horizontal)
+            path_symmetry(
+                path=shape.options['shape.path'],
+                center=self.shape_editor.manipulator.rect.center(),
+                horizontal=horizontal)
             shape.synchronize_rect()
+            shape.update_path()
         self.shape_editor.update()
         if not cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR):
             self.set_data_modified()
@@ -394,17 +414,17 @@ class PickerEditor(QtWidgets.QWidget):
 
     def move_selection(self, direction):
         offset = DIRECTION_OFFSETS[direction]
-        rects = (s.rect for s in self.shape_editor.selection)
-        rects = (s.rect for s in self.shape_editor.selection)
         rect = self.shape_editor.manipulator.rect
         reference_rect = QtCore.QRect(rect)
 
         self.shape_editor.transform.set_rect(rect)
         self.shape_editor.transform.reference_rect = reference_rect
-        self.shape_editor.transform.shift(rects, offset)
+        self.shape_editor.transform.shift(
+            self.shape_editor.selection.shapes, offset)
         self.shape_editor.manipulator.update_geometries()
         for shape in self.shape_editor.selection:
             shape.synchronize_rect()
+            shape.update_path()
         self.shape_editor.update()
         self.shape_editor.selectedShapesChanged.emit()
         self.pickerDataModified.emit(self.picker_data())
