@@ -378,7 +378,8 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
 
     def autotangent(self, i):
         point = self.path[i]['point']
-        next_point = self.path[i + 1 if i < (len(self.path) - 1) else 0]['point']
+        next_index = i + 1 if i < (len(self.path) - 1) else 0
+        next_point = self.path[next_index]['point']
         previous_point = self.path[i - 1]['point']
         tan_in, tan_out = auto_tangent(point, previous_point, next_point)
         self.path[i]['tangent_in'] = tan_in
