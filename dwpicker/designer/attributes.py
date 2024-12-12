@@ -2,7 +2,8 @@ import maya.cmds as cmds
 from functools import partial
 from PySide2 import QtCore, QtWidgets
 
-from dwpicker.commands import CommandsEditor, MenuCommandsEditor
+from dwpicker.commands import (
+    CommandsEditor, MenuCommandsEditor, GlobalCommandsEditor)
 from dwpicker.qtutils import VALIGNS, HALIGNS
 from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.designer.patheditor import PathEditor
@@ -112,6 +113,9 @@ class GeneralSettings(QtWidgets.QWidget):
         self.zoom_locked = BoolCombo(False)
         self.zoom_locked.valueSet.connect(self.zoom_changed)
         self.layers = VisibilityLayersEditor()
+        self.commands = GlobalCommandsEditor()
+        method = partial(self.optionModified.emit, 'menu_commands')
+        self.commands.valueSet.connect(method)
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.setSpacing(0)
@@ -122,9 +126,14 @@ class GeneralSettings(QtWidgets.QWidget):
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         layout.addLayout(form_layout)
+        layout.addItem(QtWidgets.QSpacerItem(0, 8))
         layout.addWidget(Title('Visibility Layers'))
         layout.addWidget(self.layers)
+        layout.addItem(QtWidgets.QSpacerItem(0, 8))
+        layout.addWidget(Title('Global Right Click Commands'))
+        layout.addWidget(self.commands)
 
     def set_shapes(self, shapes):
         self.layers.set_shapes(shapes)
@@ -132,6 +141,7 @@ class GeneralSettings(QtWidgets.QWidget):
     def set_options(self, options):
         self.name.setText(options['name'])
         self.zoom_locked.setCurrentText(str(options['zoom_locked']))
+        self.commands.set_options(options)
 
     def name_changed(self, value):
         self.optionModified.emit('name', value)

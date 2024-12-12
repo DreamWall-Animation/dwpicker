@@ -16,19 +16,19 @@ class CommandItemWidget(QtWidgets.QWidget):
         self.label = QtWidgets.QLabel(self.get_label())
         self.edit = QtWidgets.QPushButton(icon('edit2.png'), '')
         self.edit.released.connect(lambda: self.editRequested.emit(self))
+        self.edit.setFixedSize(25, 25)
         self.delete = QtWidgets.QPushButton(icon('delete2.png'), '')
+        self.delete.setFixedSize(25, 25)
         self.delete.released.connect(lambda: self.deletedRequested.emit(self))
-
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addWidget(self.label)
-        layout.addStretch()
         layout.addWidget(self.edit)
         layout.addWidget(self.delete)
+        layout.addSpacing(10)
+        layout.addWidget(self.label)
 
     def get_label(self):
-        print(self, self.command)
         language = '<a style="color: #FFFF00"><i>({0})</i></a>'.format(
             self.command['language'])
         touchs = [self.command['button'] + 'Click']
@@ -84,7 +84,6 @@ class CommandsEditor(QtWidgets.QWidget):
         self.warning.setVisible(False)
         self.add_command.setEnabled(True)
         for command in options[0][self.picker_command_key]:
-            # print(self, self.picker_command_key, command)
             self.call_add_command(command)
 
     def call_create_command(self):
@@ -141,3 +140,22 @@ class MenuCommandsEditor(CommandsEditor):
     picker_command_key = 'action.menu_commands'
     template = MENU_COMMAND
     item_constructor = MenuCommandItemWidget
+
+
+class GlobalCommandsEditor(CommandsEditor):
+    edit_dialog_constructor = MenuCommandEditorDialog
+    picker_command_key = 'menu_commands'
+    template = MENU_COMMAND
+    item_constructor = MenuCommandItemWidget
+
+    def __init__(self, parent=None):
+        super(GlobalCommandsEditor, self).__init__(parent)
+        self.warning.hide()
+        self.add_command.setEnabled(True)
+
+    def set_options(self, options):
+        self.commands.clear()
+        import pprint
+        pprint.pprint(options)
+        for command in options[self.picker_command_key]:
+            self.call_add_command(command)

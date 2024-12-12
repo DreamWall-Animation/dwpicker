@@ -482,8 +482,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if self.editable:
             method = partial(self.data_changed_from_picker, picker)
             picker.dataChanged.connect(method)
-        shapes = [Shape(s) for s in data['shapes']]
-        picker.set_shapes(shapes)
+        picker.set_picker_data(data)
         picker.reset()
         picker.zoom_locked = data['general']['zoom_locked']
         return picker
@@ -754,8 +753,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def data_changed_from_editor(self, data, picker):
         index = self.tab.indexOf(picker)
         self.generals[index] = data['general']
-        shapes = [Shape(s) for s in data['shapes']]
-        picker.set_shapes(shapes)
+        picker.set_picker_data(data)
         picker.zoom_locked = data['general']['zoom_locked']
         self.set_title(index, data['general']['name'])
         self.set_modified_state(index, True)

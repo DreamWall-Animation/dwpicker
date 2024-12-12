@@ -53,6 +53,9 @@ def ensure_retro_compatibility(picker_data):
         for shape in picker_data['shapes']:
             shape['shape.path'] = []
 
+    if tuple(version) < (0, 14, 1):
+        picker_data['general']['menu_commands'] = []
+
     return picker_data
 
 

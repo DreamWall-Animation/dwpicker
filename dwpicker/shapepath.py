@@ -2,6 +2,7 @@
 import math
 from PySide2 import QtGui, QtCore
 from dwpicker.geometry import ViewportMapper
+import maya.OpenMaya as om
 
 
 def get_default_path(shape):
@@ -45,6 +46,22 @@ def offset_path(path, offset, selection=None):
         if point:
             point[0] += offset.x()
             point[1] += offset.y()
+
+
+def auto_tangent(point, previous_point, next_point):
+    in_middle = (point[0] + previous_point[0]) / 2, (point[1] + previous_point[1]) / 2
+    out_middle = (point[0] + next_point[0]) / 2, (point[1] + next_point[1]) / 2
+    in_opposite = [2 * point[0] - in_middle[0], 2 * point[1] - in_middle[1]]
+    out_opposite = [2 * point[0] - out_middle[0], 2 * point[1] - out_middle[1]]
+    return [
+        [
+            (in_middle[0] + out_opposite[0]) / 2,
+            (in_middle[1] + out_opposite[1]) / 2
+        ],
+        [
+            (in_opposite[0] + out_middle[0]) / 2,
+            (in_opposite[1] + out_middle[1]) / 2
+        ]]
 
 
 def offset_tangent(

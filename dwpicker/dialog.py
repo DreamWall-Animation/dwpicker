@@ -18,6 +18,13 @@ from dwpicker.templates import BUTTON
 
 SEARCH_AND_REPLACE_FIELDS = 'Targets', 'Label', 'Image path', 'Command'
 SHAPES_FILTERS = 'All shapes', 'Selected shapes'
+COMMAND_PLACEHOLDER = """\
+PYTHON:
+__targets__: List[str] (variable available by default in the script)
+
+MEL:
+var $targets[] is availables by default.
+"""
 
 
 def warning(title, message, parent=None):
@@ -388,6 +395,7 @@ class CommandEditorDialog(QtWidgets.QDialog):
         self.unique_undo.setChecked(command['force_compact_undo'])
 
         self.command = QtWidgets.QTextEdit()
+        self.command.setPlaceholderText(COMMAND_PLACEHOLDER)
         self.command.setFixedHeight(100)
         self.command.setPlainText(command['command'])
 
@@ -465,6 +473,7 @@ class MenuCommandEditorDialog(QtWidgets.QDialog):
         self.caption.setText(command['caption'])
 
         self.command = QtWidgets.QTextEdit()
+        self.command.setPlaceholderText(COMMAND_PLACEHOLDER)
         self.command.setFixedHeight(100)
         self.command.setPlainText(command['command'])
 

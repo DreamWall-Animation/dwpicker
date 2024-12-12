@@ -7,10 +7,12 @@ from dwpicker.geometry import (
 from dwpicker.qtutils import icon
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.interactive import SelectionSquare, Manipulator
-from dwpicker.painting import draw_selection_square, draw_manipulator
+from dwpicker.painting import (
+    draw_selection_square, draw_manipulator, draw_tangents)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
-from dwpicker.shapepath import offset_tangent, get_default_path, offset_path
+from dwpicker.shapepath import (
+    offset_tangent, get_default_path, offset_path, auto_tangent)
 
 
 class PathEditor(QtWidgets.QWidget):
@@ -171,17 +173,22 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
             self.selection_square.handle(cursor)
 
         elif self.interaction_manager.mode == InteractionManager.DRAGGING:
+            if not self.current_action:
+                return self.update()
+
             offset = self.interaction_manager.mouse_offset(event.pos())
             if not offset:
                 return self.update()
+
             offset = QtCore.QPointF(
                 self.viewportmapper.to_units(offset.x()),
                 self.viewportmapper.to_units(offset.y()))
-            if self.current_action and self.current_action[0] == 'move points':
+
+            if self.current_action[0] == 'move points':
                 offset_path(self.path, offset, self.selection)
                 self.update_manipulator_rect()
 
-            elif self.current_action and self.current_action[0] == 'resize points':
+            elif self.current_action[0] == 'resize points':
                 resize_rect_with_direction(
                     self.transform.rect, cursor,
                     self.transform.direction)
@@ -198,38 +205,24 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
                 self.manipulator.set_rect(QtCore.QRectF(self.transform.rect))
                 self.manipulator.update_geometries()
 
-            elif self.current_action and self.current_action[0] == 'move point':
+            elif self.current_action[0] == 'move point':
                 offset_path(self.path, offset, [self.current_action[1]])
 
             elif self.current_action and self.current_action[0] == 'move in':
-                center_point = self.path[self.current_action[1]]['point']
-                tangent_in = self.path[self.current_action[1]]['tangent_in']
-                tangent_out = self.path[self.current_action[1]]['tangent_out']
-                offset = offset.x(), offset.y()
-                tangent_in,tangent_out = offset_tangent(
-                    tangent_in,
-                    tangent_out,
-                    center_point,
-                    offset,
+                move_tangent(
+                    point=self.path[self.current_action[1]],
+                    tangent_in_moved=True,
+                    offset=offset,
                     lock=not self.interaction_manager.ctrl_pressed)
-                self.path[self.current_action[1]]['tangent_in'] = tangent_in
-                self.path[self.current_action[1]]['tangent_out'] = tangent_out
 
-            elif self.current_action and self.current_action[0] == 'move out':
-                center_point = self.path[self.current_action[1]]['point']
-                tangent_in = self.path[self.current_action[1]]['tangent_out']
-                tangent_out = self.path[self.current_action[1]]['tangent_in']
-                offset = offset.x(), offset.y()
-                tangent_in, tangent_out = offset_tangent(
-                    tangent_in,
-                    tangent_out,
-                    center_point,
-                    offset,
+            elif self.current_action[0] == 'move out':
+                move_tangent(
+                    point=self.path[self.current_action[1]],
+                    tangent_in_moved=False,
+                    offset=offset,
                     lock=not self.interaction_manager.ctrl_pressed)
-                self.path[self.current_action[1]]['tangent_out'] = tangent_in
-                self.path[self.current_action[1]]['tangent_in'] = tangent_out
 
-            elif self.current_action and self.current_action[0] == 'create point':
+            elif self.current_action[0] == 'create point':
                 self.interaction_manager.mouse_offset(event.pos())
                 point = {
                     'point': [cursor.x(), cursor.y()],
@@ -237,6 +230,7 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
                     'tangent_out': None}
                 index = self.current_action[1] + 1
                 self.path.insert(index, point)
+                self.autotangent(index)
                 self.current_action = 'move point', index
                 self.selection.set([index])
                 self.update_manipulator_rect()
@@ -335,9 +329,9 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
                 0, 0, self.rect().width() - 1, self.rect().height() - 1)
             painter.drawRect(rect)
             painter.setBrush(QtGui.QBrush())
-            paint_shape_path(
+            draw_shape_path(
                 painter, self.path, self.selection, self.viewportmapper)
-            paint_tangents(painter, self.path, self.viewportmapper)
+            draw_tangents(painter, self.path, self.viewportmapper)
             if self.selection_square.rect:
                 draw_selection_square(
                     painter, self.selection_square.rect, self.viewportmapper)
@@ -378,11 +372,17 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
             return
 
         for i in self.selection:
-            tin = [self.path[i]['point'][0] - 12, self.path[i]['point'][1]]
-            self.path[i]['tangent_in'] = tin
-            tout = [self.path[i]['point'][0] + 12, self.path[i]['point'][1]]
-            self.path[i]['tangent_out'] = tout
+            self.autotangent(i)
+        self.update()
         self.pathEdited.emit()
+
+    def autotangent(self, i):
+        point = self.path[i]['point']
+        next_point = self.path[i + 1 if i < (len(self.path) - 1) else 0]['point']
+        previous_point = self.path[i - 1]['point']
+        tan_in, tan_out = auto_tangent(point, previous_point, next_point)
+        self.path[i]['tangent_in'] = tan_in
+        self.path[i]['tangent_out'] = tan_out
 
     def set_path(self, path):
         self.path = path
@@ -433,7 +433,7 @@ def painter_path(path, viewportmapper):
     return painter_path
 
 
-def paint_shape_path(painter, path, selection, viewportmapper):
+def draw_shape_path(painter, path, selection, viewportmapper):
     painter.setPen(QtCore.Qt.gray)
     painter.drawPath(painter_path(path, viewportmapper))
     rect = QtCore.QRectF(0, 0, 5, 5)
@@ -442,27 +442,6 @@ def paint_shape_path(painter, path, selection, viewportmapper):
         rect.moveCenter(viewportmapper.to_viewport_coords(center))
         painter.setBrush(QtCore.Qt.white if i in selection else QtCore.Qt.NoBrush)
         painter.drawRect(rect)
-
-
-def paint_tangents(painter, path, viewportmapper):
-    rect = QtCore.QRectF(0, 0, 6, 6)
-    painter.setBrush(QtCore.Qt.yellow)
-    painter.setPen(QtCore.Qt.yellow)
-    for point in path:
-        center = QtCore.QPointF(*point['point'])
-        center = viewportmapper.to_viewport_coords(center)
-        if point['tangent_in'] is not None:
-            tangent_in = QtCore.QPointF(*point['tangent_in'])
-            tangent_in = viewportmapper.to_viewport_coords(tangent_in)
-            rect.moveCenter(tangent_in)
-            painter.drawRect(rect)
-            painter.drawLine(tangent_in, center)
-        if point['tangent_out'] is not None:
-            tangent_out = QtCore.QPointF(*point['tangent_out'])
-            tangent_out = viewportmapper.to_viewport_coords(tangent_out)
-            rect.moveCenter(tangent_out)
-            painter.drawRect(rect)
-            painter.drawLine(tangent_out, center)
 
 
 def is_point_on_path_edge(path, cursor, tolerance=3):
@@ -485,6 +464,17 @@ def is_point_on_path_edge(path, cursor, tolerance=3):
             return i
 
     return None
+
+
+def move_tangent(point, tangent_in_moved, offset, lock):
+    center_point = point['point']
+    tangent_in = point['tangent_in' if tangent_in_moved else 'tangent_out']
+    tangent_out = point['tangent_out' if tangent_in_moved else 'tangent_in']
+    offset = offset.x(), offset.y()
+    tangent_in, tangent_out = offset_tangent(
+        tangent_in, tangent_out, center_point, offset, lock)
+    point['tangent_in'if tangent_in_moved else 'tangent_out'] = tangent_in
+    point['tangent_out'if tangent_in_moved else 'tangent_in'] = tangent_out
 
 
 if __name__ == '__main__':

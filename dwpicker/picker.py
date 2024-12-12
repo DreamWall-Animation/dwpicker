@@ -7,6 +7,7 @@ from PySide2 import QtWidgets, QtGui, QtCore
 from dwpicker.dialog import warning
 from dwpicker.interactive import (
     SelectionSquare, cursor_in_shape, rect_intersects_shape)
+from dwpicker.interactive import Shape
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
@@ -83,9 +84,9 @@ class PickerView(QtWidgets.QWidget):
         self.selection_square = SelectionSquare()
         self.layers_menu = VisibilityLayersMenu()
         self.setMouseTracking(True)
+        self.global_commands = []
         self.shapes = []
         self.clicked_shape = None
-        self.context_menu = None
         self.drag_shapes = []
         self.zoom_locked = False
 
@@ -105,8 +106,10 @@ class PickerView(QtWidgets.QWidget):
         select_shapes_from_selection(self.shapes)
         self.update()
 
-    def set_shapes(self, shapes):
+    def set_picker_data(self, data):
+        shapes = [Shape(s) for s in data['shapes']]
         self.shapes = shapes
+        self.global_commands = data['general']['menu_commands']
         self.interaction_manager.shapes = shapes
         self.layers_menu.set_shapes(shapes)
         self.update()
@@ -172,7 +175,7 @@ class PickerView(QtWidgets.QWidget):
 
         elif self.interaction_manager.mode == InteractionManager.SELECTION and not interact:
             try:
-                select_targets(self.shapes, selection_mode=selection_mode)
+                select_targets(shapes, selection_mode=selection_mode)
             except NameclashError as e:
                 warning('Selection Error', str(e), parent=self)
                 self.release(event)
@@ -182,7 +185,7 @@ class PickerView(QtWidgets.QWidget):
             if self.interaction_manager.right_click_pressed:
                 self.call_context_menu()
 
-        elif self.clicked_shape is detect_hovered_shape(self.shapes, cursor):
+        elif self.clicked_shape is detect_hovered_shape(shapes, cursor):
             show_context = (
                 self.interaction_manager.right_click_pressed and
                 not self.clicked_shape.has_right_click_command())
@@ -274,36 +277,39 @@ class PickerView(QtWidgets.QWidget):
     def call_context_menu(self):
         if not self.editable:
             return
-
-        self.context_menu = PickerMenu(self.clicked_shape)
-        position = get_cursor(self)
+        position = self.viewportmapper.to_units_coords(get_cursor(self))
+        shape = detect_hovered_shape(self.visible_shapes(), position)
+        context_menu = PickerMenu(self.global_commands, shape)
 
         method = partial(self.add_button, position, button_type=0)
-        self.context_menu.add_single.triggered.connect(method)
-        self.context_menu.add_single.setEnabled(bool(cmds.ls(selection=True)))
+        context_menu.add_single.triggered.connect(method)
+        context_menu.add_single.setEnabled(bool(cmds.ls(selection=True)))
 
         method = partial(self.add_button, position, button_type=1)
-        self.context_menu.add_multiple.triggered.connect(method)
+        context_menu.add_multiple.triggered.connect(method)
         state = len(cmds.ls(selection=True)) > 1
-        self.context_menu.add_multiple.setEnabled(state)
+        context_menu.add_multiple.setEnabled(state)
 
         method = partial(self.add_button, position, button_type=2)
-        self.context_menu.add_command.triggered.connect(method)
+        context_menu.add_command.triggered.connect(method)
 
         method = partial(self.updateButtonRequested.emit, self.clicked_shape)
-        self.context_menu.update_button.triggered.connect(method)
+        context_menu.update_button.triggered.connect(method)
         state = bool(self.clicked_shape) and bool(cmds.ls(selection=True))
-        self.context_menu.update_button.setEnabled(state)
+        context_menu.update_button.setEnabled(state)
 
         method = self.deleteButtonRequested.emit
-        self.context_menu.delete_selected.triggered.connect(method)
+        context_menu.delete_selected.triggered.connect(method)
 
         if self.layers_menu.displayed:
-            self.context_menu.addMenu(self.layers_menu)
+            context_menu.addMenu(self.layers_menu)
 
-        action = self.context_menu.exec_(QtGui.QCursor.pos())
+        action = context_menu.exec_(QtGui.QCursor.pos())
         if isinstance(action, CommandAction):
-            self.execute_menu_command(action.command)
+            if not shape:
+                self.execute_menu_command(action.command)
+                return
+            shape.execute(command=action.command)
 
     def execute_menu_command(self, command):
         try:
@@ -360,11 +366,16 @@ class CommandAction(QtWidgets.QAction):
 
 
 class PickerMenu(QtWidgets.QMenu):
-    def __init__(self, shape=None, parent=None):
+    def __init__(self, global_commands=None, shape=None, parent=None):
         super(PickerMenu, self).__init__(parent)
-
         if shape and shape.options['action.menu_commands']:
             for command in shape.options['action.menu_commands']:
+                self.addAction(CommandAction(command, self))
+            if not global_commands:
+                self.addSeparator()
+
+        if global_commands:
+            for command in global_commands:
                 self.addAction(CommandAction(command, self))
             self.addSeparator()
 

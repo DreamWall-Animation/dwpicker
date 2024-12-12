@@ -143,4 +143,5 @@ PICKER = {
     'name': 'Untitled',
     'version': VERSION,
     'zoom_locked': False,
+    'menu_commands': []
 }

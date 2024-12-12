@@ -147,10 +147,13 @@ class Shape():
             return proportional_rect(self.rect, 70)
         return self.rect
 
-    def execute(self, button, shift=False, ctrl=False):
-        commands = _find_commands(
-            self.options['action.commands'],
-            button, shift=shift, ctrl=ctrl)
+    def execute(self, command=None, button=None, shift=False, ctrl=False):
+        if command is not None:
+            commands = [command]
+        else:
+            commands = _find_commands(
+                self.options['action.commands'],
+                button, shift=shift, ctrl=ctrl)
         for command in commands:
             try:
                 execute_code(

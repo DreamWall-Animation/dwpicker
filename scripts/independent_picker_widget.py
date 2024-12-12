@@ -15,7 +15,7 @@ with open('-picker_file_path-', 'r') as f:
 view = PickerView(editable=False)
 view.register_callbacks()
 view.setWindowFlags(QtCore.Qt.Tool)
-view.set_shapes(shapes)
+view.set_picker_data(shapes)
 view.reset()
 set_shortcut('F', view, view.reset)
 

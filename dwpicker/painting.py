@@ -169,3 +169,24 @@ def get_hovered_path(rect, viewportmapper=None):
     path.addRect(rect)
     path.addRect(manipulator_rect)
     return path
+
+
+def draw_tangents(painter, path, viewportmapper):
+    rect = QtCore.QRectF(0, 0, 6, 6)
+    painter.setBrush(QtCore.Qt.yellow)
+    painter.setPen(QtCore.Qt.yellow)
+    for point in path:
+        center = QtCore.QPointF(*point['point'])
+        center = viewportmapper.to_viewport_coords(center)
+        if point['tangent_in'] is not None:
+            tangent_in = QtCore.QPointF(*point['tangent_in'])
+            tangent_in = viewportmapper.to_viewport_coords(tangent_in)
+            rect.moveCenter(tangent_in)
+            painter.drawRect(rect)
+            painter.drawLine(tangent_in, center)
+        if point['tangent_out'] is not None:
+            tangent_out = QtCore.QPointF(*point['tangent_out'])
+            tangent_out = viewportmapper.to_viewport_coords(tangent_out)
+            rect.moveCenter(tangent_out)
+            painter.drawRect(rect)
+            painter.drawLine(tangent_out, center)

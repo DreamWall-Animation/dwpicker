@@ -5,7 +5,7 @@ MEL = 'mel'
 
 
 PYTHON_TARGETS_VARIABLE = """\
-targets = [{targets}]
+__targets__ = [{targets}]
 {code}
 """
 
@@ -55,9 +55,9 @@ def execute_python(
         code = STACK_UNDO_PYTHON.format(code=code)
     if deferred:
         code = DEFERRED_PYTHON.format(code=code)
-    if targets is not None:
-        targets = ', '.join((f'"{target}"' for target in targets))
-        code = PYTHON_TARGETS_VARIABLE.format(targets=targets, code=code)
+    targets = targets or []
+    targets = ', '.join((f'"{target}"' for target in targets))
+    code = PYTHON_TARGETS_VARIABLE.format(targets=targets, code=code)
     exec(code, globals())
 
 
