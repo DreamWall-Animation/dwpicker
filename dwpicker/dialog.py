@@ -238,7 +238,7 @@ class MissingImages(QtWidgets.QDialog):
         self.paths.setVerticalScrollMode(mode)
         self.paths.setModel(self.model)
 
-        self.browse = QtWidgets.QPushButton(icon('mini-open.png'))
+        self.browse = QtWidgets.QPushButton(icon('mini-open.png'), '')
         self.browse.setFixedWidth(30)
         self.browse.released.connect(self.call_browse)
         self.update = QtWidgets.QPushButton('Update')
