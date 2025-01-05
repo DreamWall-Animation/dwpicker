@@ -1,7 +1,7 @@
 
 import math
 from PySide2 import QtGui, QtCore
-from dwpicker.geometry import ViewportMapper
+from dwpicker.geometry import ViewportMapper, to_screenspace_coords
 import maya.OpenMaya as om
 
 
@@ -115,6 +115,39 @@ def get_path(path):
 
 
 def get_painter_path(path, viewportmapper=None):
+    return get_worldspace_path(path, viewportmapper)
+
+
+def get_shape_space_painter_path(
+        shape, force_world_space=True, viewportmapper=None):
+    if shape.options['shape.space'] == 'world' or force_world_space:
+        return get_worldspace_path(shape.options['shape.path'], viewportmapper)
+    return get_screenspace_path(
+        path=shape.options['shape.path'],
+        anchor=shape.options['shape.anchor'],
+        viewport_size=viewportmapper.viewsize)
+
+
+def get_screenspace_path(path, anchor, viewport_size):
+    if not path:
+        return QtGui.QPainterPath()
+    painter_path = QtGui.QPainterPath()
+    start = QtCore.QPointF(*path[0]['point'])
+    painter_path.moveTo(to_screenspace_coords(start, anchor, viewport_size))
+    for i in range(len(path)):
+        point = path[i]
+        point2 = path[i + 1 if i + 1 < len(path) else 0]
+        c1 = QtCore.QPointF(*(point['tangent_out'] or point['point']))
+        c2 = QtCore.QPointF(*(point2['tangent_in'] or point2['point']))
+        end = QtCore.QPointF(*point2['point'])
+        painter_path.cubicTo(
+            to_screenspace_coords(c1, anchor, viewport_size),
+            to_screenspace_coords(c2, anchor, viewport_size),
+            to_screenspace_coords(end, anchor, viewport_size))
+    return painter_path
+
+
+def get_worldspace_path(path, viewportmapper=None):
     if not path:
         return QtGui.QPainterPath()
     viewportmapper = viewportmapper or ViewportMapper()

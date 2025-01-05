@@ -3,11 +3,14 @@ from maya import cmds
 
 from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.geometry import grow_rect, ViewportMapper
-from dwpicker.shapepath import get_painter_path
+from dwpicker.geometry import (
+    grow_rect, ViewportMapper, to_shape_space_rect, to_shape_space)
+from dwpicker.shapepath import get_shape_space_painter_path
 
 
 SELECTION_COLOR = '#3388FF'
+PANEL_COLOR = '#00FFFF'
+FOCUS_COLOR = '#FFFFFF'
 MANIPULATOR_BORDER = 5
 
 
@@ -16,14 +19,49 @@ def factor_sensitivity(factor):
     return factor * sensitivity
 
 
-def draw_editor(painter, rect, snap=None, viewportmapper=None):
+def draw_editor(painter: QtGui.QPainter, rect, snap=None, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
-    pen = QtGui.QPen(QtGui.QColor('#333333'))
+    color = QtGui.QColor('#333333')
+    pen = QtGui.QPen(color)
     pen.setWidthF(2)
     brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
     painter.setPen(pen)
     painter.setBrush(brush)
     painter.drawRect(rect)
+
+    center = viewportmapper.to_viewport_coords(QtCore.QPoint(0, 0))
+    top_center = QtCore.QPointF(center.x(), rect.top())
+    bottom_center = QtCore.QPointF(center.x(), rect.bottom())
+    left_center = QtCore.QPointF(rect.left(), center.y())
+    right_center = QtCore.QPointF(rect.right(), center.y())
+
+    color.setAlpha(100)
+    pen = QtGui.QPen(color)
+    pen.setWidthF(2)
+    painter.setPen(pen)
+    painter.drawLine(top_center, bottom_center)
+    painter.drawLine(left_center, right_center)
+
+    text = QtGui.QStaticText('bottom_right')
+    x = center.x() - text.size().width() - 4
+    y = center.y() - text.size().height() - 4
+    point = QtCore.QPointF(x, y)
+    painter.drawStaticText(point, text)
+
+    text = QtGui.QStaticText('bottom_left')
+    y = center.y() - text.size().height() - 4
+    point = QtCore.QPointF(center.x() + 4, y)
+    painter.drawStaticText(point, text)
+
+    text = QtGui.QStaticText('top_right')
+    x = center.x() - text.size().width() - 4
+    point = QtCore.QPointF(x, center.y() + 4)
+    painter.drawStaticText(point, text)
+
+    text = QtGui.QStaticText('top_left')
+    point = QtCore.QPointF(center.x() + 4, center.y() + 4)
+    painter.drawStaticText(point, text)
+
     if snap is None:
         return
 
@@ -56,7 +94,7 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
         x += snap[0]
 
 
-def draw_shape(painter, shape, viewportmapper=None):
+def draw_shape(painter, shape, force_world_space=True, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     options = shape.options
     content_rect = shape.content_rect()
@@ -80,27 +118,36 @@ def draw_shape(painter, shape, viewportmapper=None):
 
     pen = QtGui.QPen(bordercolor)
     pen.setStyle(QtCore.Qt.SolidLine)
-    pen.setWidthF(viewportmapper.to_viewport(bordersize))
+    w = to_shape_space(bordersize, shape, force_world_space, viewportmapper)
+    pen.setWidthF(w)
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
-    rect = viewportmapper.to_viewport_rect(shape.rect)
+    rect = to_shape_space_rect(
+        shape.rect, shape, force_world_space, viewportmapper)
     if options['shape'] == 'square':
         painter.drawRect(rect)
     elif options['shape'] == 'round':
         painter.drawEllipse(rect)
     elif options['shape'] == 'rounded_rect':
-        x = viewportmapper.to_viewport(options['shape.cornersx'])
-        y = viewportmapper.to_viewport(options['shape.cornersy'])
+        x = to_shape_space(
+            options['shape.cornersx'], shape,
+            force_world_space, viewportmapper)
+        y = to_shape_space(
+            options['shape.cornersy'], shape,
+            force_world_space, viewportmapper)
         painter.drawRoundedRect(rect, x, y)
     else:  # custom
-        path = get_painter_path(options['shape.path'], viewportmapper)
+        path = get_shape_space_painter_path(
+            shape=shape,
+            force_world_space=force_world_space,
+            viewportmapper=viewportmapper)
         painter.drawPath(path)
 
     if shape.pixmap is not None:
         rect = shape.image_rect or content_rect
-        rect = viewportmapper.to_viewport_rect(rect)
+        rect = to_shape_space_rect(
+            rect, shape, force_world_space, viewportmapper)
         painter.drawPixmap(rect.toRect(), shape.pixmap)
-
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))
@@ -110,11 +157,14 @@ def draw_shape(painter, shape, viewportmapper=None):
     font = QtGui.QFont()
     font.setBold(options['text.bold'])
     font.setItalic(options['text.italic'])
-    size = round(viewportmapper.to_viewport(options['text.size']))
-    font.setPixelSize(size)
+    size = to_shape_space(
+        options['text.size'], shape, force_world_space, viewportmapper)
+    font.setPixelSize(round(size))
     painter.setFont(font)
     text = options['text.content']
-    content_rect = viewportmapper.to_viewport_rect(content_rect)
+
+    content_rect = to_shape_space_rect(
+        content_rect, shape, force_world_space, viewportmapper)
     painter.drawText(content_rect, flags, text)
 
 
@@ -126,6 +176,32 @@ def draw_selection_square(painter, rect, viewportmapper=None):
     backgroundcolor.setAlpha(85)
     painter.setPen(QtGui.QPen(bordercolor))
     painter.setBrush(QtGui.QBrush(backgroundcolor))
+    painter.drawRect(rect)
+
+
+def draw_picker_focus(painter, rect):
+    color = QtGui.QColor(FOCUS_COLOR)
+    color.setAlpha(10)
+    pen = QtGui.QPen(color)
+    pen.setWidthF(4)
+    painter.setPen(pen)
+    painter.setBrush(QtCore.Qt.NoBrush)
+    painter.drawRect(rect)
+    painter.setBrush(QtGui.QBrush())
+
+
+def draw_current_panel(painter, rect, viewportmapper=None):
+    viewportmapper = viewportmapper or ViewportMapper()
+    rect = viewportmapper.to_viewport_rect(rect)
+    color = QtGui.QColor(PANEL_COLOR)
+    color.setAlpha(30)
+    pen = QtGui.QPen(color)
+    pen.setWidthF(1.5)
+    pen.setStyle(QtCore.Qt.DashLine)
+    painter.setPen(pen)
+    brush = QtGui.QBrush(color)
+    brush.setStyle(QtCore.Qt.BDiagPattern)
+    painter.setBrush(brush)
     painter.drawRect(rect)
 
 

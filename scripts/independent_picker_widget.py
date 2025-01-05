@@ -8,14 +8,12 @@ from dwpicker.picker import PickerView
 from dwpicker.qtutils import set_shortcut
 from PySide2 import QtCore
 
-with open('-picker_file_path-', 'r') as f:
-    data = json.load(f)
-    shapes = [Shape(shape) for shape in data['shapes']]
-
 view = PickerView(editable=False)
 view.register_callbacks()
 view.setWindowFlags(QtCore.Qt.Tool)
-view.set_picker_data(shapes)
+with open('-picker_file_path-', 'r') as f:
+    data = json.load(f)
+    view.set_picker_data(data)
 view.reset()
 set_shortcut('F', view, view.reset)
 

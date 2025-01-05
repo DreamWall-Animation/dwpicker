@@ -14,6 +14,7 @@ from dwpicker.interactive import Shape, get_shape_rect_from_options
 from dwpicker.geometry import get_combined_rects, rect_symmetry, path_symmetry
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.qtutils import set_shortcut, get_cursor
+from dwpicker.stack import count_splitters
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
 from dwpicker.designer.editarea import ShapeEditArea
@@ -27,6 +28,8 @@ DIRECTION_OFFSETS = {
 
 class PickerEditor(QtWidgets.QWidget):
     pickerDataModified = QtCore.Signal(object)
+    panelsResized = QtCore.Signal(object)
+    panelsChanged = QtCore.Signal(object)
 
     def __init__(self, picker_data, undo_manager, parent=None):
         super(PickerEditor, self).__init__(parent, QtCore.Qt.Window)
@@ -48,6 +51,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.copyRequested.connect(self.copy)
         self.menu.copySettingsRequested.connect(self.copy_settings)
         self.menu.deleteRequested.connect(self.delete_selection)
+        self.menu.isolateCurrentPanel.connect(self.isolate_shapes)
         self.menu.pasteRequested.connect(self.paste)
         self.menu.pasteSettingsRequested.connect(self.paste_settings)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
@@ -92,6 +96,8 @@ class PickerEditor(QtWidgets.QWidget):
             shortcut.setAutoRepeat(True)
 
         self.attribute_editor = AttributeEditor()
+        self.attribute_editor.panelsChanged.connect(self.panels_changed)
+        self.attribute_editor.panelsResized.connect(self.panels_resized)
         self.attribute_editor.set_generals(self.options)
         self.attribute_editor.generals.set_shapes(self.shape_editor.shapes)
         self.attribute_editor.generalOptionSet.connect(self.generals_modified)
@@ -101,6 +107,10 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.imageModified.connect(self.image_modified)
         self.attribute_editor.removeLayer.connect(self.remove_layer)
         self.attribute_editor.selectLayerContent.connect(self.select_layer)
+        self.attribute_editor.panelSelected.connect(
+            self.shape_editor.set_current_panel)
+        self.attribute_editor.panelDoubleClicked.connect(
+            self.shape_editor.select_panel_shapes)
 
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
@@ -113,6 +123,18 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
         self.vlayout.addLayout(self.hlayout)
+
+    def isolate_shapes(self, state):
+        self.shape_editor.isolate = state
+        self.shape_editor.update()
+
+    def panels_changed(self, panels):
+        self.options['panels'] = panels
+        self.panelsChanged.emit(self.picker_data())
+
+    def panels_resized(self, panels):
+        self.options['panels'] = panels
+        self.panelsResized.emit(self.picker_data())
 
     def copy(self):
         clipboard.set([
@@ -272,6 +294,7 @@ class PickerEditor(QtWidgets.QWidget):
     def create_shape(
             self, template, before=False, position=None, targets=None):
         options = template.copy()
+        options['panel'] = max((self.shape_editor.current_panel, 0))
         shape = Shape(options)
         if not position:
             center = self.shape_editor.rect().center()
@@ -471,11 +494,11 @@ class PickerEditor(QtWidgets.QWidget):
         button2.triggered.connect(method)
 
         cursor = get_cursor(self.shape_editor)
-        shape = self.shape_editor.get_hovered_shape(cursor)
-        method = partial(self.update_targets, shape)
+        s = self.shape_editor.get_hovered_shape(cursor)
+        method = partial(self.update_targets, s)
         text = 'Update targets'
         button3 = QtWidgets.QAction(text, self)
-        button3.setEnabled(bool(shape))
+        button3.setEnabled(bool(s))
         button3.triggered.connect(method)
 
         menu = QtWidgets.QMenu()
@@ -505,14 +528,27 @@ class PickerEditor(QtWidgets.QWidget):
         create_layer = QtWidgets.QAction('Create layer from selection', self)
         create_layer.triggered.connect(self.create_visibility_layer)
         create_layer.setEnabled(bool(self.shape_editor.selection.shapes))
-
         menu.addAction(create_layer)
+
+        menu.addSeparator()
+        assign_to_panel = QtWidgets.QMenu('Assign to panel', self)
+        for i in range(count_splitters(self.options['panels'])):
+            action = QtWidgets.QAction(str(i + 1), self)
+            action.triggered.connect(partial(self.assign_to_panel, i))
+            assign_to_panel.addAction(action)
+        menu.addMenu(assign_to_panel)
+
         menu.exec_(self.shape_editor.mapToGlobal(position))
 
     def set_visibility_layer(self, layer=''):
         for shape in self.shape_editor.selection:
             shape.options['visibility_layer'] = layer
         self.layers_modified()
+
+    def assign_to_panel(self, panel):
+        for shape in self.shape_editor.selection:
+            shape.options['panel'] = panel
+        self.set_data_modified()
 
     def layers_modified(self):
         self.set_data_modified()

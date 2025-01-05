@@ -3,7 +3,8 @@ from maya import cmds
 from PySide2 import QtGui, QtWidgets, QtCore
 
 from dwpicker.optionvar import (
-    BG_LOCKED, SNAP_ITEMS, SNAP_GRID_X, SNAP_GRID_Y, save_optionvar)
+    BG_LOCKED, ISOLATE_CURRENT_PANEL_SHAPES, SNAP_ITEMS, SNAP_GRID_X,
+    SNAP_GRID_Y, save_optionvar)
 from dwpicker.qtutils import icon
 
 
@@ -11,12 +12,14 @@ class MenuWidget(QtWidgets.QWidget):
     addBackgroundRequested = QtCore.Signal()
     addButtonRequested = QtCore.Signal()
     addTextRequested = QtCore.Signal()
+    alignRequested = QtCore.Signal(str)
     arrangeRequested = QtCore.Signal(str)
     centerValuesChanged = QtCore.Signal(int, int)
     copyRequested = QtCore.Signal()
     copySettingsRequested = QtCore.Signal()
     deleteRequested = QtCore.Signal()
     editCenterToggled = QtCore.Signal(bool)
+    isolateCurrentPanel = QtCore.Signal(bool)
     lockBackgroundShapeToggled = QtCore.Signal(bool)
     moveDownRequested = QtCore.Signal()
     moveUpRequested = QtCore.Signal()
@@ -30,7 +33,6 @@ class MenuWidget(QtWidgets.QWidget):
     symmetryRequested = QtCore.Signal(bool)
     undoRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
-    alignRequested = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
@@ -73,6 +75,12 @@ class MenuWidget(QtWidgets.QWidget):
         self.lock_bg.setCheckable(True)
         self.lock_bg.triggered.connect(self.save_ui_states)
         self.lock_bg.toggled.connect(self.lockBackgroundShapeToggled.emit)
+
+        self.isolate = QtWidgets.QAction(icon('isolate.png'), '', self)
+        self.isolate.setToolTip('Isolate current panel shapes')
+        self.isolate.setCheckable(True)
+        self.isolate.triggered.connect(self.save_ui_states)
+        self.isolate.toggled.connect(self.isolateCurrentPanel.emit)
 
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
@@ -170,6 +178,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.search)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.lock_bg)
+        self.toolbar.addAction(self.isolate)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.snap)
         self.toolbar.addWidget(self.snapx)
@@ -209,12 +218,16 @@ class MenuWidget(QtWidgets.QWidget):
         value = str(cmds.optionVar(query=SNAP_GRID_Y))
         self.snapy.setText(value)
         self.lock_bg.setChecked(bool(cmds.optionVar(query=BG_LOCKED)))
+        value = bool(cmds.optionVar(query=ISOLATE_CURRENT_PANEL_SHAPES))
+        self.isolate.setChecked(value)
 
     def save_ui_states(self):
         save_optionvar(BG_LOCKED, int(self.lock_bg.isChecked()))
         save_optionvar(SNAP_ITEMS, int(self.snap.isChecked()))
         save_optionvar(SNAP_GRID_X, int(self.snapx.text()))
         save_optionvar(SNAP_GRID_Y, int(self.snapy.text()))
+        value = int(self.isolate.isChecked())
+        save_optionvar(ISOLATE_CURRENT_PANEL_SHAPES, value)
 
     def size_changed(self, *_):
         self.sizeChanged.emit()

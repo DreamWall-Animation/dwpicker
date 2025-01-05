@@ -104,7 +104,7 @@ class ColorWheel(QtWidgets.QWidget):
             a = QtCore.QPoint(event.pos().x(), center.y())
             self._angle = get_absolute_angle_c(a=a, b=event.pos(), c=center)
 
-        self.repaint()
+        self.update()
         self.currentColorChanged.emit(self.current_color())
 
     def mouseReleaseEvent(self, event):
@@ -214,7 +214,7 @@ class ColorWheel(QtWidgets.QWidget):
 
         self._current_color = color
         self._color_point = QtCore.QPoint(x, y)
-        self.repaint()
+        self.update()
 
 
 def degree_to_color(degree):

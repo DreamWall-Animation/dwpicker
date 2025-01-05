@@ -56,6 +56,16 @@ def ensure_retro_compatibility(picker_data):
     if tuple(version) < (0, 14, 1):
         picker_data['general']['menu_commands'] = []
 
+    if tuple(version) < (0, 15, 0):
+        picker_data['general']['panels'] = [[1.0, [1.0]]]
+        picker_data['general']['panels.orientation'] = 'vertical'
+        picker_data['panels.zoom_locked'] = [picker_data['zoom_locked']]
+        del picker_data['zoom_locked']
+        for shape in picker_data['shapes']:
+            shape['panel'] = 0
+            shape['shape.space'] = 'world'
+            shape['shape.anchor'] = 'top_left'
+
     return picker_data
 
 

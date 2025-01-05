@@ -5,15 +5,19 @@ from PySide2 import QtCore, QtWidgets
 from dwpicker.commands import (
     CommandsEditor, MenuCommandsEditor, GlobalCommandsEditor)
 from dwpicker.qtutils import VALIGNS, HALIGNS
+from dwpicker.designer.stackeditor import StackEditor
 from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.designer.patheditor import PathEditor
+from dwpicker.stack import ORIENTATIONS
 from dwpicker.widgets import (
     BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
-    TextEdit, Title, WidgetToggler)
+    TextEdit, Title, WidgetToggler, ZoomsLockedEditor)
 
 
 LEFT_CELL_WIDTH = 80
 SHAPE_TYPES = 'square', 'round', 'rounded_rect', 'custom'
+SPACES = 'world', 'screen'
+ANCHORS = 'top_left', 'top_right', 'bottom_left', 'bottom_right'
 
 
 class AttributeEditor(QtWidgets.QWidget):
@@ -24,12 +28,20 @@ class AttributeEditor(QtWidgets.QWidget):
     rectModified = QtCore.Signal(str, float)
     removeLayer = QtCore.Signal(str)
     selectLayerContent = QtCore.Signal(str)
+    panelSelected = QtCore.Signal(int)
+    panelDoubleClicked = QtCore.Signal(int)
+    panelsChanged = QtCore.Signal(object)
+    panelsResized = QtCore.Signal(object)
 
     def __init__(self, parent=None):
         super(AttributeEditor, self).__init__(parent)
         self.widget = QtWidgets.QWidget()
 
         self.generals = GeneralSettings()
+        self.generals.panelSelected.connect(self.panel_selected)
+        self.generals.panelDoubleClicked.connect(self.panel_double_clicked)
+        self.generals.panelsChanged.connect(self.panelsChanged.emit)
+        self.generals.panelsResized.connect(self.panelsResized.emit)
         self.generals.optionModified.connect(self.generalOptionSet.emit)
         self.generals.layers.removeLayer.connect(self.removeLayer.emit)
         mtd = self.selectLayerContent.emit
@@ -84,6 +96,12 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.setFixedWidth(self.sizeHint().width() * 1.075)
 
+    def panel_selected(self, panel):
+        self.panelSelected.emit(panel - 1)
+
+    def panel_double_clicked(self, panel):
+        self.panelDoubleClicked.emit(panel - 1)
+
     def set_generals(self, options):
         self.blockSignals(True)
         self.generals.set_options(options)
@@ -105,13 +123,31 @@ class AttributeEditor(QtWidgets.QWidget):
 
 class GeneralSettings(QtWidgets.QWidget):
     optionModified = QtCore.Signal(str, object)
+    panelSelected = QtCore.Signal(int)
+    panelDoubleClicked = QtCore.Signal(int)
+    panelsChanged = QtCore.Signal(object)
+    panelsResized = QtCore.Signal(object)
 
     def __init__(self, parent=None):
         super(GeneralSettings, self).__init__(parent)
         self.name = TextEdit()
         self.name.valueSet.connect(self.name_changed)
-        self.zoom_locked = BoolCombo(False)
-        self.zoom_locked.valueSet.connect(self.zoom_changed)
+
+        self.zoom_locked = ZoomsLockedEditor()
+        self.zoom_locked.valueSet.connect(self.optionModified.emit)
+
+        self.orientation = QtWidgets.QComboBox()
+        self.orientation.addItems(list(ORIENTATIONS))
+        self.orientation.currentIndexChanged.connect(self.orienation_changed)
+
+        self.stack = StackEditor()
+        method = partial(self.optionModified.emit, 'panels')
+        self.stack.panelsChanged.connect(self.panelsChanged.emit)
+        self.stack.panelsResized.connect(self.panelsResized.emit)
+        self.stack.panelSelected.connect(self.panelSelected.emit)
+        self.stack.panelsChanged.connect(self.zoom_locked.set_panels)
+        self.stack.panelDoubleClicked.connect(self.panelDoubleClicked.emit)
+
         self.layers = VisibilityLayersEditor()
         self.commands = GlobalCommandsEditor()
         method = partial(self.optionModified.emit, 'menu_commands')
@@ -121,13 +157,25 @@ class GeneralSettings(QtWidgets.QWidget):
         form_layout.setSpacing(0)
         form_layout.setContentsMargins(0, 0, 0, 0)
         form_layout.setHorizontalSpacing(5)
-        form_layout.addRow('Name', self.name)
-        form_layout.addRow('Zoom-locked', self.zoom_locked)
+        form_layout.addRow('Picker Name', self.name)
+
+        form_layout_2 = QtWidgets.QFormLayout()
+        form_layout_2.setSpacing(0)
+        form_layout_2.setContentsMargins(0, 0, 0, 0)
+        form_layout_2.setHorizontalSpacing(5)
+        form_layout_2.addRow('Columns orientation', self.orientation)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addLayout(form_layout)
+        layout.addItem(QtWidgets.QSpacerItem(0, 8))
+        layout.addWidget(Title('Picker Panels'))
+        layout.addLayout(form_layout_2)
+        layout.addWidget(self.stack)
+        layout.addItem(QtWidgets.QSpacerItem(0, 8))
+        layout.addWidget(Title('Panels Zoom Locked'))
+        layout.addWidget(self.zoom_locked)
         layout.addItem(QtWidgets.QSpacerItem(0, 8))
         layout.addWidget(Title('Visibility Layers'))
         layout.addWidget(self.layers)
@@ -135,19 +183,25 @@ class GeneralSettings(QtWidgets.QWidget):
         layout.addWidget(Title('Global Right Click Commands'))
         layout.addWidget(self.commands)
 
+    def orienation_changed(self, _):
+        orientation = self.orientation.currentText()
+        self.stack.set_orientation(orientation)
+        self.optionModified.emit('panels.orientation', orientation)
+        self.panelsResized.emit(self.stack.data)
+
     def set_shapes(self, shapes):
         self.layers.set_shapes(shapes)
 
     def set_options(self, options):
+        self.stack.set_data(options['panels'])
+        self.stack.set_orientation(options['panels.orientation'])
+        self.orientation.setCurrentText(options['panels.orientation'])
         self.name.setText(options['name'])
-        self.zoom_locked.setCurrentText(str(options['zoom_locked']))
+        self.zoom_locked.set_options(options)
         self.commands.set_options(options)
 
     def name_changed(self, value):
         self.optionModified.emit('name', value)
-
-    def zoom_changed(self, state):
-        self.optionModified.emit('zoom_locked', state)
 
 
 class ShapeSettings(QtWidgets.QWidget):
@@ -165,6 +219,8 @@ class ShapeSettings(QtWidgets.QWidget):
         self.path_editor.setVisible(False)
         self.path_editor.setEnabled(False)
 
+        self.panel = QtWidgets.QLineEdit()
+        self.panel.setReadOnly(True)
         self.layer = LayerEdit()
         method = partial(self.optionSet.emit, 'visibility_layer')
         self.layer.valueSet.connect(method)
@@ -172,6 +228,15 @@ class ShapeSettings(QtWidgets.QWidget):
         self.background = BoolCombo()
         method = partial(self.optionSet.emit, 'background')
         self.background.valueSet.connect(method)
+
+        self.space = QtWidgets.QComboBox()
+        self.space.addItems(SPACES)
+        self.space.currentIndexChanged.connect(self.space_changed)
+
+        self.anchor = QtWidgets.QComboBox()
+        self.anchor.addItems(ANCHORS)
+        method = partial(self.optionSet.emit, 'shape.anchor')
+        self.anchor.currentTextChanged.connect(method)
 
         self.left = IntEdit(minimum=0)
         method = partial(self.rectModified.emit, 'shape.left')
@@ -196,6 +261,8 @@ class ShapeSettings(QtWidgets.QWidget):
         layout1.setSpacing(0)
         layout1.setContentsMargins(0, 0, 0, 0)
         layout1.setHorizontalSpacing(5)
+        layout1.addRow(Title('Display'))
+        layout1.addRow('Panel number', self.panel)
         layout1.addRow('Visibility layer', self.layer)
         layout1.addRow('Background', self.background)
         layout1.addRow('Shape', self.shape)
@@ -207,6 +274,10 @@ class ShapeSettings(QtWidgets.QWidget):
 
         layout3 = QtWidgets.QFormLayout()
         layout3.addItem(QtWidgets.QSpacerItem(0, 8))
+        layout3.addRow(Title('Space'))
+        layout3.addRow('space', self.space)
+        layout3.addRow('anchor', self.anchor)
+        layout3.addItem(QtWidgets.QSpacerItem(0, 8))
         layout3.addRow(Title('Dimensions'))
         layout3.addRow('left', self.left)
         layout3.addRow('top', self.top)
@@ -214,6 +285,7 @@ class ShapeSettings(QtWidgets.QWidget):
         layout3.addRow('height', self.height)
         layout3.addRow('roundness x', self.cornersx)
         layout3.addRow('roundness y', self.cornersy)
+        layout3.addItem(QtWidgets.QSpacerItem(0, 8))
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
@@ -250,10 +322,27 @@ class ShapeSettings(QtWidgets.QWidget):
             self.optionSet.emit('shape.path', self.path_editor.path())
         self.optionSet.emit('shape', self.shape.currentText())
 
+    def space_changed(self, index):
+        self.anchor.setEnabled(bool(index))
+        self.optionSet.emit('shape.space', self.space.currentText())
+
     def set_options(self, options):
         values = list({option['background'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.background.setCurrentText(value)
+
+        values = list({option['panel'] for option in options})
+        value = values[0] if len(values) == 1 else '' if not values else '...'
+        self.panel.setText(str(value + 1 if isinstance(value, int) else value))
+
+        values = list({option['shape.space'] for option in options})
+        value = values[0] if len(values) == 1 else '' if not values else '...'
+        self.space.setCurrentText(value)
+
+        values = list({option['shape.anchor'] for option in options})
+        value = values[0] if len(values) == 1 else '' if not values else '...'
+        self.anchor.setCurrentText(value)
+        self.anchor.setEnabled(self.space.currentText() == 'screen')
 
         values = list({option['visibility_layer'] for option in options})
         value = values[0] if len(values) == 1 else '' if not values else '...'

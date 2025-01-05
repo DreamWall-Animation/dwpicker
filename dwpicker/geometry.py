@@ -99,6 +99,41 @@ class ViewportMapper():
         return self.to_units_transform().map(path)
 
 
+def to_screenspace_coords(point, anchor, viewport_size):
+    if anchor == 'top_left':
+        return point
+
+    point = QtCore.QPointF(point)
+    if anchor == 'top_right':
+        x = viewport_size.width() + point.x()
+        return QtCore.QPointF(x, point.y())
+
+    y = viewport_size.height() + point.y()
+    if anchor == 'bottom_left':
+        return QtCore.QPointF(point.x(), y)
+
+    if anchor == 'bottom_right':
+        x = viewport_size.width() + point.x()
+        return QtCore.QPointF(x, y)
+
+
+def to_shape_space_rect(rect, shape, force_world_space, viewportmapper):
+    if shape.options['shape.space'] == 'world' or force_world_space:
+        return viewportmapper.to_viewport_rect(rect)
+    rect = QtCore.QRectF(rect)
+    point = to_screenspace_coords(
+        rect.topLeft(), shape.options['shape.anchor'], viewportmapper.viewsize)
+    rect.moveTopLeft(point)
+    return rect
+
+
+
+def to_shape_space(value, shape, force_world_space, viewportmapper):
+    if shape.options['shape.space'] == 'world' or force_world_space:
+        return viewportmapper.to_viewport(value)
+    return value
+
+
 def get_topleft_rect(rect):
     """
     this function return a manipulator rect for the transform

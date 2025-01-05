@@ -155,7 +155,5 @@ class GlobalCommandsEditor(CommandsEditor):
 
     def set_options(self, options):
         self.commands.clear()
-        import pprint
-        pprint.pprint(options)
         for command in options[self.picker_command_key]:
             self.call_add_command(command)

@@ -30,7 +30,7 @@ from dwpicker.optionvar import (
     NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
     save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.path import get_import_directory, get_open_directory
-from dwpicker.picker import PickerView, list_targets
+from dwpicker.picker import PickerStackedView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
 from dwpicker.quick import QuickOptions
@@ -473,8 +473,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             picker.reset()
 
     def create_picker(self, data):
-        picker = PickerView()
-        picker.editable = self.editable
+        picker = PickerStackedView(self.editable)
         picker.register_callbacks()
         picker.addButtonRequested.connect(self.add_button)
         picker.updateButtonRequested.connect(self.update_button)
@@ -483,8 +482,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             method = partial(self.data_changed_from_picker, picker)
             picker.dataChanged.connect(method)
         picker.set_picker_data(data)
-        picker.reset()
-        picker.zoom_locked = data['general']['zoom_locked']
+        picker.reset(force_all=True)
         return picker
 
     def add_picker(self, data, filename=None, modified_state=False):
@@ -509,7 +507,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.modified_states.insert(index, modified_state)
             self.tab.insertTab(index, picker, data['general']['name'])
             self.tab.setCurrentIndex(index)
-        picker.reset()
+        picker.reset(force_all=True)
 
     def call_open(self):
         filenames = QtWidgets.QFileDialog.getOpenFileNames(
@@ -628,6 +626,16 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             picker = self.pickers[index]
             method = partial(self.data_changed_from_editor, picker=picker)
             editor.pickerDataModified.connect(method)
+            method = partial(
+                self.data_changed_from_editor,
+                picker=picker,
+                panels_resized=True)
+            editor.panelsResized.connect(method)
+            method = partial(
+                self.data_changed_from_editor,
+                picker=picker,
+                panels_changed=True)
+            editor.panelsChanged.connect(method)
             self.editors[index] = editor
 
         self.editors[index].show()
@@ -678,21 +686,23 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def sizeHint(self):
         return QtCore.QSize(500, 800)
 
-    def add_button(self, x, y, button_type):
+    def add_button(self, panel, x, y, button_type):
         targets = cmds.ls(selection=True)
         if not targets and button_type <= 1:
             return warning("Warning", "No targets selected")
 
         if button_type == 1:
             overrides = self.quick_options.values
+            overrides['panel'] = panel
             shapes = build_multiple_shapes(targets, overrides)
             if not shapes:
                 return
             picker = self.tab.currentWidget()
-            picker.drag_shapes = shapes
+            picker.set_drag_shapes(shapes, panel)
             return
 
         data = BUTTON.copy()
+        data['panel'] = panel
         data['shape.left'] = x
         data['shape.top'] = y
         data.update(self.quick_options.values)
@@ -729,15 +739,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker = self.tab.currentWidget()
         selected_shapes = [s for s in picker.shapes if s.selected]
         for shape in selected_shapes:
-            picker.shapes.remove(shape)
+            picker.remove_shape(shape)
+        picker.update()
         self.data_changed_from_picker(picker)
 
     def add_shape_to_current_picker(self, shape, prepend=False):
         picker = self.tab.currentWidget()
-        if prepend:
-            picker.shapes.insert(0, shape)
-        else:
-            picker.shapes.append(shape)
+        picker.add_shape(shape, prepend=prepend)
         self.data_changed_from_picker(picker)
 
     def data_changed_from_picker(self, picker):
@@ -746,15 +754,23 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if self.editors[index]:
             self.editors[index].set_picker_data(data)
         self.set_modified_state(index, True)
-        picker.repaint()
+        picker.update()
         self.undo_managers[index].set_data_modified(data)
         self.store_local_pickers_data()
 
-    def data_changed_from_editor(self, data, picker):
+    def data_changed_from_editor(
+            self, data, picker,
+            panels_changed=False,
+            panels_resized=False):
+
         index = self.tab.indexOf(picker)
         self.generals[index] = data['general']
-        picker.set_picker_data(data)
-        picker.zoom_locked = data['general']['zoom_locked']
+
+        picker.set_picker_data(
+            data,
+            panels_changed=panels_changed,
+            panels_resized=panels_resized)
+
         self.set_title(index, data['general']['name'])
         self.set_modified_state(index, True)
         self.store_local_pickers_data()

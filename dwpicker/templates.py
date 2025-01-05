@@ -4,7 +4,10 @@ from dwpicker.appinfos import VERSION
 BUTTON = {
     'background': False,
     'visibility_layer': None,
+    'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
+    'shape.space': 'world',
+    'shape.anchor': 'top_left',  # or bottom_left, top_right, bottom_right
     'shape.path' : [],
     'shape.left': 0.0,
     'shape.top': 0.0,
@@ -37,13 +40,17 @@ BUTTON = {
     'image.path': '',
     'image.fit': True,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32
+}
 
 
 TEXT = {
     'background': False,
     'visibility_layer': None,
+    'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
+    'shape.space': 'world',  # or screen
+    'shape.anchor': 'top_left',  # or bottom_left, top_right, bottom_right
     'shape.path' : [],
     'shape.left': 0.0,
     'shape.top': 0.0,
@@ -76,13 +83,17 @@ TEXT = {
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32,
+}
 
 
 BACKGROUND = {
     'background': True,
     'visibility_layer': None,
+    'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
+    'shape.space': 'world',  # or screen
+    'shape.anchor': 'top_left',  # or bottom_left, top_right, bottom_right
     'shape.path' : [],
     'shape.left': 0.0,
     'shape.top': 0.0,
@@ -115,7 +126,8 @@ BACKGROUND = {
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32,
+}
 
 
 COMMAND = {
@@ -142,6 +154,8 @@ MENU_COMMAND = {
 PICKER = {
     'name': 'Untitled',
     'version': VERSION,
-    'zoom_locked': False,
-    'menu_commands': []
+    'panels.zoom_locked': [False],
+    'panels.orientation': 'vertical',
+    'menu_commands': [],
+    'panels': [[1.0, [1.0]]]
 }

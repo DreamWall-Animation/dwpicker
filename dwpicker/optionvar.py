@@ -26,6 +26,7 @@ DISABLE_IMPORT_CALLBACKS = 'dwpicker_disable_import_callbacks'
 DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
 OVERRIDE_PROD_PICKER_DIRECTORY_ENV = 'dwpicker_override_picker_directory_env'
 INSERT_TAB_AFTER_CURRENT = 'dwpicker_insert_tab_after_current'
+ISOLATE_CURRENT_PANEL_SHAPES = 'dwpicker_isolate_current_panel_shapes'
 LAST_COMMAND_LANGUAGE = 'dwpicker_last_command_language_used'
 LAST_IMAGE_DIRECTORY_USED = 'dwpicker_last_directory_used'
 LAST_IMPORT_DIRECTORY = 'dwpicker_last_file_import_directory'
@@ -49,6 +50,7 @@ USE_PROD_PICKER_DIR_AS_DEFAULT = 'dwpicker_user_prod_picker_dir_for_import'
 ZOOM_BUTTON = 'dwpicker_picker_zoom_mouse_button'
 WARN_ON_TAB_CLOSED = 'dwpicker_warn_on_tab_closed'
 ZOOM_SENSITIVITY = 'dwpicker_zoom_sensitivity'
+
 
 try:
     check_for_update = int(cmds.about(majorVersion=True) != '2023')
@@ -83,6 +85,7 @@ OPTIONVARS = {
     DISPLAY_QUICK_OPTIONS: 1,
     OVERRIDE_PROD_PICKER_DIRECTORY_ENV: 0,
     INSERT_TAB_AFTER_CURRENT: 0,
+    ISOLATE_CURRENT_PANEL_SHAPES: 0,
     LAST_OPEN_DIRECTORY: os.path.expanduser("~"),
     LAST_SAVE_DIRECTORY: os.path.expanduser("~"),
     LAST_IMPORT_DIRECTORY: os.path.expanduser("~"),

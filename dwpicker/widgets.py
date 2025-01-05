@@ -4,6 +4,7 @@ from dwpicker.colorwheel import ColorDialog
 from dwpicker.dialog import get_image_path
 from dwpicker.path import format_path
 from dwpicker.qtutils import icon
+from dwpicker.stack import count_splitters
 
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
@@ -291,3 +292,76 @@ class LayerEdit(QtWidgets.QWidget):
             return
         self.layer.setText('')
         self.valueSet.emit(None)
+
+
+class ZoomsLockedEditor(QtWidgets.QWidget):
+    valueSet = QtCore.Signal(object)
+
+    def __init__(self, parent=None):
+        super(ZoomsLockedEditor, self).__init__(parent)
+        self.model = ZoomLockedModel()
+        self.model.resultChanged.connect(self.emit_result_changed)
+
+        self.list = QtWidgets.QListView()
+        self.list.setFixedHeight(85)
+        self.list.setModel(self.model)
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.list)
+
+    def emit_result_changed(self):
+        self.valueSet.emit('panels.zoom_locked', self.model.result)
+
+    def set_panels(self, panels):
+        self.model.layoutAboutToBeChanged.emit()
+        self.model.panels = panels
+        split_count = count_splitters(panels)
+        while split_count > len(self.model.result):
+            self.model.result.append(False)
+        self.model.layoutChanged.emit()
+
+    def set_options(self, options):
+        self.model.layoutAboutToBeChanged.emit()
+        self.model.panels = options['panels']
+        split_count = count_splitters(options['panels'])
+        while split_count > len(options['panels.zoom_locked']):
+            options['panels.zoom_locked'].append(False)
+        self.model.result = options['panels.zoom_locked']
+        self.model.layoutChanged.emit()
+
+
+class ZoomLockedModel(QtCore.QAbstractListModel):
+    resultChanged = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        super(ZoomLockedModel, self).__init__(parent)
+        self.panels = [1.0, [1.0]]
+        self.result = []
+
+    def rowCount(self, _):
+        return count_splitters(self.panels)
+
+    def flags(self, _):
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable
+
+    def setData(self, index, value, role):
+        if role != QtCore.Qt.CheckStateRole:
+            return False
+
+        state = value == QtCore.Qt.Checked
+        self.result[index.row()] = state
+        return True
+
+    def data(self, index, role):
+        if not index.isValid():
+            return
+
+        if role == QtCore.Qt.DisplayRole:
+            return 'Panel ' + str(index.row() + 1)
+
+        if role == QtCore.Qt.CheckStateRole:
+            return (
+                QtCore.Qt.Checked
+                if self.result[index.row()] else
+                QtCore.Qt.Unchecked)

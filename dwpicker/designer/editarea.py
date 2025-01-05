@@ -3,9 +3,12 @@ from maya import cmds
 
 from dwpicker.interactive import Manipulator, SelectionSquare, cursor_in_shape
 from dwpicker.interactionmanager import InteractionManager
-from dwpicker.optionvar import SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS
+from dwpicker.optionvar import (
+    ISOLATE_CURRENT_PANEL_SHAPES, SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS)
 from dwpicker.geometry import Transform, ViewportMapper, get_combined_rects
-from dwpicker.painting import draw_editor, draw_shape, draw_manipulator, draw_selection_square
+from dwpicker.painting import (
+    draw_editor, draw_shape, draw_manipulator, draw_selection_square,
+    draw_current_panel)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 
@@ -27,6 +30,8 @@ class ShapeEditArea(QtWidgets.QWidget):
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
         self.setMouseTracking(True)
+        self.current_panel = -1
+        self.isolate = cmds.optionVar(query= ISOLATE_CURRENT_PANEL_SHAPES)
         self.options = options
 
         self.viewportmapper = ViewportMapper()
@@ -55,8 +60,18 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.zoom(factor, event.pos())
         self.update()
 
+    def set_current_panel(self, panel):
+        self.current_panel = panel
+        self.update()
+
+    def select_panel_shapes(self, panel):
+        panel_shapes = [s for s in self.shapes if s.options['panel'] == panel]
+        if panel_shapes:
+            self.selection.set(panel_shapes)
+            self.update_selection()
+
     def focus(self):
-        shapes = [s for s in self.shapes if s.selected] or self.shapes
+        shapes = self.selection.shapes or self.visible_shapes()
         shapes_rects = [s.rect for s in shapes]
         if not shapes_rects:
             self.update()
@@ -87,9 +102,9 @@ class ShapeEditArea(QtWidgets.QWidget):
     def list_shapes(self):
         if self.lock_background_shape:
             return [
-                shape for shape in self.shapes
+                shape for shape in self.visible_shapes()
                 if not shape.is_background()]
-        return self.shapes
+        return self.visible_shapes()
 
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
@@ -198,6 +213,14 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selection_square.release()
         self.update()
 
+    def visible_shapes(self):
+        if not self.isolate or self.current_panel < 0:
+            return self.shapes
+
+        return [
+            s for s in self.shapes if
+            s.options['panel'] == self.current_panel]
+
     def select_shapes(self):
         shapes = [
             s for s in self.list_shapes()
@@ -250,8 +273,17 @@ class ShapeEditArea(QtWidgets.QWidget):
             painter, self.rect(),
             snap=self.transform.snap,
             viewportmapper=self.viewportmapper)
+        current_panel_shapes = []
         for shape in self.shapes:
-            draw_shape(painter, shape, self.viewportmapper)
+            if shape.options['panel'] == self.current_panel:
+                current_panel_shapes.append(shape)
+
+        if current_panel_shapes:
+            rect = get_combined_rects([s.rect for s in current_panel_shapes])
+            draw_current_panel(painter, rect, self.viewportmapper)
+
+        for shape in self.visible_shapes():
+            draw_shape(painter, shape, viewportmapper=self.viewportmapper)
 
         conditions = (
             self.manipulator.rect is not None and

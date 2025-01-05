@@ -92,7 +92,7 @@ class ColorButton(QtWidgets.QAbstractButton):
             return
         self.name = dialog.colorname()
         self.colorChanged.emit()
-        self.repaint()
+        self.update()
 
     @property
     def name(self):

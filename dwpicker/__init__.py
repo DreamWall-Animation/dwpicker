@@ -186,11 +186,11 @@ def set_layer_visible(layername, visible=True):
     if visible:
         if layername in picker.layers_menu.hidden_layers:
             picker.layers_menu.hidden_layers.remove(layername)
-            picker.repaint()
+            picker.update()
         return
     if layername not in picker.layers_menu.hidden_layers:
         picker.layers_menu.hidden_layers.append(layername)
-        picker.repaint()
+        picker.update()
 
 
 def toggle_layer_visibility(layername):
@@ -203,4 +203,4 @@ def toggle_layer_visibility(layername):
         picker.layers_menu.hidden_layers.remove(layername)
     else:
         picker.layers_menu.hidden_layers.append(layername)
-    picker.repaint()
+    picker.update()

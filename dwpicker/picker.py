@@ -1,4 +1,5 @@
 from functools import partial
+from collections import defaultdict
 
 from maya import cmds
 import maya.OpenMaya as om
@@ -13,11 +14,23 @@ from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
-from dwpicker.painting import ViewportMapper, draw_shape, draw_selection_square
-from dwpicker.qtutils import get_cursor
+from dwpicker.painting import (
+    ViewportMapper, draw_shape, draw_selection_square, draw_picker_focus)
+from dwpicker.qtutils import get_cursor, clear_layout
+from dwpicker.stack import create_stack_splitters, count_splitters
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
     NameclashError)
+
+
+SPLITTER_STYLE = """\
+QSplitter::handle {
+    background-color: rgba(0, 0, 0, 50);
+    border: 1px solid #444;
+    width: 2px;
+    height: 2px;
+}
+"""
 
 
 def align_shapes_on_line(shapes, point1, point2):
@@ -28,19 +41,24 @@ def align_shapes_on_line(shapes, point1, point2):
         shape.update_path()
 
 
-def set_shapes_hovered(shapes, cursor, selection_rect=None):
+def set_shapes_hovered(
+        shapes,
+        world_cursor,
+        screen_cursor,
+        selection_rect=None,
+        viewportmapper=None):
     """
     It set hovered the shape if his rect contains the cursor.
     """
     if not shapes:
         return
-    cursor = cursor.toPoint()
-    selection_rect = selection_rect or QtCore.QRect(cursor, cursor)
+    world_cursor = world_cursor.toPoint()
+    selection_rect = selection_rect or QtCore.QRect(world_cursor, world_cursor)
     shapes = [s for s in shapes if not s.is_background()]
     selection_shapes_intersect_selection = [
         s for s in shapes
-        if cursor_in_shape(s, cursor) or
-        rect_intersects_shape(s, selection_rect)]
+        if cursor_in_shape(s, world_cursor, screen_cursor, False, viewportmapper)
+        or rect_intersects_shape(s, selection_rect, skip_screen_space=True)]
 
     targets = list_targets(selection_shapes_intersect_selection)
     for s in shapes:
@@ -57,11 +75,17 @@ def set_shapes_hovered(shapes, cursor, selection_rect=None):
         s.hovered = state
 
 
-def detect_hovered_shape(shapes, cursor):
+def detect_hovered_shape(shapes, world_cursor, screen_cursor, viewportmapper):
     if not shapes:
         return
     for shape in reversed(shapes):
-        if cursor_in_shape(shape, cursor) and not shape.is_background():
+        hovered = cursor_in_shape(
+            shape=shape,
+            world_cursor=world_cursor,
+            screen_cursor=screen_cursor,
+            force_world_space=False,
+            viewportmapper=viewportmapper)
+        if hovered and not shape.is_background():
             return shape
 
 
@@ -69,20 +93,144 @@ def list_targets(shapes):
     return {t for s in shapes for t in s.targets()}
 
 
-class PickerView(QtWidgets.QWidget):
+class PickerStackedView(QtWidgets.QWidget):
     dataChanged = QtCore.Signal()
-    addButtonRequested = QtCore.Signal(int, int, int)
+    addButtonRequested = QtCore.Signal(int, int, int, int)
     updateButtonRequested = QtCore.Signal(object)
     deleteButtonRequested = QtCore.Signal()
 
     def __init__(self, editable=True, parent=None):
+        super(PickerStackedView, self).__init__(parent)
+        self.editable = editable
+        self.pickers = []
+        self.shapes = []
+        self.layers_menu = VisibilityLayersMenu()
+        self.layers_menu.visibilities_changed.connect(self.update)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setStyleSheet(SPLITTER_STYLE)
+
+    def register_callbacks(self):
+        for picker in self.pickers:
+            picker.register_callbacks()
+
+    def unregister_callbacks(self):
+        for picker in self.pickers:
+            picker.unregister_callbacks()
+
+    def reset(self, force_all=False):
+        if not force_all:
+            for picker in self.pickers:
+                if picker.rect().contains(get_cursor(self)):
+                    picker.reset()
+                    return
+        # If no picker hovered, focus all.
+        for picker in self.pickers:
+            picker.reset()
+
+    def create_pickers(self, data):
+        self.unregister_callbacks()
+        self.pickers = [
+            PickerView(self.editable, i, self.layers_menu, self)
+            for i in range(count_splitters(data['general']['panels']))]
+
+        for picker in self.pickers:
+            picker.dataChanged.connect(self.dataChanged.emit)
+            picker.addButtonRequested.connect(self.addButtonRequested.emit)
+            picker.updateButtonRequested.connect(self.updateButtonRequested.emit)
+            picker.deleteButtonRequested.connect(self.deleteButtonRequested.emit)
+
+    def create_splitters(self, data):
+        panels = data['general']['panels']
+        orientation = data['general']['panels.orientation']
+        splitter = create_stack_splitters(panels, self.pickers, orientation)
+        clear_layout(self.layout)
+        self.layout.addWidget(splitter)
+
+    def set_picker_data(
+            self, data, panels_changed=False, panels_resized=False):
+        update_splitters = panels_changed or panels_resized or not self.pickers
+        if panels_changed or not self.pickers:
+            self.create_pickers(data)
+        self.set_auto_center(False)
+        if update_splitters:
+            self.create_splitters(data)
+
+        self.dispatch_picker_data(data)
+        # HACK: delay the auto_center switch to avoid weird resize issue at
+        # splitter recreation time.
+        QtCore.QTimer.singleShot(1, partial(self.set_auto_center, True))
+
+    def set_auto_center(self, state):
+        for picker in self.pickers:
+            picker.auto_center = state
+
+    def dispatch_picker_data(self, data):
+        self.shapes = [Shape(s) for s in data['shapes']]
+        self.layers_menu.set_shapes(self.shapes)
+
+        panels_zoom_locked = data['general']['panels.zoom_locked']
+        for picker, zoom_locked in zip(self.pickers, panels_zoom_locked):
+            picker.zoom_locked = zoom_locked
+            picker.shapes = []
+            picker.global_commands = data['general']['menu_commands']
+            picker.interaction_manager.shapes = []
+
+        for shape in self.shapes:
+            if shape.options['panel'] >= len(self.pickers):
+                continue
+            picker = self.pickers[shape.options['panel']]
+            picker.shapes.append(shape)
+            picker.interaction_manager.shapes.append(shape)
+
+        self.update()
+
+    def add_shape(self, shape, prepend=False):
+        if prepend:
+            self.shapes.insert(0, shape)
+            picker.add_shapeshapes.insert(0, shape)
+        else:
+            self.shapes.append(shape)
+        self.layers_menu.set_shapes(self.shapes)
+
+        if shape.options['panel'] >= len(self.pickers):
+            return
+
+        picker = self.pickers[shape.options['panel']]
+        if prepend:
+            picker.shapes.insert(0, shape)
+        else:
+            picker.shapes.append(shape)
+        picker.update()
+
+    def remove_shape(self, shape):
+        self.shapes.remove(shape)
+        if shape.options['panel'] >= len(self.pickers):
+            return
+        picker = self.pickers[shape.options['panel']]
+        picker.shapes.remove(shape)
+
+    def set_drag_shapes(self, shapes, panel):
+        self.pickers[panel].drag_shapes = shapes
+
+
+class PickerView(QtWidgets.QWidget):
+    dataChanged = QtCore.Signal()
+    addButtonRequested = QtCore.Signal(int, int, int, int)
+    updateButtonRequested = QtCore.Signal(object)
+    deleteButtonRequested = QtCore.Signal()
+
+    def __init__(self, editable=True, panel=0, layers_menu=None, parent=None):
         super(PickerView, self).__init__(parent)
         self.callbacks = []
+        self.panel = panel
+        self.auto_center = True
         self.editable = editable
         self.interaction_manager = InteractionManager()
         self.viewportmapper = ViewportMapper()
         self.selection_square = SelectionSquare()
-        self.layers_menu = VisibilityLayersMenu()
+        self.layers_menu = layers_menu or VisibilityLayersMenu()
         self.setMouseTracking(True)
         self.global_commands = []
         self.shapes = []
@@ -91,6 +239,7 @@ class PickerView(QtWidgets.QWidget):
         self.zoom_locked = False
 
     def register_callbacks(self):
+        self.unregister_callbacks()
         method = self.sync_with_maya_selection
         cb = om.MEventMessage.addEventCallback('SelectionChanged', method)
         self.callbacks.append(cb)
@@ -107,7 +256,7 @@ class PickerView(QtWidgets.QWidget):
         self.update()
 
     def set_picker_data(self, data):
-        shapes = [Shape(s) for s in data['shapes']]
+        shapes = [Shape(s) for s in data['shapes'] if s['panel'] == self.panel]
         self.shapes = shapes
         self.global_commands = data['general']['menu_commands']
         self.interaction_manager.shapes = shapes
@@ -121,7 +270,9 @@ class PickerView(QtWidgets.QWidget):
             or s.visibility_layer() not in self.layers_menu.hidden_layers]
 
     def reset(self):
-        shapes = self.visible_shapes()
+        shapes = [
+            s for s in self.visible_shapes() if
+            s.options['shape.space'] == 'world']
         shapes_rects = [s.rect for s in shapes if s.selected]
         if not shapes_rects:
             shapes_rects = [s.rect for s in shapes]
@@ -130,22 +281,39 @@ class PickerView(QtWidgets.QWidget):
             return
         self.viewportmapper.viewsize = self.size()
         rect = get_combined_rects(shapes_rects)
-        self.viewportmapper.focus(rect)
+        if self.zoom_locked:
+            x = rect.center().x() - (self.size().width() / 2)
+            y = rect.center().y() - (self.size().height() / 2)
+            self.viewportmapper.origin = QtCore.QPointF(x, y)
+        else:
+            self.viewportmapper.focus(rect)
         self.update()
 
     def resizeEvent(self, event):
+        if not self.auto_center:
+            return
         self.viewportmapper.viewsize = self.size()
         size = (event.size() - event.oldSize()) / 2
         offset = QtCore.QPointF(size.width(), size.height())
         self.viewportmapper.origin -= offset
         self.update()
 
+    def enterEvent(self, _):
+        self.update()
+
+    def leaveEvent(self, _):
+        self.update()
+
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)
         self.shapes.extend(self.drag_shapes)
-        cursor = self.viewportmapper.to_units_coords(event.pos()).toPoint()
+        world_cursor = self.viewportmapper.to_units_coords(event.pos())
         shapes = self.visible_shapes()
-        self.clicked_shape = detect_hovered_shape(shapes, cursor)
+        self.clicked_shape = detect_hovered_shape(
+            shapes=shapes,
+            world_cursor=world_cursor.toPoint(),
+            screen_cursor=event.pos(),
+            viewportmapper=self.viewportmapper)
         hsh = any(s.hovered for s in self.shapes)
         self.interaction_manager.update(
             event,
@@ -157,12 +325,18 @@ class PickerView(QtWidgets.QWidget):
         shift = self.interaction_manager.shift_pressed
         ctrl = self.interaction_manager.ctrl_pressed
         selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
-        cursor = self.viewportmapper.to_units_coords(event.pos()).toPoint()
+        world_cursor = self.viewportmapper.to_units_coords(event.pos())
         zoom = self.interaction_manager.zoom_button_pressed
         shapes = self.visible_shapes()
+        hovered_shape = detect_hovered_shape(
+            shapes=shapes,
+            world_cursor=world_cursor.toPoint(),
+            screen_cursor=event.pos(),
+            viewportmapper=self.viewportmapper)
+
         interact = (
             self.clicked_shape and
-            self.clicked_shape is detect_hovered_shape(shapes, cursor) and
+            self.clicked_shape is hovered_shape and
             self.clicked_shape.is_interactive())
 
         if zoom and self.interaction_manager.alt_pressed:
@@ -185,7 +359,7 @@ class PickerView(QtWidgets.QWidget):
             if self.interaction_manager.right_click_pressed:
                 self.call_context_menu()
 
-        elif self.clicked_shape is detect_hovered_shape(shapes, cursor):
+        elif self.clicked_shape is hovered_shape:
             show_context = (
                 self.interaction_manager.right_click_pressed and
                 not self.clicked_shape.has_right_click_command())
@@ -239,9 +413,11 @@ class PickerView(QtWidgets.QWidget):
             selection_rect = selection_rect.toRect()
 
         set_shapes_hovered(
-            self.visible_shapes(),
-            self.viewportmapper.to_units_coords(event.pos()),
-            selection_rect)
+            shapes=self.visible_shapes(),
+            world_cursor=self.viewportmapper.to_units_coords(event.pos()),
+            screen_cursor=event.pos(),
+            selection_rect=selection_rect,
+            viewportmapper=self.viewportmapper)
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
             point1 = self.viewportmapper.to_units_coords(
@@ -277,20 +453,23 @@ class PickerView(QtWidgets.QWidget):
     def call_context_menu(self):
         if not self.editable:
             return
-        position = self.viewportmapper.to_units_coords(get_cursor(self))
-        shape = detect_hovered_shape(self.visible_shapes(), position)
+        screen_cursor = get_cursor(self)
+        world_cursor = self.viewportmapper.to_units_coords(screen_cursor)
+        shape = detect_hovered_shape(
+            self.visible_shapes(), world_cursor, screen_cursor,
+            self.viewportmapper)
         context_menu = PickerMenu(self.global_commands, shape)
 
-        method = partial(self.add_button, position, button_type=0)
+        method = partial(self.add_button, world_cursor, button_type=0)
         context_menu.add_single.triggered.connect(method)
         context_menu.add_single.setEnabled(bool(cmds.ls(selection=True)))
 
-        method = partial(self.add_button, position, button_type=1)
+        method = partial(self.add_button, world_cursor, button_type=1)
         context_menu.add_multiple.triggered.connect(method)
         state = len(cmds.ls(selection=True)) > 1
         context_menu.add_multiple.setEnabled(state)
 
-        method = partial(self.add_button, position, button_type=2)
+        method = partial(self.add_button, world_cursor, button_type=2)
         context_menu.add_command.triggered.connect(method)
 
         method = partial(self.updateButtonRequested.emit, self.clicked_shape)
@@ -302,6 +481,7 @@ class PickerView(QtWidgets.QWidget):
         context_menu.delete_selected.triggered.connect(method)
 
         if self.layers_menu.displayed:
+            context_menu.addSeparator()
             context_menu.addMenu(self.layers_menu)
 
         action = context_menu.exec_(QtGui.QCursor.pos())
@@ -331,13 +511,15 @@ class PickerView(QtWidgets.QWidget):
             1 = Multiple buttons from selection.
             2 = Command button.
         """
-        position = self.viewportmapper.to_units_coords(position).toPoint()
-        self.addButtonRequested.emit(position.x(), position.y(), button_type)
+        self.addButtonRequested.emit(
+            self.panel, position.x(), position.y(), button_type)
 
     def paintEvent(self, _):
         try:
             painter = QtGui.QPainter()
             painter.begin(self)
+            if self.rect().contains(get_cursor(self)):
+                draw_picker_focus(painter, self.rect())
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
             if not self.shapes:
                 return
@@ -348,7 +530,10 @@ class PickerView(QtWidgets.QWidget):
                     not shape.visibility_layer() in hidden_layers)
                 if not visible:
                     continue
-                draw_shape(painter, shape, self.viewportmapper)
+                draw_shape(
+                    painter, shape,
+                    force_world_space=False,
+                    viewportmapper=self.viewportmapper)
             if self.selection_square.rect:
                 draw_selection_square(
                     painter, self.selection_square.rect)
@@ -361,7 +546,7 @@ class PickerView(QtWidgets.QWidget):
 
 class CommandAction(QtWidgets.QAction):
     def __init__(self, command, parent=None):
-        super().__init__(command['caption'], parent)
+        super(CommandAction).__init__(command['caption'], parent)
         self.command = command
 
 
@@ -396,6 +581,7 @@ class PickerMenu(QtWidgets.QMenu):
 
 
 class VisibilityLayersMenu(QtWidgets.QMenu):
+    visibilities_changed = QtCore.Signal()
     def __init__(self, parent=None):
         super(VisibilityLayersMenu, self).__init__('Visibility layers', parent)
         self.hidden_layers = []
@@ -419,3 +605,4 @@ class VisibilityLayersMenu(QtWidgets.QMenu):
             self.hidden_layers.append(layer)
         if state is True and layer in self.hidden_layers:
             self.hidden_layers.remove(layer)
+        self.visibilities_changed.emit()

@@ -56,7 +56,7 @@ def execute_python(
     if deferred:
         code = DEFERRED_PYTHON.format(code=code)
     targets = targets or []
-    targets = ', '.join((f'"{target}"' for target in targets))
+    targets = ', '.join(('"{}"'.format(target) for target in targets))
     code = PYTHON_TARGETS_VARIABLE.format(targets=targets, code=code)
     exec(code, globals())
 
@@ -69,7 +69,7 @@ def execute_mel(code, targets=None, deferred=False, compact_undo=False):
         print('Eval deferred not supported for mel command.')
         # code = DEFERRED_MEL.format(code=code)
     if targets is not None:
-        targets = ', '.join((f'"{target}"' for target in targets))
+        targets = ', '.join(('"{}"'.format(target) for target in targets))
         code = MEL_TARGETS_VARIABLE.format(targets=targets, code=code)
     mel.eval(code.replace(u'\u2029', '\n'))
 
