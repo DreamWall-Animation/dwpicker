@@ -19,7 +19,7 @@ def factor_sensitivity(factor):
     return factor * sensitivity
 
 
-def draw_editor(painter: QtGui.QPainter, rect, snap=None, viewportmapper=None):
+def draw_editor(painter, rect, snap=None, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     color = QtGui.QColor('#333333')
     pen = QtGui.QPen(color)
