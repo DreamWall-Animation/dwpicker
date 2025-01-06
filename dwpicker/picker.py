@@ -189,7 +189,6 @@ class PickerStackedView(QtWidgets.QWidget):
     def add_shape(self, shape, prepend=False):
         if prepend:
             self.shapes.insert(0, shape)
-            picker.add_shapeshapes.insert(0, shape)
         else:
             self.shapes.append(shape)
         self.layers_menu.set_shapes(self.shapes)
