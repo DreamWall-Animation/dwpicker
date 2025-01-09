@@ -141,6 +141,7 @@ class PickerStackedView(QtWidgets.QWidget):
 
         for picker in self.pickers:
             picker.dataChanged.connect(self.dataChanged.emit)
+            picker.multipleShapesAdded.connect(self.add_multiple_shapes)
             picker.addButtonRequested.connect(self.addButtonRequested.emit)
             picker.updateButtonRequested.connect(self.updateButtonRequested.emit)
             picker.deleteButtonRequested.connect(self.deleteButtonRequested.emit)
@@ -207,6 +208,11 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.shapes.append(shape)
         picker.update()
 
+    def add_multiple_shapes(self, shapes):
+        self.shapes.extend(shapes)
+        self.layers_menu.set_shapes(self.shapes)
+        self.dataChanged.emit()
+
     def remove_shape(self, shape):
         self.shapes.remove(shape)
         if shape.options['panel'] >= len(self.pickers):
@@ -220,6 +226,7 @@ class PickerStackedView(QtWidgets.QWidget):
 
 class PickerView(QtWidgets.QWidget):
     dataChanged = QtCore.Signal()
+    multipleShapesAdded = QtCore.Signal(list)
     addButtonRequested = QtCore.Signal(int, int, int, int)
     updateButtonRequested = QtCore.Signal(object)
     deleteButtonRequested = QtCore.Signal()
@@ -347,8 +354,10 @@ class PickerView(QtWidgets.QWidget):
             return
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
+            self.multipleShapesAdded.emit(self.drag_shapes[:])
             self.drag_shapes = []
-            self.dataChanged.emit()
+            self.release(event)
+            return
 
         elif self.interaction_manager.mode == InteractionManager.SELECTION and not interact:
             try:
