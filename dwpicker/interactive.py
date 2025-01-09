@@ -16,33 +16,53 @@ from dwpicker.shapepath import get_painter_path, get_screenspace_path
 def cursor_in_shape(
         shape,
         world_cursor,
-        screen_cursor=None,
+        viewpoert_cursor=None,
         force_world_space=True,
         viewportmapper=None):
     if force_world_space or shape.options['shape.space'] == 'world':
         if shape.path and shape.options['shape'] == 'custom':
             return shape.path.contains(world_cursor)
         return shape.rect.contains(world_cursor)
-    rect = to_shape_space_rect(
-        rect=shape.rect,
-        shape=shape,
-        force_world_space=False,
-        viewportmapper=viewportmapper)
+
     if shape.path and shape.options['shape'] == 'custom':
         path = get_screenspace_path(
             path=shape.options['shape.path'],
             anchor=shape.options['shape.anchor'],
             viewport_size=viewportmapper.viewsize)
-        return path.contains(screen_cursor)
-    return rect.contains(screen_cursor)
+        return path.contains(viewpoert_cursor)
+
+    rect = to_shape_space_rect(
+        rect=shape.rect,
+        shape=shape,
+        force_world_space=False,
+        viewportmapper=viewportmapper)
+    return rect.contains(viewpoert_cursor)
 
 
-def rect_intersects_shape(shape, rect, skip_screen_space=False):
-    if skip_screen_space and shape.options['shape.space'] == 'screen':
-        return False
+def rect_intersects_shape(
+        shape, unit_rect, viewport_rect=None,
+        force_world_space=True,
+        viewportmapper=None):
+
+    if force_world_space or shape.options['shape.space'] == 'world':
+        if shape.path and shape.options['shape'] == 'custom':
+            return shape.path.intersects(unit_rect)
+        return shape.rect.intersects(unit_rect)
+
     if shape.path and shape.options['shape'] == 'custom':
-        return shape.path.intersects(rect)
-    return shape.rect.intersects(rect)
+        path = get_screenspace_path(
+            path=shape.options['shape.path'],
+            anchor=shape.options['shape.anchor'],
+            viewport_size=viewportmapper.viewsize)
+        return path.intersects(viewport_rect)
+
+    rect = to_shape_space_rect(
+        rect=shape.rect,
+        shape=shape,
+        force_world_space=False,
+        viewportmapper=viewportmapper)
+
+    return rect.intersects(viewport_rect)
 
 
 class SelectionSquare():

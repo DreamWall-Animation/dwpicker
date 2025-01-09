@@ -44,8 +44,9 @@ def align_shapes_on_line(shapes, point1, point2):
 def set_shapes_hovered(
         shapes,
         world_cursor,
-        screen_cursor,
-        selection_rect=None,
+        viewport_cursor,
+        selection_rect,
+        viewport_selection_rect,
         viewportmapper=None):
     """
     It set hovered the shape if his rect contains the cursor.
@@ -53,13 +54,16 @@ def set_shapes_hovered(
     if not shapes:
         return
     world_cursor = world_cursor.toPoint()
-    selection_rect = selection_rect or QtCore.QRect(world_cursor, world_cursor)
     shapes = [s for s in shapes if not s.is_background()]
     selection_shapes_intersect_selection = [
         s for s in shapes
-        if cursor_in_shape(s, world_cursor, screen_cursor, False, viewportmapper)
-        or rect_intersects_shape(s, selection_rect, skip_screen_space=True)]
-
+        if cursor_in_shape(s, world_cursor, viewport_cursor, False, viewportmapper)
+        or rect_intersects_shape(
+            shape=s,
+            unit_rect=selection_rect,
+            viewport_rect=viewport_selection_rect,
+            force_world_space=False,
+            viewportmapper=viewportmapper)]
     targets = list_targets(selection_shapes_intersect_selection)
     for s in shapes:
         if s.targets():
@@ -82,7 +86,7 @@ def detect_hovered_shape(shapes, world_cursor, screen_cursor, viewportmapper):
         hovered = cursor_in_shape(
             shape=shape,
             world_cursor=world_cursor,
-            screen_cursor=screen_cursor,
+            viewpoert_cursor=screen_cursor,
             force_world_space=False,
             viewportmapper=viewportmapper)
         if hovered and not shape.is_background():
@@ -406,16 +410,19 @@ class PickerView(QtWidgets.QWidget):
         self.viewportmapper.origin = self.viewportmapper.origin + vector
 
     def mouseMoveEvent(self, event):
-        selection_rect = self.selection_square.rect
-        if selection_rect:
-            selection_rect = self.viewportmapper.to_units_rect(selection_rect)
-            selection_rect = selection_rect.toRect()
+        world_cursor=self.viewportmapper.to_units_coords(event.pos())
+        selection_rect = (
+            self.selection_square.rect or
+            QtCore.QRectF(world_cursor, world_cursor))
+        unit_selection_rect = self.viewportmapper.to_units_rect(selection_rect)
+        unit_selection_rect = unit_selection_rect.toRect()
 
         set_shapes_hovered(
             shapes=self.visible_shapes(),
-            world_cursor=self.viewportmapper.to_units_coords(event.pos()),
-            screen_cursor=event.pos(),
-            selection_rect=selection_rect,
+            world_cursor=world_cursor,
+            viewport_cursor=event.pos(),
+            selection_rect=unit_selection_rect,
+            viewport_selection_rect=selection_rect,
             viewportmapper=self.viewportmapper)
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
