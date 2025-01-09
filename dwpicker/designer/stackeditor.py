@@ -21,6 +21,9 @@ class StackEditor(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.clicked_action = None
         self.selected_index = None
+        self.panels_are_changed = False
+        self.panels_are_resized = False
+        self.panel_is_selected = None
 
     def set_orientation(self, orientation):
         self.orientation = orientation
@@ -81,9 +84,20 @@ class StackEditor(QtWidgets.QWidget):
                 self.selected_index = index
                 self.panelSelected.emit(self.panel_number(self.selected_index))
         else:
-            self.panelsResized.emit(self.data)
+            self.check_buffer_states()
         self.update()
         self.clicked_action = None
+
+    def check_buffer_states(self):
+        if self.panel_is_selected is not None:
+            self.panelSelected.emit(self.panel_is_selected)
+        if self.panels_are_changed:
+            self.panelsChanged.emit(self.data)
+        elif self.panels_are_resized:
+            self.panelsResized.emit(self.data)
+        self.panel_is_selected = None
+        self.panels_are_changed = False
+        self.panels_are_resized = False
 
     def get_action(self, cursor):
         for i, column in enumerate(self.stack_rects):
@@ -124,8 +138,8 @@ class StackEditor(QtWidgets.QWidget):
             col.append(.1)
             self.clicked_action = 'move vertical', index
             self.selected_index = [index[0], index[1] + 1]
-            self.panelSelected.emit(self.panel_number(self.selected_index))
-            self.panelsChanged.emit(self.data)
+            self.panel_is_selected = self.panel_number(self.selected_index)
+            self.panels_are_changed = True
 
         elif self.clicked_action[0] == 'create horizontal':
             index = self.clicked_action[1]
@@ -133,32 +147,32 @@ class StackEditor(QtWidgets.QWidget):
             self.data.append([.1, [1.]])
             self.clicked_action = 'move horizontal', index
             self.selected_index = [index[0] + 1, 0]
-            self.panelSelected.emit(self.panel_number(self.selected_index))
-            self.panelsChanged.emit(self.data)
+            self.panel_is_selected = self.panel_number(self.selected_index)
+            self.panels_are_changed = True
 
         elif self.clicked_action[0] == 'move vertical' and vertical:
             index = self.clicked_action[1]
             y = event.pos().y() / self.height()
             move_vertical(self.data, index, y)
-            self.panelsResized.emit(self.data)
+            self.panels_are_resized = True
 
         elif self.clicked_action[0] == 'move vertical':
             index = self.clicked_action[1]
             x = event.pos().x() / self.width()
             move_vertical(self.data, index, x)
-            self.panelsResized.emit(self.data)
+            self.panels_are_resized = True
 
         elif self.clicked_action[0] == 'move horizontal' and vertical:
             index = self.clicked_action[1]
             x = event.pos().x() / self.width()
             move_horizontal(self.data, index, x)
-            self.panelsResized.emit(self.data)
+            self.panels_are_resized = True
 
         elif self.clicked_action[0] == 'move horizontal':
             index = self.clicked_action[1]
             y = event.pos().y() / self.height()
             move_horizontal(self.data, index, y)
-            self.panelsResized.emit(self.data)
+            self.panels_are_resized = True
 
         self.stack_rects = get_stack_rects(
             self.data, self.rect(), self.orientation)
