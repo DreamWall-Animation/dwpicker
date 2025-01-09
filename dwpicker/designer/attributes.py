@@ -134,7 +134,8 @@ class GeneralSettings(QtWidgets.QWidget):
         self.name.valueSet.connect(self.name_changed)
 
         self.zoom_locked = ZoomsLockedEditor()
-        self.zoom_locked.valueSet.connect(self.optionModified.emit)
+        method = partial(self.optionModified.emit, 'panels.zoom_locked')
+        self.zoom_locked.valueSet.connect(method)
 
         self.orientation = QtWidgets.QComboBox()
         self.orientation.addItems(list(ORIENTATIONS))

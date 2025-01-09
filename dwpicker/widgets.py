@@ -311,7 +311,7 @@ class ZoomsLockedEditor(QtWidgets.QWidget):
         layout.addWidget(self.list)
 
     def emit_result_changed(self):
-        self.valueSet.emit('panels.zoom_locked', self.model.result)
+        self.valueSet.emit(self.model.result)
 
     def set_panels(self, panels):
         self.model.layoutAboutToBeChanged.emit()
@@ -351,6 +351,7 @@ class ZoomLockedModel(QtCore.QAbstractListModel):
 
         state = value == QtCore.Qt.Checked
         self.result[index.row()] = state
+        self.resultChanged.emit()
         return True
 
     def data(self, index, role):

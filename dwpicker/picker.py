@@ -292,6 +292,7 @@ class PickerView(QtWidgets.QWidget):
         self.viewportmapper.viewsize = self.size()
         rect = get_combined_rects(shapes_rects)
         if self.zoom_locked:
+            self.viewportmapper.zoom = 1
             x = rect.center().x() - (self.size().width() / 2)
             y = rect.center().y() - (self.size().height() / 2)
             self.viewportmapper.origin = QtCore.QPointF(x, y)
@@ -456,8 +457,6 @@ class PickerView(QtWidgets.QWidget):
                 self.zoom(factor, self.interaction_manager.zoom_anchor)
 
         elif self.interaction_manager.mode == InteractionManager.NAVIGATION:
-            if self.zoom_locked:
-                return self.update()
             offset = self.interaction_manager.mouse_offset(event.pos())
             if offset is not None:
                 self.viewportmapper.origin = (
