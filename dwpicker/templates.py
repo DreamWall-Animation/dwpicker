@@ -154,8 +154,11 @@ MENU_COMMAND = {
 PICKER = {
     'name': 'Untitled',
     'version': VERSION,
-    'panels.zoom_locked': [False],
+    'panels.as_sub_tab': False,
     'panels.orientation': 'vertical',
+    'panels.zoom_locked': [False],
+    'panels.colors': [None],
+    'panels.names': ['Panel 1'],
     'menu_commands': [],
     'hidden_layers': [],
     'panels': [[1.0, [1.0]]]

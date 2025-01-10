@@ -146,21 +146,27 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.updateButtonRequested.connect(self.updateButtonRequested.emit)
             picker.deleteButtonRequested.connect(self.deleteButtonRequested.emit)
 
-    def create_splitters(self, data):
-        panels = data['general']['panels']
-        orientation = data['general']['panels.orientation']
-        splitter = create_stack_splitters(panels, self.pickers, orientation)
+    def create_panels(self, data):
+        if not data['general']['panels.as_sub_tab']:
+            panels = data['general']['panels']
+            orientation = data['general']['panels.orientation']
+            panels = create_stack_splitters(panels, self.pickers, orientation)
+        else:
+            panels = QtWidgets.QTabWidget()
+            names = data['general']['panels.names']
+            for picker, name in zip(self.pickers, names):
+                panels.addTab(picker, name)
         clear_layout(self.layout)
-        self.layout.addWidget(splitter)
+        self.layout.addWidget(panels)
 
     def set_picker_data(
             self, data, panels_changed=False, panels_resized=False):
-        update_splitters = panels_changed or panels_resized or not self.pickers
+        recreate_panels = panels_changed or panels_resized or not self.pickers
         if panels_changed or not self.pickers:
             self.create_pickers(data)
         self.set_auto_center(False)
-        if update_splitters:
-            self.create_splitters(data)
+        if recreate_panels:
+            self.create_panels(data)
         self.layers_menu.hidden_layers = data['general']['hidden_layers']
         self.dispatch_picker_data(data)
         # HACK: delay the auto_center switch to avoid weird resize issue at
@@ -174,10 +180,11 @@ class PickerStackedView(QtWidgets.QWidget):
     def dispatch_picker_data(self, data):
         self.shapes = [Shape(s) for s in data['shapes']]
         self.layers_menu.set_shapes(self.shapes)
-
-        panels_zoom_locked = data['general']['panels.zoom_locked']
-        for picker, zoom_locked in zip(self.pickers, panels_zoom_locked):
-            picker.zoom_locked = zoom_locked
+        zooms_locked = data['general']['panels.zoom_locked']
+        colors = data['general']['panels.colors']
+        for picker, locked, color in zip(self.pickers, zooms_locked, colors):
+            picker.background_color = QtGui.QColor(color) if color else None
+            picker.zoom_locked = locked
             picker.shapes = []
             picker.global_commands = data['general']['menu_commands']
             picker.interaction_manager.shapes = []
@@ -247,6 +254,7 @@ class PickerView(QtWidgets.QWidget):
         self.clicked_shape = None
         self.drag_shapes = []
         self.zoom_locked = False
+        self.background_color = None
 
     def register_callbacks(self):
         self.unregister_callbacks()
@@ -263,14 +271,6 @@ class PickerView(QtWidgets.QWidget):
         if not cmds.optionVar(query=SYNCHRONYZE_SELECTION):
             return
         select_shapes_from_selection(self.shapes)
-        self.update()
-
-    def set_picker_data(self, data):
-        shapes = [Shape(s) for s in data['shapes'] if s['panel'] == self.panel]
-        self.shapes = shapes
-        self.global_commands = data['general']['menu_commands']
-        self.interaction_manager.shapes = shapes
-        self.layers_menu.set_shapes(shapes)
         self.update()
 
     def visible_shapes(self):
@@ -532,6 +532,10 @@ class PickerView(QtWidgets.QWidget):
         try:
             painter = QtGui.QPainter()
             painter.begin(self)
+            if self.background_color:
+                painter.setPen(QtCore.Qt.NoPen)
+                painter.setBrush(self.background_color)
+                painter.drawRect(self.rect())
             if self.rect().contains(get_cursor(self)):
                 draw_picker_focus(painter, self.rect())
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
@@ -551,7 +555,8 @@ class PickerView(QtWidgets.QWidget):
             if self.selection_square.rect:
                 draw_selection_square(
                     painter, self.selection_square.rect)
-        except BaseException:
+        except BaseException as e:
+            print(str(e))
             pass  # avoid crash
             # TODO: log the error
         finally:

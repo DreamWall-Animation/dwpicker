@@ -1,7 +1,9 @@
+from functools import partial, lru_cache
 from PySide2 import QtGui, QtCore, QtWidgets
-
+from dwpicker.compatibility import ensure_general_options_sanity
 from dwpicker.colorwheel import ColorDialog
 from dwpicker.dialog import get_image_path
+from dwpicker.geometry import grow_rect
 from dwpicker.path import format_path
 from dwpicker.qtutils import icon
 from dwpicker.stack import count_splitters
@@ -9,6 +11,8 @@ from dwpicker.stack import count_splitters
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
     'background: rgb(0, 0, 0, 75); text-align: left; font: bold')
+X = '✘'
+V = '✔'
 
 
 class BoolCombo(QtWidgets.QComboBox):
@@ -295,74 +299,204 @@ class LayerEdit(QtWidgets.QWidget):
 
 
 class ZoomsLockedEditor(QtWidgets.QWidget):
-    valueSet = QtCore.Signal(object)
+    optionSet = QtCore.Signal(str, object)
 
     def __init__(self, parent=None):
         super(ZoomsLockedEditor, self).__init__(parent)
         self.model = ZoomLockedModel()
         self.model.resultChanged.connect(self.emit_result_changed)
 
-        self.list = QtWidgets.QListView()
-        self.list.setFixedHeight(85)
-        self.list.setModel(self.model)
+        self.table = QtWidgets.QTableView()
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
+        self.table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.table.horizontalHeader().setSectionResizeMode(mode)
+        self.table.setFixedHeight(120)
+        self.table.setItemDelegateForColumn(0, CheckDelegate())
+        self.table.setModel(self.model)
 
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.list)
+        layout.addWidget(self.table)
 
-    def emit_result_changed(self):
-        self.valueSet.emit(self.model.result)
+    def emit_result_changed(self, key):
+        self.optionSet.emit(key, self.model.options[key])
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.table.horizontalHeader().setSectionResizeMode(mode)
 
     def set_panels(self, panels):
         self.model.layoutAboutToBeChanged.emit()
-        self.model.panels = panels
-        split_count = count_splitters(panels)
-        while split_count > len(self.model.result):
-            self.model.result.append(False)
+        self.model.options['panels'] = panels
+        ensure_general_options_sanity(self.model.options)
         self.model.layoutChanged.emit()
 
     def set_options(self, options):
         self.model.layoutAboutToBeChanged.emit()
-        self.model.panels = options['panels']
-        split_count = count_splitters(options['panels'])
-        while split_count > len(options['panels.zoom_locked']):
-            options['panels.zoom_locked'].append(False)
-        self.model.result = options['panels.zoom_locked']
+        ensure_general_options_sanity(options)
+        self.model.options = options
         self.model.layoutChanged.emit()
 
 
-class ZoomLockedModel(QtCore.QAbstractListModel):
-    resultChanged = QtCore.Signal()
+class ZoomLockedModel(QtCore.QAbstractTableModel):
+    resultChanged = QtCore.Signal(str)
+    HEADERS = 'Z-lock', 'BG Color', 'Name'
 
     def __init__(self, parent=None):
         super(ZoomLockedModel, self).__init__(parent)
-        self.panels = [1.0, [1.0]]
-        self.result = []
+        self.options = None
+
+    def columnCount(self, _):
+        return 3
 
     def rowCount(self, _):
-        return count_splitters(self.panels)
+        if not self.options:
+            return 0
+        return count_splitters(self.options['panels'])
 
     def flags(self, _):
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+
+    def headerData(self, section, orientation, role):
+        if role != QtCore.Qt.DisplayRole:
+            return
+        if orientation == QtCore.Qt.Vertical:
+            return str(section + 1)
+        return self.HEADERS[section]
+
+    def set_zoom_locked(self, row, state):
+        self.layoutAboutToBeChanged.emit()
+
+        self.options['panels.zoom_locked'][row] = state
+        self.resultChanged.emit('panels.zoom_locked')
+        self.layoutChanged.emit()
 
     def setData(self, index, value, role):
-        if role != QtCore.Qt.CheckStateRole:
+        if index.column() == 0:
             return False
 
-        state = value == QtCore.Qt.Checked
-        self.result[index.row()] = state
-        self.resultChanged.emit()
-        return True
+        if index.column() == 1 and role == QtCore.Qt.EditRole:
+            if value and not QtGui.QColor(value).isValid():
+                if QtGui.QColor('#' + value).isValid():
+                    value = '#' + value
+                else:
+                    return False
+            self.options['panels.colors'][index.row()] = value or None
+            self.resultChanged.emit('panels.colors')
+            return True
+
+        if index.column() == 2 and role == QtCore.Qt.EditRole:
+            self.options['panels.names'][index.row()] = value
+            self.resultChanged.emit('panels.names')
+            return True
+
+        return False
 
     def data(self, index, role):
         if not index.isValid():
             return
 
-        if role == QtCore.Qt.DisplayRole:
-            return 'Panel ' + str(index.row() + 1)
+        if role == QtCore.Qt.DecorationRole:
+            if index.column() == 1:
+                color = self.options['panels.colors'][index.row()]
+                return get_color_icon(color)
 
-        if role == QtCore.Qt.CheckStateRole:
-            return (
-                QtCore.Qt.Checked
-                if self.result[index.row()] else
-                QtCore.Qt.Unchecked)
+        if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
+            if index.column() == 1:
+                color = self.options['panels.colors'][index.row()]
+                return str(color) if color else ''
+            if index.column() == 2:
+                return str(self.options['panels.names'][index.row()])
+
+
+@lru_cache()
+def get_color_icon(color, size=None, as_pixmap=False):
+    px = QtGui.QPixmap(QtCore.QSize(*(size if size else (64, 64))))
+    px.fill(QtCore.Qt.transparent)
+    rect = QtCore.QRect(0, 0, px.size().width(), px.size().height())
+    painter = QtGui.QPainter(px)
+    try:
+        if not color:
+            painter.drawRect(rect)
+            font = QtGui.QFont()
+            font.setPixelSize(50)
+            option = QtGui.QTextOption()
+            option.setAlignment(QtCore.Qt.AlignCenter)
+            painter.setPen(QtGui.QPen(QtGui.QColor('#ddd')))
+            painter.setFont(font)
+            painter.drawText(grow_rect(rect, 300), X, option)
+            painter.end()
+            return QtGui.QIcon(px)
+
+        painter.setPen(QtCore.Qt.NoPen)
+        painter.setBrush(QtGui.QColor(color))
+        painter.drawRect(rect)
+        painter.end()
+        return QtGui.QIcon(px)
+    except BaseException:
+        import traceback
+        print(traceback.format_exc())
+        painter.end()
+        return QtGui.QIcon()
+
+
+class CheckDelegate(QtWidgets.QItemDelegate):
+
+    def mouseReleaseEvent(self, event):
+        if event.button() != QtCore.Qt.LeftButton:
+            return
+        self.repaint()
+
+    def createEditor(self, parent, _, index):
+        model = index.model()
+        if not model.options:
+            return
+        state = model.options['panels.zoom_locked'][index.row()]
+        model.set_zoom_locked(index.row(), not state)
+        checker = CheckWidget(not state, parent)
+        checker.toggled.connect(partial(model.set_zoom_locked, index.row()))
+        return checker
+
+    def paint(self, painter, option, index):
+        model = index.model()
+        if not model.options:
+            return
+        state = model.options['panels.zoom_locked'][index.row()]
+
+        center = option.rect.center()
+        painter.setBrush(QtCore.Qt.NoBrush)
+        rect = QtCore.QRect(center.x() - 10, center.y() - 10, 20, 20)
+        if not state:
+            return
+        font = QtGui.QFont()
+        font.setPixelSize(20)
+        option = QtGui.QTextOption()
+        option.setAlignment(QtCore.Qt.AlignCenter)
+        painter.drawText(rect, V, option)
+
+
+class CheckWidget(QtWidgets.QWidget):
+    toggled = QtCore.Signal(bool)
+
+    def __init__(self, state, parent=None):
+        super(CheckWidget, self).__init__(parent)
+        self.state = state
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.state = not self.state
+            self.toggled.emit(self.state)
+            self.update()
+
+    def paintEvent(self, _):
+        painter = QtGui.QPainter(self)
+        center = self.rect().center()
+        painter.setBrush(QtCore.Qt.NoBrush)
+        rect = QtCore.QRect(center.x() - 15, center.y() - 15, 30, 30)
+        painter.drawRect(rect)
+        if not self.state:
+            return
+        font = QtGui.QFont()
+        font.setPixelSize(20)
+        option = QtGui.QTextOption()
+        option.setAlignment(QtCore.Qt.AlignCenter)
+        painter.drawText(rect, V, option)

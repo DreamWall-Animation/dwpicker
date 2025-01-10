@@ -5,6 +5,7 @@ version.
 """
 
 from dwpicker.appinfos import VERSION
+from dwpicker.stack import count_splitters
 
 
 def ensure_retro_compatibility(picker_data):
@@ -70,7 +71,24 @@ def ensure_retro_compatibility(picker_data):
     if tuple(version) < (0, 15, 2):
         picker_data['general']['hidden_layers'] = []
 
+    if tuple(version) < (0, 15, 3):
+        picker_data['general']['panels.as_sub_tab'] = False
+        picker_data['general']['panels.colors'] = [None]
+        picker_data['general']['panels.names'] = ['Panel 1']
+        ensure_general_options_sanity(picker_data['general'])
+
     return picker_data
+
+
+def ensure_general_options_sanity(options):
+    split_count = count_splitters(options['panels'])
+    while split_count > len(options['panels.zoom_locked']):
+        options['panels.zoom_locked'].append(False)
+    while split_count > len(options['panels.colors']):
+        options['panels.colors'].append(None)
+    while split_count > len(options['panels.names']):
+        name = f'Panel {len(options["panels.names"])}'
+        options['panels.names'].append(name)
 
 
 def update_shape_actions_for_v0_11_0(shape):

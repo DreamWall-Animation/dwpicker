@@ -231,6 +231,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.update()
 
     def generals_modified(self, key, value):
+        print(key, value)
         self.options[key] = value
         if key == 'name':
             title = "Picker editor - " + self.options['name']

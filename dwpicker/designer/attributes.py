@@ -134,12 +134,14 @@ class GeneralSettings(QtWidgets.QWidget):
         self.name.valueSet.connect(self.name_changed)
 
         self.zoom_locked = ZoomsLockedEditor()
-        method = partial(self.optionSet.emit, 'panels.zoom_locked')
-        self.zoom_locked.valueSet.connect(method)
+        self.zoom_locked.optionSet.connect(self.optionSet.emit)
 
         self.orientation = QtWidgets.QComboBox()
         self.orientation.addItems(list(ORIENTATIONS))
         self.orientation.currentIndexChanged.connect(self.orienation_changed)
+
+        self.as_sub_tab = BoolCombo()
+        self.as_sub_tab.valueSet.connect(self.display_mode_changed)
 
         self.stack = StackEditor()
         method = partial(self.optionSet.emit, 'panels')
@@ -166,6 +168,7 @@ class GeneralSettings(QtWidgets.QWidget):
         form_layout_2.setContentsMargins(0, 0, 0, 0)
         form_layout_2.setHorizontalSpacing(5)
         form_layout_2.addRow('Columns orientation', self.orientation)
+        form_layout_2.addRow('Display panels as tab', self.as_sub_tab)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -191,12 +194,17 @@ class GeneralSettings(QtWidgets.QWidget):
         self.optionSet.emit('panels.orientation', orientation)
         self.panelsResized.emit(self.stack.data)
 
+    def display_mode_changed(self, state):
+        self.optionSet.emit('panels.as_sub_tab', state)
+        self.panelsChanged.emit(self.stack.data)
+
     def set_shapes(self, shapes):
         self.layers.set_shapes(shapes)
 
     def set_options(self, options):
         self.layers.set_hidden_layers(options['hidden_layers'])
         self.stack.set_data(options['panels'])
+        self.as_sub_tab.setCurrentText(str(options['panels.as_sub_tab']))
         self.stack.set_orientation(options['panels.orientation'])
         self.orientation.setCurrentText(options['panels.orientation'])
         self.name.setText(options['name'])
