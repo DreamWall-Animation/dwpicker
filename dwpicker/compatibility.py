@@ -67,6 +67,9 @@ def ensure_retro_compatibility(picker_data):
             shape['shape.space'] = 'world'
             shape['shape.anchor'] = 'top_left'
 
+    if tuple(version) < (0, 15, 2):
+        picker_data['general']['hidden_layers'] = []
+
     return picker_data
 
 

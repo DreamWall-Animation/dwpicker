@@ -161,7 +161,7 @@ class PickerStackedView(QtWidgets.QWidget):
         self.set_auto_center(False)
         if update_splitters:
             self.create_splitters(data)
-
+        self.layers_menu.hidden_layers = data['general']['hidden_layers']
         self.dispatch_picker_data(data)
         # HACK: delay the auto_center switch to avoid weird resize issue at
         # splitter recreation time.

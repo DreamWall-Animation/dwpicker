@@ -157,5 +157,6 @@ PICKER = {
     'panels.zoom_locked': [False],
     'panels.orientation': 'vertical',
     'menu_commands': [],
+    'hidden_layers': [],
     'panels': [[1.0, [1.0]]]
 }

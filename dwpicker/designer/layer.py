@@ -3,12 +3,14 @@ from PySide2 import QtWidgets, QtCore
 
 
 class VisibilityLayersEditor(QtWidgets.QWidget):
+    optionSet = QtCore.Signal(str, list)
     removeLayer = QtCore.Signal(str)
     selectLayerContent = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(VisibilityLayersEditor, self).__init__(parent)
         self.model = VisbilityLayersModel()
+        self.model.visibility_changed.connect(self.visibility_changed)
         self.table = QtWidgets.QTableView()
         self.table.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeToContents)
@@ -34,6 +36,12 @@ class VisibilityLayersEditor(QtWidgets.QWidget):
         layout.addWidget(self.select_content)
         layout.addWidget(self.remove_layer)
 
+    def set_hidden_layers(self, hidden_layers):
+        self.model.set_hidden_layers(hidden_layers)
+
+    def visibility_changed(self):
+            self.optionSet.emit('hidden_layers', self.model.hidden_layers)
+
     def selected_layer(self):
         indexes = self.table.selectedIndexes()
         if not indexes:
@@ -57,11 +65,18 @@ class VisibilityLayersEditor(QtWidgets.QWidget):
 
 
 class VisbilityLayersModel(QtCore.QAbstractTableModel):
-    HEADERS = 'name', 'shapes'
+    visibility_changed = QtCore.Signal()
+    HEADERS = 'hide', 'name', 'shapes'
 
     def __init__(self, parent=None):
         super(VisbilityLayersModel, self).__init__(parent)
         self.layers_data = []
+        self.hidden_layers = []
+
+    def set_hidden_layers(self, hidden_layers):
+        self.layoutAboutToBeChanged.emit()
+        self.hidden_layers = hidden_layers
+        self.layoutChanged.emit()
 
     def rowCount(self, _):
         return len(self.layers_data)
@@ -85,17 +100,44 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
             return
         return self.HEADERS[section]
 
+    def flags(self, index):
+        flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        if index.column() == 0:
+            flags |= QtCore.Qt.ItemIsUserCheckable
+        return flags
+
+    def setData(self, index, value, role):
+        if role != QtCore.Qt.CheckStateRole:
+            return False
+        layer = self.layers_data[index.row()][0]
+        if value == QtCore.Qt.Unchecked and layer in self.hidden_layers:
+            self.hidden_layers.remove(layer)
+            self.visibility_changed.emit()
+            return True
+        elif value == QtCore.Qt.Checked and layer not in self.hidden_layers:
+            self.hidden_layers.append(layer)
+            self.visibility_changed.emit()
+            return True
+        return False
+
     def data(self, index, role):
         if not index.isValid():
             return
         if role == QtCore.Qt.TextAlignmentRole:
-            if index.column() == 1:
+            if index.column() == 2:
                 return QtCore.Qt.AlignCenter
+
+        if role == QtCore.Qt.CheckStateRole:
+            if index.column() == 0:
+                return (
+                    QtCore.Qt.Checked
+                    if self.layers_data[index.row()][0] in self.hidden_layers
+                    else QtCore.Qt.Unchecked)
 
         if role != QtCore.Qt.DisplayRole:
             return
 
-        if index.column() == 0:
-            return self.layers_data[index.row()][0]
         if index.column() == 1:
+            return self.layers_data[index.row()][0]
+        if index.column() == 2:
             return str(self.layers_data[index.row()][1])

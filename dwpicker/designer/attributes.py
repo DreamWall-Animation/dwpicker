@@ -42,7 +42,7 @@ class AttributeEditor(QtWidgets.QWidget):
         self.generals.panelDoubleClicked.connect(self.panel_double_clicked)
         self.generals.panelsChanged.connect(self.panelsChanged.emit)
         self.generals.panelsResized.connect(self.panelsResized.emit)
-        self.generals.optionModified.connect(self.generalOptionSet.emit)
+        self.generals.optionSet.connect(self.generalOptionSet.emit)
         self.generals.layers.removeLayer.connect(self.removeLayer.emit)
         mtd = self.selectLayerContent.emit
         self.generals.layers.selectLayerContent.connect(mtd)
@@ -122,7 +122,7 @@ class AttributeEditor(QtWidgets.QWidget):
 
 
 class GeneralSettings(QtWidgets.QWidget):
-    optionModified = QtCore.Signal(str, object)
+    optionSet = QtCore.Signal(str, object)
     panelSelected = QtCore.Signal(int)
     panelDoubleClicked = QtCore.Signal(int)
     panelsChanged = QtCore.Signal(object)
@@ -134,7 +134,7 @@ class GeneralSettings(QtWidgets.QWidget):
         self.name.valueSet.connect(self.name_changed)
 
         self.zoom_locked = ZoomsLockedEditor()
-        method = partial(self.optionModified.emit, 'panels.zoom_locked')
+        method = partial(self.optionSet.emit, 'panels.zoom_locked')
         self.zoom_locked.valueSet.connect(method)
 
         self.orientation = QtWidgets.QComboBox()
@@ -142,7 +142,7 @@ class GeneralSettings(QtWidgets.QWidget):
         self.orientation.currentIndexChanged.connect(self.orienation_changed)
 
         self.stack = StackEditor()
-        method = partial(self.optionModified.emit, 'panels')
+        method = partial(self.optionSet.emit, 'panels')
         self.stack.panelsChanged.connect(self.panelsChanged.emit)
         self.stack.panelsResized.connect(self.panelsResized.emit)
         self.stack.panelSelected.connect(self.panelSelected.emit)
@@ -150,8 +150,9 @@ class GeneralSettings(QtWidgets.QWidget):
         self.stack.panelDoubleClicked.connect(self.panelDoubleClicked.emit)
 
         self.layers = VisibilityLayersEditor()
+        self.layers.optionSet.connect(self.optionSet.emit)
         self.commands = GlobalCommandsEditor()
-        method = partial(self.optionModified.emit, 'menu_commands')
+        method = partial(self.optionSet.emit, 'menu_commands')
         self.commands.valueSet.connect(method)
 
         form_layout = QtWidgets.QFormLayout()
@@ -187,13 +188,14 @@ class GeneralSettings(QtWidgets.QWidget):
     def orienation_changed(self, _):
         orientation = self.orientation.currentText()
         self.stack.set_orientation(orientation)
-        self.optionModified.emit('panels.orientation', orientation)
+        self.optionSet.emit('panels.orientation', orientation)
         self.panelsResized.emit(self.stack.data)
 
     def set_shapes(self, shapes):
         self.layers.set_shapes(shapes)
 
     def set_options(self, options):
+        self.layers.set_hidden_layers(options['hidden_layers'])
         self.stack.set_data(options['panels'])
         self.stack.set_orientation(options['panels.orientation'])
         self.orientation.setCurrentText(options['panels.orientation'])
@@ -202,7 +204,7 @@ class GeneralSettings(QtWidgets.QWidget):
         self.commands.set_options(options)
 
     def name_changed(self, value):
-        self.optionModified.emit('name', value)
+        self.optionSet.emit('name', value)
 
 
 class ShapeSettings(QtWidgets.QWidget):
