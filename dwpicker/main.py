@@ -474,7 +474,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def create_picker(self, data):
         picker = PickerStackedView(self.editable)
-        picker.register_callbacks()
         picker.addButtonRequested.connect(self.add_button)
         picker.updateButtonRequested.connect(self.update_button)
         picker.deleteButtonRequested.connect(self.delete_buttons)
@@ -482,6 +481,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             method = partial(self.data_changed_from_picker, picker)
             picker.dataChanged.connect(method)
         picker.set_picker_data(data)
+        picker.register_callbacks()
         picker.reset(force_all=True)
         return picker
 
