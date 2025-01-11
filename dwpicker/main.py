@@ -386,7 +386,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.clear()
         pickers = load_local_picker_data()
         if cmds.optionVar(query=CHECK_IMAGES_PATHS):
-            pickers = ensure_images_path_exists(pickers)
+            ensure_images_path_exists(pickers)
         for picker in pickers:
             self.add_picker(picker)
         clean_stray_picker_holder_nodes()
