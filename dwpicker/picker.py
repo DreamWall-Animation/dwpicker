@@ -565,7 +565,7 @@ class PickerView(QtWidgets.QWidget):
 
 class CommandAction(QtWidgets.QAction):
     def __init__(self, command, parent=None):
-        super(CommandAction).__init__(command['caption'], parent)
+        super(CommandAction, self).__init__(command['caption'], parent)
         self.command = command
 
 
