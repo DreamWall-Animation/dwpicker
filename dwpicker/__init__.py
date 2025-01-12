@@ -174,7 +174,7 @@ def current_namespace():
     picker = current()
     if not picker:
         return ':'
-    return detect_picker_namespace(picker.shapes)
+    return detect_picker_namespace(picker.document.shapes)
 
 
 def set_layer_visible(layername, visible=True):

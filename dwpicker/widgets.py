@@ -8,7 +8,7 @@ from dwpicker.dialog import get_image_path
 from dwpicker.geometry import grow_rect
 from dwpicker.path import format_path
 from dwpicker.qtutils import icon
-from dwpicker.stack import count_splitters
+from dwpicker.stack import count_panels
 
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
@@ -407,12 +407,10 @@ class LayerEdit(QtWidgets.QWidget):
 
 
 class ZoomsLockedEditor(QtWidgets.QWidget):
-    optionSet = QtCore.Signal(str, object)
 
-    def __init__(self, parent=None):
+    def __init__(self, document, parent=None):
         super(ZoomsLockedEditor, self).__init__(parent)
-        self.model = ZoomLockedModel()
-        self.model.resultChanged.connect(self.emit_result_changed)
+        self.model = ZoomLockedModel(document)
 
         self.table = QtWidgets.QTableView()
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
@@ -427,39 +425,20 @@ class ZoomsLockedEditor(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.table)
 
-    def emit_result_changed(self, key):
-        self.optionSet.emit(key, self.model.options[key])
-        mode = QtWidgets.QHeaderView.ResizeToContents
-        self.table.horizontalHeader().setSectionResizeMode(mode)
-
-    def set_panels(self, panels):
-        self.model.layoutAboutToBeChanged.emit()
-        self.model.options['panels'] = panels
-        ensure_general_options_sanity(self.model.options)
-        self.model.layoutChanged.emit()
-
-    def set_options(self, options):
-        self.model.layoutAboutToBeChanged.emit()
-        ensure_general_options_sanity(options)
-        self.model.options = options
-        self.model.layoutChanged.emit()
-
 
 class ZoomLockedModel(QtCore.QAbstractTableModel):
-    resultChanged = QtCore.Signal(str)
     HEADERS = 'Z-lock', 'BG Color', 'Name'
 
-    def __init__(self, parent=None):
+    def __init__(self, document, parent=None):
         super(ZoomLockedModel, self).__init__(parent)
-        self.options = None
+        self.document = document
+        self.document.changed.connect(self.layoutChanged.emit)
 
     def columnCount(self, _):
         return 3
 
     def rowCount(self, _):
-        if not self.options:
-            return 0
-        return count_splitters(self.options['panels'])
+        return count_panels(self.document.data['general']['panels'])
 
     def flags(self, _):
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
@@ -473,9 +452,10 @@ class ZoomLockedModel(QtCore.QAbstractTableModel):
 
     def set_zoom_locked(self, row, state):
         self.layoutAboutToBeChanged.emit()
-
-        self.options['panels.zoom_locked'][row] = state
-        self.resultChanged.emit('panels.zoom_locked')
+        self.document.data['general']['panels.zoom_locked'][row] = state
+        self.document.general_option_changed.emit(
+            'attribute_editor', 'panels.zoom_locked')
+        self.document.record_undo()
         self.layoutChanged.emit()
 
     def setData(self, index, value, role):
@@ -488,13 +468,18 @@ class ZoomLockedModel(QtCore.QAbstractTableModel):
                     value = '#' + value
                 else:
                     return False
-            self.options['panels.colors'][index.row()] = value or None
-            self.resultChanged.emit('panels.colors')
+            value = value or None
+            self.document.data['general']['panels.colors'][index.row()] = value
+            self.document.general_option_changed.emit(
+                'attribute_editor', 'panels.colors')
+            self.document.record_undo()
             return True
 
         if index.column() == 2 and role == QtCore.Qt.EditRole:
-            self.options['panels.names'][index.row()] = value
-            self.resultChanged.emit('panels.names')
+            self.document.data['general']['panels.names'][index.row()] = value
+            self.document.general_option_changed.emit(
+                'attribute_editor', 'panels.names')
+            self.document.record_undo()
             return True
 
         return False
@@ -503,17 +488,18 @@ class ZoomLockedModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return
 
+        general = self.document.data['general']
         if role == QtCore.Qt.DecorationRole:
             if index.column() == 1:
-                color = self.options['panels.colors'][index.row()]
+                color = general['panels.colors'][index.row()]
                 return get_color_icon(color)
 
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
             if index.column() == 1:
-                color = self.options['panels.colors'][index.row()]
+                color = general['panels.colors'][index.row()]
                 return str(color) if color else ''
             if index.column() == 2:
-                return str(self.options['panels.names'][index.row()])
+                return str(general['panels.names'][index.row()])
 
 
 @lru_cache()
@@ -540,6 +526,7 @@ def get_color_icon(color, size=None, as_pixmap=False):
         painter.drawRect(rect)
         painter.end()
         return QtGui.QIcon(px)
+
     except BaseException:
         import traceback
         print(traceback.format_exc())
@@ -556,9 +543,8 @@ class CheckDelegate(QtWidgets.QItemDelegate):
 
     def createEditor(self, parent, _, index):
         model = index.model()
-        if not model.options:
-            return
-        state = model.options['panels.zoom_locked'][index.row()]
+        general = model.document.data['general']
+        state = general['panels.zoom_locked'][index.row()]
         model.set_zoom_locked(index.row(), not state)
         checker = CheckWidget(not state, parent)
         checker.toggled.connect(partial(model.set_zoom_locked, index.row()))
@@ -566,9 +552,8 @@ class CheckDelegate(QtWidgets.QItemDelegate):
 
     def paint(self, painter, option, index):
         model = index.model()
-        if not model.options:
-            return
-        state = model.options['panels.zoom_locked'][index.row()]
+        general = model.document.data['general']
+        state = general['panels.zoom_locked'][index.row()]
 
         center = option.rect.center()
         painter.setBrush(QtCore.Qt.NoBrush)

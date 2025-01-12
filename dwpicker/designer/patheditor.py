@@ -10,7 +10,7 @@ from dwpicker.interactive import SelectionSquare, Manipulator
 from dwpicker.painting import (
     draw_selection_square, draw_manipulator, draw_tangents)
 from dwpicker.qtutils import get_cursor
-from dwpicker.selection import Selection, get_selection_mode
+from dwpicker.selection import get_selection_mode
 from dwpicker.shapepath import (
     offset_tangent, get_default_path, offset_path, auto_tangent,
     create_polygon_shape, rotate_custom_shape)
@@ -51,10 +51,14 @@ class PathEditor(QtWidgets.QWidget):
         self.angle_spinbox.setMaximum(360)
         self.angle_spinbox.setVisible(False)
 
-        polygon_action = QtWidgets.QAction(icon('polygon.png'), 'Create Polygon', self)
-        polygon_action.triggered.connect(partial(create_polygon_shape, self, self.polygon_spinbox))
-        rotation_action = QtWidgets.QAction(icon('rotation.png'), 'Rotate Shape', self)
-        rotation_action.triggered.connect(partial(rotate_custom_shape, self, self.angle_spinbox))
+        polygon_action = QtWidgets.QAction(
+            icon('polygon.png'), 'Create Polygon', self)
+        polygon_action.triggered.connect(
+            partial(create_polygon_shape, self, self.polygon_spinbox))
+        rotation_action = QtWidgets.QAction(
+            icon('rotation.png'), 'Rotate Shape', self)
+        rotation_action.triggered.connect(
+            partial(rotate_custom_shape, self, self.angle_spinbox))
 
         toggle = QtWidgets.QAction(icon('dock.png'), 'Dock/Undock', self)
         toggle.triggered.connect(self.toggle_flag)
@@ -66,7 +70,8 @@ class PathEditor(QtWidgets.QWidget):
         self.toolbar.addAction(break_tangent)
         self.toolbar.addAction(hsymmetry)
         self.toolbar.addAction(vsymmetry)
-        self.polygon_spinbox_action = self.toolbar.addWidget(self.polygon_spinbox)
+        self.polygon_spinbox_action = self.toolbar.addWidget(
+            self.polygon_spinbox)
         self.toolbar.addAction(polygon_action)
         self.angle_spinbox_action = self.toolbar.addWidget(self.angle_spinbox)
         self.toolbar.addAction(rotation_action)
@@ -110,6 +115,7 @@ class PathEditor(QtWidgets.QWidget):
         return get_global_rect(
             [QtCore.QPointF(*p['point']) for p in self.canvas.path])
 
+
 class ShapeEditorCanvas(QtWidgets.QWidget):
     pathEdited = QtCore.Signal()
 
@@ -120,7 +126,7 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
         self.selection_square = SelectionSquare()
         self.manipulator = Manipulator()
         self.transform = Transform()
-        self.selection = Selection()
+        self.selection = PointSelection()
         self.interaction_manager = InteractionManager()
         self.setMouseTracking(True)
         self.path = []
@@ -436,6 +442,66 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
         path_symmetry(path, center, horizontal=horizontal)
         self.pathEdited.emit()
         self.update()
+
+
+class PointSelection():
+    def __init__(self):
+        self.elements = []
+        self.mode = 'replace'
+
+    def set(self, elements):
+        if self.mode == 'add':
+            if elements is None:
+                return
+            return self.add(elements)
+        elif self.mode == 'replace':
+            if elements is None:
+                return self.clear()
+            return self.replace(elements)
+        elif self.mode == 'invert':
+            if elements is None:
+                return
+            return self.invert(elements)
+        elif self.mode == 'remove':
+            if elements is None:
+                return
+            for shape in elements:
+                if shape in self.shapes:
+                    self.remove(shape)
+
+    def replace(self, elements):
+        self.elements = elements
+
+    def add(self, elements):
+        self.elements.extend([e for e in elements if e not in self])
+
+    def remove(self, element):
+        self.elements.remove(element)
+
+    def invert(self, elements):
+        for element in elements:
+            if element not in self.elements:
+                self.add([element])
+            else:
+                self.remove(element)
+
+    def clear(self):
+        self.elements = []
+
+    def __len__(self):
+        return len(self.elements)
+
+    def __bool__(self):
+        return bool(self.elements)
+
+    __nonzero__ = __bool__
+
+    def __getitem__(self, i):
+        return self.elements[i]
+
+    def __iter__(self):
+        return self.elements.__iter__()
+
 
 
 def painter_path(path, viewportmapper):

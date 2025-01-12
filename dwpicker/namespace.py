@@ -12,7 +12,8 @@ def detect_picker_namespace(shapes):
 
 
 def pickers_namespaces(pickers):
-    targets = {t for p in pickers for s in p.shapes for t in s.targets()}
+    targets = {
+        t for p in pickers for s in p.document.shapes for t in s.targets()}
     namespaces = {ns for ns in [node_namespace(t) for t in targets] if ns}
     return sorted(list(namespaces))
 

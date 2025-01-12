@@ -1,3 +1,4 @@
+from functools import partial
 from PySide2 import QtCore, QtGui, QtWidgets
 from maya import cmds
 
@@ -23,30 +24,29 @@ def load_saved_snap():
 
 class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
-    increaseUndoStackRequested = QtCore.Signal()
     centerMoved = QtCore.Signal(int, int)
     callContextMenu = QtCore.Signal(QtCore.QPoint)
 
-    def __init__(self, options, parent=None):
+    def __init__(self, document, parent=None):
         super(ShapeEditArea, self).__init__(parent)
         self.setMouseTracking(True)
         self.current_panel = -1
         self.isolate = cmds.optionVar(query= ISOLATE_CURRENT_PANEL_SHAPES)
-        self.options = options
+        self.document = document
+        method = partial(self.update_selection, False)
+        self.document.data_changed.connect(method)
 
         self.viewportmapper = ViewportMapper()
         self.viewportmapper.viewsize = self.size()
 
         self.interaction_manager = InteractionManager()
 
-        self.selection = Selection()
+        self.selection = Selection(self.document)
         self.selection_square = SelectionSquare()
         self.manipulator = Manipulator()
         self.transform = Transform(load_saved_snap())
 
-        self.shapes = []
         self.clicked_shape = None
-        self.manipulator_moved = False
         self.increase_undo_on_release = False
         self.lock_background_shape = True
 
@@ -62,10 +62,13 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def set_current_panel(self, panel):
         self.current_panel = panel
+        self.update_selection()
         self.update()
 
     def select_panel_shapes(self, panel):
-        panel_shapes = [s for s in self.shapes if s.options['panel'] == panel]
+        panel_shapes = [
+            s for s in self.document.shapes if
+            s.options['panel'] == panel]
         if panel_shapes:
             self.selection.set(panel_shapes)
             self.update_selection()
@@ -142,7 +145,6 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.transform.set_reference_point(cursor)
 
         self.update()
-
         self.interaction_manager.update(
             event,
             pressed=True,
@@ -171,7 +173,6 @@ class ShapeEditArea(QtWidgets.QWidget):
                 shape.synchronize_rect()
                 shape.update_path()
                 shape.synchronize_image()
-            self.manipulator_moved = True
             self.increase_undo_on_release = True
             self.selectedShapesChanged.emit()
 
@@ -203,11 +204,15 @@ class ShapeEditArea(QtWidgets.QWidget):
             return
 
         if self.increase_undo_on_release:
-            self.increaseUndoStackRequested.emit()
+            self.document.record_undo()
+            self.document.shapes_changed.emit()
             self.increase_undo_on_release = False
 
         if self.interaction_manager.mode == InteractionManager.SELECTION:
             self.select_shapes()
+
+        elif self.interaction_manager.mode == InteractionManager.DRAGGING:
+            self.update_selection(False)
 
         self.interaction_manager.update(event, pressed=False)
         self.selection_square.release()
@@ -215,10 +220,10 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def visible_shapes(self):
         if not self.isolate or self.current_panel < 0:
-            return self.shapes
+            return self.document.shapes
 
         return [
-            s for s in self.shapes if
+            s for s in self.document.shapes if
             s.options['panel'] == self.current_panel]
 
     def select_shapes(self):
@@ -249,10 +254,15 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.update()
 
-    def update_selection(self):
-        rect = get_combined_rects([shape.rect for shape in self.selection])
+    def update_selection(self, changed=True):
+        shapes = [s for s in self.selection if s in self.visible_shapes()]
+        if shapes:
+            rect = get_combined_rects([shape.rect for shape in shapes])
+        else:
+            rect = None
         self.manipulator.set_rect(rect)
-        self.selectedShapesChanged.emit()
+        if changed:
+            self.selectedShapesChanged.emit()
 
     def paintEvent(self, _):
         try:
@@ -274,7 +284,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             snap=self.transform.snap,
             viewportmapper=self.viewportmapper)
         current_panel_shapes = []
-        for shape in self.shapes:
+        for shape in self.document.shapes:
             if shape.options['panel'] == self.current_panel:
                 current_panel_shapes.append(shape)
 
@@ -297,3 +307,10 @@ class ShapeEditArea(QtWidgets.QWidget):
         if self.selection_square.rect:
             draw_selection_square(
                 painter, self.selection_square.rect, self.viewportmapper)
+
+    def delete_selection(self):
+        self.document.remove_shapes(self.selection.shapes)
+        self.selection.clear()
+        self.document.shapes_changed.emit()
+        self.manipulator.set_rect(None)
+        self.document.record_undo()

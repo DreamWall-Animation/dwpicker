@@ -32,8 +32,8 @@ def create_stack_splitters(data, widgets, orientation='vertical'):
     return root_splitter
 
 
-def count_splitters(data):
+def count_panels(panels):
     result = 0
-    for _, rows in data:
+    for _, rows in panels:
         result += len(rows)
     return result

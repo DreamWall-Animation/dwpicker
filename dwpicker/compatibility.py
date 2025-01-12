@@ -3,9 +3,9 @@ This module contain a function to ingest picker done with older version.
 If the structure changed, it can convert automatically the data to the new
 version.
 """
-
+import uuid
 from dwpicker.appinfos import VERSION
-from dwpicker.stack import count_splitters
+from dwpicker.stack import count_panels
 
 
 def ensure_retro_compatibility(picker_data):
@@ -77,11 +77,15 @@ def ensure_retro_compatibility(picker_data):
         picker_data['general']['panels.names'] = ['Panel 1']
         ensure_general_options_sanity(picker_data['general'])
 
+    if tuple(version) < (1, 0, 0):
+        for shape in picker_data['shapes']:
+            shape['id'] = str(uuid.uuid4())
+
     return picker_data
 
 
 def ensure_general_options_sanity(options):
-    split_count = count_splitters(options['panels'])
+    split_count = count_panels(options['panels'])
     while split_count > len(options['panels.zoom_locked']):
         options['panels.zoom_locked'].append(False)
     while split_count > len(options['panels.colors']):

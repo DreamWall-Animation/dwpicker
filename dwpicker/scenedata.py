@@ -9,6 +9,7 @@ from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.namespace import maya_namespace, node_full_namespace
 from dwpicker.optionvar import USE_BASE64_DATA_ENCODING
 
+
 PICKER_HOLDER_NODE = '_dwpicker_data'
 PICKER_HOLDER_ATTRIBUTE = '_dwpicker_data'
 LS_EXP = ["*." + PICKER_HOLDER_ATTRIBUTE, "*:*." + PICKER_HOLDER_ATTRIBUTE]
@@ -22,7 +23,9 @@ def get_picker_holder_node():
 
 def create_picker_holder_node():
     with maya_namespace(":"):
+        selection = cmds.ls(selection=True)
         node = cmds.createNode('script', name=PICKER_HOLDER_NODE)
+        cmds.select(selection)
     cmds.setAttr(node + '.nodeState', 1)
     cmds.addAttr(node, longName=PICKER_HOLDER_ATTRIBUTE, dataType='string')
     return node

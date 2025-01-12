@@ -8,7 +8,7 @@ picker_files = (
 
 from PySide2 import QtCore, QtWidgets
 import json
-from dwpicker.picker import PickerView
+from dwpicker.picker import PickerPanelView
 from dwpicker.dashbord import DashboardDisplay
 from dwpicker.qtutils import maya_main_window, set_shortcut
 from dwpicker.compatibility import ensure_retro_compatibility
@@ -29,7 +29,7 @@ for picker in picker_files:
     with open(picker, 'r') as f:
         data = json.load(f)
         data = ensure_retro_compatibility(data)
-        view = PickerView(editable=False)
+        view = PickerPanelView(editable=False)
         view.register_callbacks()
         view.set_picker_data(data)
         view.reset()

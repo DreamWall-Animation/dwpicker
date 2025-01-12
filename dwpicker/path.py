@@ -38,8 +38,10 @@ def format_path(path):
 
 def get_picker_project_directory():
     if cmds.optionVar(query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV):
-        return unix_path(cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY))
-    return unix_path(os.getenv('DWPICKER_PROJECT_DIRECTORY'))
+        path = cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY)
+        return unix_path(path) if path else None
+    path = os.getenv('DWPICKER_PROJECT_DIRECTORY')
+    return unix_path(path) if path else None
 
 
 def expand_path(path):

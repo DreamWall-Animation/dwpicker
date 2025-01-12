@@ -8,7 +8,6 @@ HANDLER_HEIGHT = 16
 
 class StackEditor(QtWidgets.QWidget):
     panelsChanged = QtCore.Signal(object)
-    panelsResized = QtCore.Signal(object)
     panelSelected = QtCore.Signal(int)
     panelDoubleClicked = QtCore.Signal(int)
 
@@ -22,7 +21,6 @@ class StackEditor(QtWidgets.QWidget):
         self.clicked_action = None
         self.selected_index = None
         self.panels_are_changed = False
-        self.panels_are_resized = False
         self.panel_is_selected = None
 
     def set_orientation(self, orientation):
@@ -93,11 +91,8 @@ class StackEditor(QtWidgets.QWidget):
             self.panelSelected.emit(self.panel_is_selected)
         if self.panels_are_changed:
             self.panelsChanged.emit(self.data)
-        elif self.panels_are_resized:
-            self.panelsResized.emit(self.data)
         self.panel_is_selected = None
         self.panels_are_changed = False
-        self.panels_are_resized = False
 
     def get_action(self, cursor):
         for i, column in enumerate(self.stack_rects):
@@ -154,25 +149,25 @@ class StackEditor(QtWidgets.QWidget):
             index = self.clicked_action[1]
             y = event.pos().y() / self.height()
             move_vertical(self.data, index, y)
-            self.panels_are_resized = True
+            self.panels_are_changed = True
 
         elif self.clicked_action[0] == 'move vertical':
             index = self.clicked_action[1]
             x = event.pos().x() / self.width()
             move_vertical(self.data, index, x)
-            self.panels_are_resized = True
+            self.panels_are_changed = True
 
         elif self.clicked_action[0] == 'move horizontal' and vertical:
             index = self.clicked_action[1]
             x = event.pos().x() / self.width()
             move_horizontal(self.data, index, x)
-            self.panels_are_resized = True
+            self.panels_are_changed = True
 
         elif self.clicked_action[0] == 'move horizontal':
             index = self.clicked_action[1]
             y = event.pos().y() / self.height()
             move_horizontal(self.data, index, y)
-            self.panels_are_resized = True
+            self.panels_are_changed = True
 
         self.stack_rects = get_stack_rects(
             self.data, self.rect(), self.orientation)

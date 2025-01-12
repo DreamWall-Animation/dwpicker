@@ -4,11 +4,11 @@
 
 import json
 from dwpicker.interactive import Shape
-from dwpicker.picker import PickerView
+from dwpicker.picker import PickerPanelView
 from dwpicker.qtutils import set_shortcut
 from PySide2 import QtCore
 
-view = PickerView(editable=False)
+view = PickerPanelView(editable=False)
 view.register_callbacks()
 view.setWindowFlags(QtCore.Qt.Tool)
 with open('-picker_file_path-', 'r') as f:

@@ -12,12 +12,11 @@ import maya.OpenMaya as om
 
 from dwpicker.appinfos import VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE
 from dwpicker.compatibility import ensure_retro_compatibility
+from dwpicker.document import PickerDocument
 from dwpicker.designer.editor import PickerEditor
-from dwpicker.dialog import CommandEditorDialog
 from dwpicker.dialog import (
-    warning, question, get_image_path, NamespaceDialog)
+    question, get_image_path, NamespaceDialog)
 from dwpicker.ingest import animschool
-from dwpicker.interactive import Shape
 from dwpicker.hotkeys import get_hotkeys_config
 from dwpicker.namespace import (
     switch_namespace, selected_namespace, detect_picker_namespace,
@@ -26,8 +25,8 @@ from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, AUTO_RESIZE_NAMESPACE_COMBO,
     CHECK_IMAGES_PATHS, AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
     DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_COMMAND_LANGUAGE, LAST_SAVE_DIRECTORY,
-    NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
+    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
+    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
     save_optionvar, append_recent_filename, save_opened_filenames)
 from dwpicker.path import get_import_directory, get_open_directory
 from dwpicker.picker import PickerStackedView, list_targets
@@ -38,7 +37,7 @@ from dwpicker.references import ensure_images_path_exists
 from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
-from dwpicker.templates import BUTTON, PICKER, BACKGROUND, COMMAND
+from dwpicker.templates import PICKER, BACKGROUND
 from dwpicker.undo import UndoManager
 
 
@@ -73,15 +72,6 @@ Close the tab will remove completely the picker data from the scene.
 Are you sure to continue ?"""
 
 
-def build_multiple_shapes(targets, override):
-    shapes = [BUTTON.copy() for _ in range(len(targets))]
-    for shape, target in zip(shapes, targets):
-        if override:
-            shape.update(override)
-        shape['action.targets'] = [target]
-    return [Shape(shape) for shape in shapes]
-
-
 class DwPicker(DockableBase, QtWidgets.QWidget):
     def __init__(
             self,
@@ -97,11 +87,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.callbacks = []
         self.stored_focus = None
         self.editors = []
-        self.generals = []
-        self.undo_managers = []
         self.pickers = []
-        self.filenames = []
-        self.modified_states = []
         self.preferences_window = PreferencesWindow(
             callback=self.load_ui_states, parent=maya_main_window())
         self.preferences_window.need_update_callbacks.connect(
@@ -263,7 +249,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker = self.pickers[index]
         if not picker:
             return
-        namespace = detect_picker_namespace(picker.shapes)
+        namespace = detect_picker_namespace(picker.document.shapes)
         self.namespace_combo.blockSignals(True)
         if self.namespace_combo.findText(namespace) == -1 and namespace:
             self.namespace_combo.addItem(namespace)
@@ -274,14 +260,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_combo.blockSignals(False)
 
     def tab_moved(self, newindex, oldindex):
-        lists = (
-            self.editors,
-            self.generals,
-            self.pickers,
-            self.filenames,
-            self.modified_states)
 
-        for l in lists:
+        for l in (self.editors, self.pickers):
             l.insert(newindex, l.pop(oldindex))
 
         self.store_local_pickers_data()
@@ -298,13 +278,18 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             cmds.setFocus(self.objectName())
 
     def dockCloseEventTriggered(self):
-        save_opened_filenames([fn for fn in self.filenames if fn])
-        if not any(self.modified_states):
+        save_opened_filenames([
+            p.document.filename for p in self.pickers
+            if p.document.filename])
+
+        modified = [p.document.modified_state for p in self.pickers]
+        if not any(modified):
             return super(DwPicker, self).dockCloseEventTriggered()
 
         msg = (
             'Some picker have unsaved modification. \n'
             'Would you like to save them ?')
+
         result = QtWidgets.QMessageBox.question(
             None, 'Save ?', msg,
             buttons=(
@@ -318,7 +303,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         for i in range(self.tab.count()-1, -1, -1):
             self.save_tab(i)
 
-        save_opened_filenames(self.filenames)
+        save_opened_filenames([p.document.filename for p in self.pickers])
         return super(DwPicker, self).dockCloseEventTriggered()
 
     def reload_callbacks(self):
@@ -399,7 +384,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             store_local_picker_data([])
             return
 
-        pickers = [self.picker_data(i) for i in range(self.tab.count())]
+        pickers = [self.document(i).data for i in range(self.tab.count())]
         store_local_picker_data(pickers)
 
     def save_tab(self, index):
@@ -430,9 +415,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.close_tab(i, force=True)
 
     def close_tab(self, index, force=False, store=False):
-        if self.modified_states[index] and force is False:
+        if self.document(index).modified_state and force is False:
             if not self.save_tab(index):
                 return
+
         elif (cmds.optionVar(query=WARN_ON_TAB_CLOSED) and
               not question('Warning', CLOSE_TAB_WARNING)):
             return
@@ -443,10 +429,6 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker = self.pickers.pop(index)
         picker.unregister_callbacks()
         picker.close()
-        self.generals.pop(index)
-        self.modified_states.pop(index)
-        self.undo_managers.pop(index)
-        self.filenames.pop(index)
         self.tab.removeTab(index)
         if store:
             self.store_local_pickers_data()
@@ -458,7 +440,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_widget.setVisible(value)
         self.update_namespaces()
         for i in range(self.tab.count()):
-            self.set_modified_state(i, self.modified_states[i])
+            self.set_modified_state(i, self.document(i).modified_state)
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
@@ -472,39 +454,39 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if picker:
             picker.reset()
 
+    def general_changed(self, origin, option):
+        if origin == 'main_window':
+            return
+        if option == 'name':
+            self.update_names()
+
+    def update_names(self):
+        for i in range(self.tab.count()):
+            self.set_title(i, self.document(i).data['general']['name'])
+
     def create_picker(self, data):
-        picker = PickerStackedView(self.editable)
-        picker.addButtonRequested.connect(self.add_button)
-        picker.updateButtonRequested.connect(self.update_button)
-        picker.deleteButtonRequested.connect(self.delete_buttons)
-        if self.editable:
-            method = partial(self.data_changed_from_picker, picker)
-            picker.dataChanged.connect(method)
-        picker.set_picker_data(data)
+        document = PickerDocument(data)
+        document.changed.connect(self.store_local_pickers_data)
+        document.general_option_changed.connect(self.general_changed)
+        document.data_changed.connect(self.update_names)
+        picker = PickerStackedView(document, self.editable)
         picker.register_callbacks()
-        picker.reset(force_all=True)
         return picker
 
     def add_picker(self, data, filename=None, modified_state=False):
         picker = self.create_picker(data)
+        picker.document.filename = filename
+        picker.document.modified_state = modified_state
         insert = cmds.optionVar(query=INSERT_TAB_AFTER_CURRENT)
         if not insert or self.tab.currentIndex() == self.tab.count() - 1:
-            self.generals.append(data['general'])
             self.pickers.append(picker)
             self.editors.append(None)
-            self.undo_managers.append(UndoManager(data))
-            self.filenames.append(filename)
-            self.modified_states.append(modified_state)
             self.tab.addTab(picker, data['general']['name'])
             self.tab.setCurrentIndex(self.tab.count() - 1)
         else:
             index = self.tab.currentIndex() + 1
-            self.generals.insert(index, data['general'])
             self.pickers.insert(index, picker)
             self.editors.insert(index, None)
-            self.undo_managers.insert(index, UndoManager(data))
-            self.filenames.insert(index, filename)
-            self.modified_states.insert(index, modified_state)
             self.tab.insertTab(index, picker, data['general']['name'])
             self.tab.setCurrentIndex(index)
         picker.reset(force_all=True)
@@ -526,7 +508,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def call_save(self, index=None):
         index = self.tab.currentIndex() if type(index) is not int else index
-        filename = self.filenames[index]
+        filename = self.document(index).filename
         if not filename:
             return self.call_save_as(index=index)
         return self.save_picker(index, filename)
@@ -552,24 +534,22 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         index = self.tab.currentIndex()
         if index < 0:
             return
-        undo_manager = self.undo_managers[index]
-        undo_manager.undo()
-        self.data_changed_from_undo_manager(index)
+        self.document(index).undo()
+        self.document(index).changed.emit()
 
     def call_redo(self):
         index = self.tab.currentIndex()
         if index < 0:
             return
-        undo_manager = self.undo_managers[index]
-        undo_manager.redo()
-        self.data_changed_from_undo_manager(index)
+        self.document(index).redo()
+        self.document(index).changed.emit()
 
     def save_picker(self, index, filename):
-        self.filenames[index] = filename
+        self.document(index).filename = filename
         save_optionvar(LAST_SAVE_DIRECTORY, os.path.dirname(filename))
         append_recent_filename(filename)
         with open(filename, 'w') as f:
-            json.dump(self.picker_data(index), f, indent=2)
+            json.dump(self.document(index).data, f, indent=2)
 
         self.set_modified_state(index, False)
         return True
@@ -601,15 +581,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'shapes': []})
         self.store_local_pickers_data()
 
-    def picker_data(self, index=None):
+    def document(self, index=None):
         index = self.tab.currentIndex() if type(index) is not int else index
         if index < 0:
             return None
         picker = self.tab.widget(index)
-        return {
-            'version': VERSION,
-            'general': self.generals[index],
-            'shapes': [shape.options for shape in picker.shapes]}
+        return picker.document
 
     def call_edit(self):
         index = self.tab.currentIndex()
@@ -617,25 +594,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Warning", "No picker set")
             return
         if self.editors[index] is None:
-            data = self.picker_data()
-            undo_manager = self.undo_managers[index]
+            document = self.document()
             editor = PickerEditor(
-                picker_data=data,
-                undo_manager=undo_manager,
+                document,
                 parent=self)
-            picker = self.pickers[index]
-            method = partial(self.data_changed_from_editor, picker=picker)
-            editor.pickerDataModified.connect(method)
-            method = partial(
-                self.data_changed_from_editor,
-                picker=picker,
-                panels_resized=True)
-            editor.panelsResized.connect(method)
-            method = partial(
-                self.data_changed_from_editor,
-                picker=picker,
-                panels_changed=True)
-            editor.panelsChanged.connect(method)
             self.editors[index] = editor
 
         self.editors[index].show()
@@ -664,13 +626,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         Update the tab icon. Add a "save" icon if tab contains unsaved
         modifications.
         """
-        if not self.filenames[index]:
+        if not self.document(index).filename:
             return
-        self.modified_states[index] = state
+        self.document(index).modified_state = state
         use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
         icon_ = icon('save.png') if state and use_icon else QtGui.QIcon()
         self.tab.setTabIcon(index, icon_)
-        title = self.generals[index]['name']
+        title = self.document(index).data['general']['name']
         title = "*" + title if state and not use_icon else title
         self.tab.setTabText(index, title)
 
@@ -686,119 +648,33 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def sizeHint(self):
         return QtCore.QSize(500, 800)
 
-    def add_button(self, panel, x, y, button_type):
-        targets = cmds.ls(selection=True)
-        if not targets and button_type <= 1:
-            return warning("Warning", "No targets selected")
-
-        if button_type == 1:
-            overrides = self.quick_options.values
-            overrides['panel'] = panel
-            shapes = build_multiple_shapes(targets, overrides)
-            if not shapes:
-                return
-            picker = self.tab.currentWidget()
-            picker.set_drag_shapes(shapes, panel)
-            return
-
-        data = BUTTON.copy()
-        data['panel'] = panel
-        data['shape.left'] = x
-        data['shape.top'] = y
-        data.update(self.quick_options.values)
-        if button_type == 0:
-            data['action.targets'] = targets
-        else:
-            text, result = (
-                QtWidgets.QInputDialog.getText(self, 'Button text', 'text'))
-            if not result:
-                return
-            data['text.content'] = text
-            command = deepcopy(COMMAND)
-            languages = ['python', 'mel']
-            language = languages[cmds.optionVar(query=LAST_COMMAND_LANGUAGE)]
-            command['language'] = language
-            dialog = CommandEditorDialog(command)
-            if not dialog.exec_():
-                return
-            command = dialog.command_data()
-            index = languages.index(command['language'])
-            save_optionvar(LAST_COMMAND_LANGUAGE, index)
-            data['action.commands'] = [command]
-
-        width = max([data['shape.width'], len(data['text.content']) * 7])
-        data['shape.width'] = width
-        self.add_shape_to_current_picker(Shape(data))
-
-    def update_button(self, shape):
-        picker = self.tab.currentWidget()
-        shape.set_targets(cmds.ls(selection=True))
-        self.data_changed_from_picker(picker)
-
-    def delete_buttons(self):
-        picker = self.tab.currentWidget()
-        selected_shapes = [s for s in picker.shapes if s.selected]
-        for shape in selected_shapes:
-            picker.remove_shape(shape)
-        picker.update()
-        self.data_changed_from_picker(picker)
-
-    def add_shape_to_current_picker(self, shape, prepend=False):
-        picker = self.tab.currentWidget()
-        picker.add_shape(shape, prepend=prepend)
-        self.data_changed_from_picker(picker)
-
-    def data_changed_from_picker(self, picker):
-        index = self.tab.indexOf(picker)
-        data = self.picker_data(index)
-        if self.editors[index]:
-            self.editors[index].set_picker_data(data)
-        self.set_modified_state(index, True)
-        picker.update()
-        self.undo_managers[index].set_data_modified(data)
-        self.store_local_pickers_data()
-
-    def data_changed_from_editor(
-            self, data, picker,
-            panels_changed=False,
-            panels_resized=False):
-
-        index = self.tab.indexOf(picker)
-        self.generals[index] = data['general']
-
-        picker.set_picker_data(
-            data,
-            panels_changed=panels_changed,
-            panels_resized=panels_resized)
-
-        self.set_title(index, data['general']['name'])
-        self.set_modified_state(index, True)
-        self.store_local_pickers_data()
-
-    def data_changed_from_undo_manager(self, index):
-        data = self.undo_managers[index].data
-        if self.editors[index]:
-            self.editors[index].set_picker_data(data)
-        self.data_changed_from_editor(data, self.pickers[index])
-
     def change_title(self, index=None):
         if not self.editable:
             return
-        index = self.tab.currentIndex() if type(index) is not int else index
+        index = (
+            self.tab.currentIndex() if not isinstance(index, int) else index)
         if index < 0:
             return
         title, operate = QtWidgets.QInputDialog.getText(
-            None, 'Change picker title', 'New title')
+            None, 'Change picker title', 'New title',
+            text=self.document(index).data['general']['name'])
 
         if not operate:
             return
         self.set_title(index, title)
-        self.data_changed_from_picker(self.tab.widget(index))
+        index = (
+            self.tab.currentIndex() if not isinstance(index, int) else index)
+        if index < 0:
+            return
+        document = self.document(index)
+        document.data['general']['name'] = title
+        document.general_option_changed.emit('main_window', 'name')
+        self.document(index).record_undo()
+        self.set_title(index, title)
 
-    def set_title(self, index, title):
-        self.generals[index]['name'] = title
+    def set_title(self, index=None, title=''):
         use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
-        if not use_icon and self.modified_states[index]:
+        if not use_icon and self.document(index).modified_state:
             title = "*" + title
         self.tab.setTabText(index, title)
 
@@ -848,8 +724,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         shape['shape.width'] = image.size().width()
         shape['shape.height'] = image.size().height()
         shape['bgcolor.transparency'] = 255
-        shape = Shape(shape)
-        self.add_shape_to_current_picker(shape, prepend=True)
+        self.document().add_shape(shape, prepend=True)
 
 
 class DwPickerMenu(QtWidgets.QMenuBar):

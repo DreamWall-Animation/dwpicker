@@ -59,8 +59,9 @@ def select_shapes_from_selection(shapes):
 
 
 class Selection():
-    def __init__(self):
-        self.shapes = []
+    def __init__(self, document=None):
+        self.document = document
+        self.ids = []
         self.mode = 'replace'
 
     def set(self, shapes):
@@ -84,34 +85,39 @@ class Selection():
                     self.remove(shape)
 
     def replace(self, shapes):
-        self.shapes = shapes
+        self.ids = [s.options['id'] for s in shapes]
 
     def add(self, shapes):
-        self.shapes.extend([s for s in shapes if s not in self])
+        self.ids.extend([s.options['id'] for s in shapes if s not in self])
 
     def remove(self, shape):
-        self.shapes.remove(shape)
+        self.ids.remove(shape.options.options['id'])
 
     def invert(self, shapes):
         for shape in shapes:
-            if shape not in self.shapes:
+            if shape.options.options['id'] not in self.ids:
                 self.add([shape])
             else:
                 self.remove(shape)
 
+    @property
+    def shapes(self):
+        shapes = [self.document.shapes_by_id.get(id_) for id_ in self.ids]
+        return [shape for shape in shapes if shape is not None]
+
     def clear(self):
-        self.shapes = []
+        self.ids = []
 
     def __len__(self):
-        return len(self.shapes)
+        return len(self.ids)
 
     def __bool__(self):
-        return bool(self.shapes)
+        return bool(self.ids)
 
     __nonzero__ = __bool__
 
     def __getitem__(self, i):
-        return self.shapes[i]
+        return self.document.shapes_by_id[self.ids[i]]
 
     def __iter__(self):
         return self.shapes.__iter__()
