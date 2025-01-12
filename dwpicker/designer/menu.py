@@ -127,43 +127,53 @@ class MenuWidget(QtWidgets.QWidget):
         self.ontop.triggered.connect(self.onTopRequested.emit)
 
         self.hsymmetry = QtWidgets.QAction(icon('h_symmetry.png'), '', self)
+        self.hsymmetry.setToolTip('Mirror a shape horizontally')
         method = partial(self.symmetryRequested.emit, True)
         self.hsymmetry.triggered.connect(method)
         self.vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), '', self)
+        self.vsymmetry.setToolTip('Mirror a shape vertically')
         method = partial(self.symmetryRequested.emit, False)
         self.vsymmetry.triggered.connect(method)
 
         method = partial(self.alignRequested.emit, 'left')
         self.align_left = QtWidgets.QAction(icon('align_left.png'), '', self)
         self.align_left.triggered.connect(method)
+        self.align_left.setToolTip('Align to left')
         file_ = 'align_h_center.png'
         method = partial(self.alignRequested.emit, 'h_center')
         self.align_h_center = QtWidgets.QAction(icon(file_), '', self)
         self.align_h_center.triggered.connect(method)
+        self.align_h_center.setToolTip('Align to center horizontally')
         method = partial(self.alignRequested.emit, 'right')
         self.align_right = QtWidgets.QAction(icon('align_right.png'), '', self)
         self.align_right.triggered.connect(method)
+        self.align_right.setToolTip('Align to right')
         method = partial(self.alignRequested.emit, 'top')
         self.align_top = QtWidgets.QAction(icon('align_top.png'), '', self)
         self.align_top.triggered.connect(method)
+        self.align_top.setToolTip('Align to top')
         file_ = 'align_v_center.png'
         self.align_v_center = QtWidgets.QAction(icon(file_), '', self)
         method = partial(self.alignRequested.emit, 'v_center')
         self.align_v_center.triggered.connect(method)
+        self.align_v_center.setToolTip('Align to center vertically')
         file_ = 'align_bottom.png'
         method = partial(self.alignRequested.emit, 'bottom')
         self.align_bottom = QtWidgets.QAction(icon(file_), '', self)
         self.align_bottom.triggered.connect(method)
+        self.align_bottom.setToolTip('Align to bottom')
 
         file_ = 'arrange_h.png'
         method = partial(self.arrangeRequested.emit, 'horizontal')
         self.arrange_horizontal = QtWidgets.QAction(icon(file_), '', self)
         self.arrange_horizontal.triggered.connect(method)
+        self.arrange_horizontal.setToolTip('Distribute horizontally')
 
         file_ = 'arrange_v.png'
         method = partial(self.arrangeRequested.emit, 'vertical')
         self.arrange_vertical = QtWidgets.QAction(icon(file_), '', self)
         self.arrange_vertical.triggered.connect(method)
+        self.arrange_vertical.setToolTip('Distribute vertically')
 
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.addAction(self.delete)
