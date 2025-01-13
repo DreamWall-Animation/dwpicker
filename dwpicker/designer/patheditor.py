@@ -1,3 +1,4 @@
+import math
 from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -39,6 +40,11 @@ class PathEditor(QtWidgets.QWidget):
         vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), '', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
+        polygon_action = QtWidgets.QAction(icon('polygon.png'), 'Create Polygon', self)
+        polygon_action.triggered.connect(partial(self.process_polygon, parent.polygon_spinbox))
+        rotation_action = QtWidgets.QAction(icon('rotation.png'), 'Rotate Shape', self)
+        rotation_action.triggered.connect(partial(self.process_rotation, parent.angle_spinbox))
+
         toggle = QtWidgets.QAction(icon('dock.png'), '', self)
         toggle.triggered.connect(self.toggle_flag)
 
@@ -49,6 +55,8 @@ class PathEditor(QtWidgets.QWidget):
         self.toolbar.addAction(break_tangent)
         self.toolbar.addAction(hsymmetry)
         self.toolbar.addAction(vsymmetry)
+        self.toolbar.addAction(polygon_action)
+        self.toolbar.addAction(rotation_action)
 
         self.toolbar2 = QtWidgets.QToolBar()
         self.toolbar2.setIconSize(QtCore.QSize(18, 18))
@@ -88,6 +96,81 @@ class PathEditor(QtWidgets.QWidget):
         return get_global_rect(
             [QtCore.QPointF(*p['point']) for p in self.canvas.path])
 
+    def process_polygon(self, polygon):
+        polygon_edges = polygon.value()
+        x_point, y_point = self.canvas.path[0]['point']
+        shape_path = self.create_polygon_shape_format(radius=45, n=polygon_edges, x_origin=x_point, y_origin=y_point)
+        self.canvas.path = shape_path
+        self.pathEdited.emit()
+
+    def process_rotation(self, angle):
+        angle_value = math.radians(angle.value())
+
+        vertices = [(point["point"][0], point["point"][1]) for point in self.canvas.path]
+        cx = sum(x for x, y in vertices) / len(vertices)
+        cy = sum(y for x, y in vertices) / len(vertices)
+
+        # Helper function to rotate a point
+        def rotate_point(x, y, cx, cy, angle):
+            x_rotated = math.cos(angle) * (x - cx) - math.sin(angle) * (y - cy) + cx
+            y_rotated = math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy) + cy
+            return x_rotated, y_rotated
+
+        rotated_shape_path = []
+        for point_data in self.canvas.path:
+            x, y = point_data["point"]
+            tangent_in = point_data["tangent_in"]
+            tangent_out = point_data["tangent_out"]
+
+            # Rotate the point
+            x_rotated, y_rotated = rotate_point(x, y, cx, cy, angle_value)
+
+            # Rotate the tangents if they exist
+            if tangent_in:
+                tan_in_x, t_in_y = tangent_in
+                tan_in_rotated = rotate_point(tan_in_x, t_in_y, cx, cy, angle_value)
+            else:
+                tan_in_rotated = None
+
+            if tangent_out:
+                tan_out_x, t_out_y = tangent_out
+                tan_out_rotated = rotate_point(tan_out_x, t_out_y, cx, cy, angle_value)
+            else:
+                tan_out_rotated = None
+
+            # Update the shape path
+            rotated_shape_path.append({
+                "point": [x_rotated, y_rotated],
+                "tangent_in": [tan_in_rotated[0], tan_in_rotated[1]] if tan_in_rotated else None,
+                "tangent_out": [tan_out_rotated[0], tan_out_rotated[1]] if tan_out_rotated else None,
+            })
+
+        self.canvas.path = rotated_shape_path
+        self.pathEdited.emit()
+
+    def calculate_polygon(self, radius, n):
+        vertices = []
+        angle_step = 2 * math.pi / n
+        for i in range(n):
+            x = radius * math.cos(i * angle_step)
+            y = radius * math.sin(i * angle_step)
+            vertices.append((x, y))
+        # Shift to ensure first vertex is at origin (0, 0)
+        x_shift, y_shift = vertices[0]
+        adjusted_vertices = [(x - x_shift, y - y_shift) for x, y in vertices]
+        return adjusted_vertices
+
+    def create_polygon_shape_format(self, radius, n, x_origin, y_origin):
+        vertices = self.calculate_polygon(radius, n)
+        offset_vertices = [(x + x_origin, y + y_origin) for x, y in vertices]
+        shape_path = []
+        for vertex in offset_vertices:
+            shape_path.append({
+                "point": [vertex[0], vertex[1]],
+                "tangent_in": None,
+                "tangent_out": None
+            })
+        return shape_path
 
 class ShapeEditorCanvas(QtWidgets.QWidget):
     pathEdited = QtCore.Signal()

@@ -225,6 +225,8 @@ class ShapeSettings(QtWidgets.QWidget):
         self.shape = QtWidgets.QComboBox()
         self.shape.addItems(SHAPE_TYPES)
         self.shape.currentIndexChanged.connect(self.shape_changed)
+        self.polygon_spinbox = QtWidgets.QSpinBox(self)
+        self.angle_spinbox = QtWidgets.QSpinBox(self)
         self.path_editor = PathEditor(self)
         self.path_editor.pathEdited.connect(self.path_edited)
         self.path_editor.setVisible(False)
@@ -278,9 +280,31 @@ class ShapeSettings(QtWidgets.QWidget):
         layout1.addRow('Background', self.background)
         layout1.addRow('Shape', self.shape)
 
+        polygon_layout = QtWidgets.QHBoxLayout()
+        self.polygon_label = QtWidgets.QLabel("Polygon:")
+        self.polygon_spinbox.setMinimum(3)  # Minimum of 3 sides for a polygon
+        self.polygon_label.setVisible(False)
+        self.polygon_spinbox.setVisible(False)
+        polygon_layout.addWidget(self.polygon_label)
+        polygon_layout.addWidget(self.polygon_spinbox)
+        polygon_layout.addStretch()
+
+        rotate_layout = QtWidgets.QHBoxLayout()
+        self.angle_label = QtWidgets.QLabel("Angle:")
+        self.angle_label.setVisible(False)
+        self.angle_spinbox.setVisible(False)
+        self.angle_spinbox.setValue(45)
+        self.angle_spinbox.setMinimum(-360)
+        self.angle_spinbox.setMaximum(360)
+        rotate_layout.addWidget(self.angle_label)
+        rotate_layout.addWidget(self.angle_spinbox)
+        rotate_layout.addStretch()
+
         layout2 = QtWidgets.QVBoxLayout()
         layout2.setSpacing(0)
         layout2.setContentsMargins(0, 0, 0, 0)
+        layout2.addLayout(polygon_layout)
+        layout2.addLayout(rotate_layout)
         layout2.addWidget(self.path_editor)
 
         layout3 = QtWidgets.QFormLayout()
@@ -308,6 +332,15 @@ class ShapeSettings(QtWidgets.QWidget):
         layout.addLayout(layout2)
         layout.addLayout(layout3)
 
+    def hide_custom_widgets(self):
+        self.polygon_label.setVisible(self.shape.currentText() == 'custom')
+        self.polygon_spinbox.setEnabled(self.shape.currentText() == 'custom')
+        self.polygon_spinbox.setVisible(self.shape.currentText() == 'custom')
+        self.angle_label.setVisible(self.shape.currentText() == 'custom')
+        self.angle_spinbox.setEnabled(self.shape.currentText() == 'custom')
+        self.angle_spinbox.setVisible(self.shape.currentText() == 'custom')
+        self.path_editor.setEnabled(self.shape.currentText() == 'custom')
+        self.path_editor.setVisible(self.shape.currentText() == 'custom')
     def path_edited(self):
         if self.shape.currentText() != 'custom':
             return
@@ -326,8 +359,7 @@ class ShapeSettings(QtWidgets.QWidget):
         self.height.setText(str(rect.height()))
 
     def shape_changed(self, _):
-        self.path_editor.setEnabled(self.shape.currentText() == 'custom')
-        self.path_editor.setVisible(self.shape.currentText() == 'custom')
+        self.hide_custom_widgets()
         if self.shape.currentText() == 'custom':
             self.path_editor.canvas.focus()
             self.optionSet.emit('shape.path', self.path_editor.path())
