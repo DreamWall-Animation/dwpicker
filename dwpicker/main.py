@@ -49,7 +49,7 @@ DreamWall Picker
     Release date: {release}
     Authors: Lionel Brouyère, Olivier Evers
     Contributor(s):
-        Herizoran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk),
+        Herizo Ran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk),
         Markus Ng, Jerome Drese
 
 Features:

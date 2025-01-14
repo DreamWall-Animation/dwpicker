@@ -165,3 +165,87 @@ def get_worldspace_path(path, viewportmapper=None):
             viewportmapper.to_viewport_coords(c2),
             viewportmapper.to_viewport_coords(end))
     return painter_path
+
+def create_polygon_shape(path_editor, polygon):
+    if not path_editor.polygon_spinbox_action.isVisible():
+        path_editor.angle_spinbox_action.setVisible(False)
+        return path_editor.polygon_spinbox_action.setVisible(True)
+    polygon_edges = polygon.value()
+    x_point, y_point = path_editor.canvas.path[0]['point']
+    shape_path = polygon_shape_format(radius=45, n=polygon_edges, x_origin=x_point, y_origin=y_point)
+    path_editor.canvas.path = shape_path
+    path_editor.pathEdited.emit()
+    path_editor.canvas.focus()
+
+def rotate_custom_shape(path_editor, angle):
+    if not path_editor.angle_spinbox_action.isVisible():
+        path_editor.polygon_spinbox_action.setVisible(False)
+        return path_editor.angle_spinbox_action.setVisible(True)
+    angle_value = math.radians(angle.value())
+
+    vertices = [(point["point"][0], point["point"][1]) for point in path_editor.canvas.path]
+    cx = sum(x for x, y in vertices) / len(vertices)
+    cy = sum(y for x, y in vertices) / len(vertices)
+
+    # Helper function to rotate a point
+    def rotate_point(x, y, cx, cy, angle):
+        x_rotated = math.cos(angle) * (x - cx) - math.sin(angle) * (y - cy) + cx
+        y_rotated = math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy) + cy
+        return x_rotated, y_rotated
+
+    rotated_shape_path = []
+    for point_data in path_editor.canvas.path:
+        x, y = point_data["point"]
+        tangent_in = point_data["tangent_in"]
+        tangent_out = point_data["tangent_out"]
+
+        # Rotate the point
+        x_rotated, y_rotated = rotate_point(x, y, cx, cy, angle_value)
+
+        # Rotate the tangents if they exist
+        if tangent_in:
+            tan_in_x, tan_out_y = tangent_in
+            tan_in_rotated = rotate_point(tan_in_x, tan_out_y, cx, cy, angle_value)
+        else:
+            tan_in_rotated = None
+
+        if tangent_out:
+            tan_out_x, tan_out_y = tangent_out
+            tan_out_rotated = rotate_point(tan_out_x, tan_out_y, cx, cy, angle_value)
+        else:
+            tan_out_rotated = None
+
+        # Update the shape path
+        rotated_shape_path.append({
+            "point": [x_rotated, y_rotated],
+            "tangent_in": [tan_in_rotated[0], tan_in_rotated[1]] if tan_in_rotated else None,
+            "tangent_out": [tan_out_rotated[0], tan_out_rotated[1]] if tan_out_rotated else None,
+        })
+
+    path_editor.canvas.path = rotated_shape_path
+    path_editor.pathEdited.emit()
+    path_editor.canvas.focus()
+
+def calculate_polygon(radius, n):
+    vertices = []
+    angle_step = 2 * math.pi / n
+    for i in range(n):
+        x = radius * math.cos(i * angle_step)
+        y = radius * math.sin(i * angle_step)
+        vertices.append((x, y))
+    # Shift to ensure first vertex is at origin (0, 0)
+    x_shift, y_shift = vertices[0]
+    adjusted_vertices = [(x - x_shift, y - y_shift) for x, y in vertices]
+    return adjusted_vertices
+
+def polygon_shape_format(radius, n, x_origin, y_origin):
+    vertices = calculate_polygon(radius, n)
+    offset_vertices = [(x + x_origin, y + y_origin) for x, y in vertices]
+    shape_path = []
+    for vertex in offset_vertices:
+        shape_path.append({
+            "point": [vertex[0], vertex[1]],
+            "tangent_in": None,
+            "tangent_out": None
+        })
+    return shape_path

@@ -1,3 +1,4 @@
+import math
 from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -12,7 +13,8 @@ from dwpicker.painting import (
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 from dwpicker.shapepath import (
-    offset_tangent, get_default_path, offset_path, auto_tangent)
+    offset_tangent, get_default_path, offset_path, auto_tangent,
+    create_polygon_shape, rotate_custom_shape)
 
 
 class PathEditor(QtWidgets.QWidget):
@@ -39,6 +41,20 @@ class PathEditor(QtWidgets.QWidget):
         vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), '', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
+        self.polygon_spinbox = QtWidgets.QSpinBox(self)
+        self.polygon_spinbox.setMinimum(3)  # Minimum of 3 sides for a polygon
+
+        self.angle_spinbox = QtWidgets.QSpinBox(self)
+        self.angle_spinbox.setValue(45)
+        self.angle_spinbox.setMinimum(-360)
+        self.angle_spinbox.setMaximum(360)
+        self.angle_spinbox.setVisible(False)
+
+        polygon_action = QtWidgets.QAction(icon('polygon.png'), 'Create Polygon', self)
+        polygon_action.triggered.connect(partial(create_polygon_shape, self, self.polygon_spinbox))
+        rotation_action = QtWidgets.QAction(icon('rotation.png'), 'Rotate Shape', self)
+        rotation_action.triggered.connect(partial(rotate_custom_shape, self, self.angle_spinbox))
+
         toggle = QtWidgets.QAction(icon('dock.png'), '', self)
         toggle.triggered.connect(self.toggle_flag)
 
@@ -49,6 +65,10 @@ class PathEditor(QtWidgets.QWidget):
         self.toolbar.addAction(break_tangent)
         self.toolbar.addAction(hsymmetry)
         self.toolbar.addAction(vsymmetry)
+        self.polygon_spinbox_action = self.toolbar.addWidget(self.polygon_spinbox)
+        self.toolbar.addAction(polygon_action)
+        self.angle_spinbox_action = self.toolbar.addWidget(self.angle_spinbox)
+        self.toolbar.addAction(rotation_action)
 
         self.toolbar2 = QtWidgets.QToolBar()
         self.toolbar2.setIconSize(QtCore.QSize(18, 18))
@@ -87,7 +107,6 @@ class PathEditor(QtWidgets.QWidget):
     def path_rect(self):
         return get_global_rect(
             [QtCore.QPointF(*p['point']) for p in self.canvas.path])
-
 
 class ShapeEditorCanvas(QtWidgets.QWidget):
     pathEdited = QtCore.Signal()
