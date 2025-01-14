@@ -167,6 +167,9 @@ def get_worldspace_path(path, viewportmapper=None):
     return painter_path
 
 def create_polygon_shape(path_editor, polygon):
+    if not path_editor.polygon_spinbox_action.isVisible():
+        path_editor.angle_spinbox_action.setVisible(False)
+        return path_editor.polygon_spinbox_action.setVisible(True)
     polygon_edges = polygon.value()
     x_point, y_point = path_editor.canvas.path[0]['point']
     shape_path = polygon_shape_format(radius=45, n=polygon_edges, x_origin=x_point, y_origin=y_point)
@@ -175,6 +178,9 @@ def create_polygon_shape(path_editor, polygon):
     path_editor.canvas.focus()
 
 def rotate_custom_shape(path_editor, angle):
+    if not path_editor.angle_spinbox_action.isVisible():
+        path_editor.polygon_spinbox_action.setVisible(False)
+        return path_editor.angle_spinbox_action.setVisible(True)
     angle_value = math.radians(angle.value())
 
     vertices = [(point["point"][0], point["point"][1]) for point in path_editor.canvas.path]
