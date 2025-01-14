@@ -224,6 +224,59 @@ class FloatEdit(LineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
 
+    def __init__(self, minimum=None, maximum=None, decimals=2, parent=None):
+        super().__init__(parent)
+        self.dragging = False
+        self.last_mouse_pos = QtCore.QPoint()
+
+        if minimum is not None and maximum is None:
+            maximum = float('inf')
+
+        self.validator = self.VALIDATOR_CLS(minimum, maximum, decimals,
+                                            self) if minimum is not None or maximum is not None else None
+        if self.validator:
+            self.setValidator(self.validator)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.dragging = True
+            self.last_mouse_pos = event.globalPos()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            delta = event.globalPos() - self.last_mouse_pos
+            self.last_mouse_pos = event.globalPos()
+
+            current_value = float(self.text()) if self.text() else 0.0
+            adjustment = delta.x() * 0.1  # Fine control adjustment
+            new_value = current_value + adjustment
+
+            if self.validator:
+                min_val, max_val = self.validator.bottom(), self.validator.top()
+                new_value = max(min_val, min(new_value, max_val))
+
+            self.setText(f"{new_value:.2f}")
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.dragging = False
+            event.accept()
+
+            self.emitValue()
+
+        else:
+            super().mouseReleaseEvent(event)
+
+    def emitValue(self):
+        current_value = self.value()
+        if current_value is not None:
+            self.valueSet.emit(current_value)
+
     def value(self):
         if self.text() == '':
             return None
