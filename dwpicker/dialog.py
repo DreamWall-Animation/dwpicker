@@ -396,7 +396,6 @@ class CommandEditorDialog(QtWidgets.QDialog):
 
         self.command = QtWidgets.QTextEdit()
         self.command.setPlaceholderText(COMMAND_PLACEHOLDER)
-        self.command.setFixedHeight(100)
         self.command.setPlainText(command['command'])
 
         self.ok = QtWidgets.QPushButton('Ok')
@@ -437,6 +436,9 @@ class CommandEditorDialog(QtWidgets.QDialog):
         layout.addLayout(buttons_layout)
         self.language_changed()
 
+    def sizeHint(self):
+        return QtCore.QSize(400, 550)
+
     def language_changed(self, *_):
         language = self.languages.currentText()
         highlighter = get_highlighter(language)
@@ -474,7 +476,6 @@ class MenuCommandEditorDialog(QtWidgets.QDialog):
 
         self.command = QtWidgets.QTextEdit()
         self.command.setPlaceholderText(COMMAND_PLACEHOLDER)
-        self.command.setFixedHeight(100)
         self.command.setPlainText(command['command'])
 
         self.ok = QtWidgets.QPushButton('Ok')
@@ -508,6 +509,9 @@ class MenuCommandEditorDialog(QtWidgets.QDialog):
         layout.addWidget(code)
         layout.addLayout(buttons_layout)
         self.language_changed()
+
+    def sizeHint(self):
+        return QtCore.QSize(400, 550)
 
     def language_changed(self, *_):
         language = self.languages.currentText()
