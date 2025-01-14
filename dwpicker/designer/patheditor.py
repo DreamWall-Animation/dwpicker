@@ -1,4 +1,3 @@
-import math
 from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -26,25 +25,27 @@ class PathEditor(QtWidgets.QWidget):
         self.canvas = ShapeEditorCanvas()
         self.canvas.pathEdited.connect(self.pathEdited.emit)
 
-        delete = QtWidgets.QAction(icon('delete.png'), '', self)
+        delete = QtWidgets.QAction(icon('delete.png'), 'Delete vertex', self)
         delete.triggered.connect(self.canvas.delete)
 
-        smooth_tangent = QtWidgets.QAction(icon('tangent.png'), '', self)
+        smooth_tangent = QtWidgets.QAction(icon('tangent.png'), 'Smooth tangents', self)
         smooth_tangent.triggered.connect(self.canvas.smooth_tangents)
 
-        break_tangent = QtWidgets.QAction(icon('tangentbreak.png'), '', self)
+        break_tangent = QtWidgets.QAction(icon('tangentbreak.png'), 'Break tangents', self)
         break_tangent.triggered.connect(self.canvas.break_tangents)
 
-        hsymmetry = QtWidgets.QAction(icon('h_symmetry.png'), '', self)
+        hsymmetry = QtWidgets.QAction(icon('h_symmetry.png'), 'Mirror horizontally', self)
         hsymmetry.triggered.connect(partial(self.canvas.symmetry, True))
 
-        vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), '', self)
+        vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), 'Mirror vertically', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
         self.polygon_spinbox = QtWidgets.QSpinBox(self)
+        self.polygon_spinbox.setToolTip('Sides')
         self.polygon_spinbox.setMinimum(3)  # Minimum of 3 sides for a polygon
 
         self.angle_spinbox = QtWidgets.QSpinBox(self)
+        self.angle_spinbox.setToolTip('Angle')
         self.angle_spinbox.setValue(45)
         self.angle_spinbox.setMinimum(-360)
         self.angle_spinbox.setMaximum(360)
@@ -55,7 +56,7 @@ class PathEditor(QtWidgets.QWidget):
         rotation_action = QtWidgets.QAction(icon('rotation.png'), 'Rotate Shape', self)
         rotation_action.triggered.connect(partial(rotate_custom_shape, self, self.angle_spinbox))
 
-        toggle = QtWidgets.QAction(icon('dock.png'), '', self)
+        toggle = QtWidgets.QAction(icon('dock.png'), 'Dock/Undock', self)
         toggle.triggered.connect(self.toggle_flag)
 
         self.toolbar = QtWidgets.QToolBar()
@@ -93,6 +94,7 @@ class PathEditor(QtWidgets.QWidget):
         self.show()
         if state:
             self.move(point)
+        self.canvas.focus()
 
     def set_options(self, options):
         if options is None:
