@@ -232,13 +232,18 @@ class FloatEdit(LineEdit):
         if minimum is not None and maximum is None:
             maximum = float('inf')
 
-        self.validator = self.VALIDATOR_CLS(minimum, maximum, decimals,
-                                            self) if minimum is not None or maximum is not None else None
+        self.validator = self.VALIDATOR_CLS(
+            minimum, maximum, decimals, self
+        ) if minimum is not None or maximum is not None else None
         if self.validator:
             self.setValidator(self.validator)
 
+        self.setMouseTracking(True)
+
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.MiddleButton:
+            self.setStyleSheet("background-color: #5285A6;")
+            self.clearFocus()
             self.dragging = True
             self.last_mouse_pos = event.globalPos()
             event.accept()
@@ -247,6 +252,7 @@ class FloatEdit(LineEdit):
 
     def mouseMoveEvent(self, event):
         if self.dragging:
+            self.setStyleSheet("")
             delta = event.globalPos() - self.last_mouse_pos
             self.last_mouse_pos = event.globalPos()
 
@@ -263,12 +269,12 @@ class FloatEdit(LineEdit):
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        self.setStyleSheet("")
         if event.button() == QtCore.Qt.MiddleButton:
             self.dragging = False
             event.accept()
-
             self.emitValue()
-
+            self.clearFocus()
         else:
             super().mouseReleaseEvent(event)
 
@@ -281,6 +287,24 @@ class FloatEdit(LineEdit):
         if self.text() == '':
             return None
         return float(self.text().replace(',', '.'))
+
+    def enterEvent(self, event):
+        if not self.hasFocus():
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        if self.underMouse():
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
+        super().focusOutEvent(event)
 
 
 class IntEdit(LineEdit):
