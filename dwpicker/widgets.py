@@ -232,6 +232,9 @@ class FloatEdit(LineEdit):
         if minimum is not None and maximum is None:
             maximum = float('inf')
 
+        self.minimum = minimum
+        self.maximum = maximum
+
         self.validator = self.VALIDATOR_CLS(
             minimum, maximum, decimals, self
         ) if minimum is not None or maximum is not None else None
@@ -251,20 +254,32 @@ class FloatEdit(LineEdit):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        is_value_integer = False
+
         if self.dragging:
             self.setStyleSheet("")
             delta = event.globalPos() - self.last_mouse_pos
             self.last_mouse_pos = event.globalPos()
 
             current_value = float(self.text()) if self.text() else 0.0
-            adjustment = delta.x() * 0.1  # Fine control adjustment
+
+            if isinstance(self.minimum, int) or isinstance(self.maximum, int):
+                is_value_integer = True
+                step = 1
+            else:
+                step = 0.1
+
+            adjustment = delta.x() * step
             new_value = current_value + adjustment
 
             if self.validator:
                 min_val, max_val = self.validator.bottom(), self.validator.top()
                 new_value = max(min_val, min(new_value, max_val))
 
-            self.setText(f"{new_value:.2f}")
+            if is_value_integer:
+                self.setText(f"{int(new_value)}")
+            else:
+                self.setText(f"{new_value:.2f}")
         else:
             super().mouseMoveEvent(event)
 
