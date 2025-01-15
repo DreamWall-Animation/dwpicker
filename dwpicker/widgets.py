@@ -224,10 +224,102 @@ class FloatEdit(LineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
 
+    def __init__(self, minimum=None, maximum=None, decimals=2, parent=None):
+        super().__init__(parent)
+        self.dragging = False
+        self.last_mouse_pos = QtCore.QPoint()
+
+        if minimum is not None and maximum is None:
+            maximum = float('inf')
+
+        self.minimum = minimum
+        self.maximum = maximum
+
+        self.validator = self.VALIDATOR_CLS(
+            minimum, maximum, decimals, self
+        ) if minimum is not None or maximum is not None else None
+        if self.validator:
+            self.setValidator(self.validator)
+
+        self.setMouseTracking(True)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.setStyleSheet("background-color: #5285A6;")
+            self.clearFocus()
+            self.dragging = True
+            self.last_mouse_pos = event.globalPos()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        is_value_integer = False
+
+        if self.dragging:
+            self.setStyleSheet("")
+            delta = event.globalPos() - self.last_mouse_pos
+            self.last_mouse_pos = event.globalPos()
+
+            current_value = float(self.text()) if self.text() else 0.0
+
+            if isinstance(self.minimum, int) or isinstance(self.maximum, int):
+                is_value_integer = True
+                step = 1
+            else:
+                step = 0.1
+
+            adjustment = delta.x() * step
+            new_value = current_value + adjustment
+
+            if self.validator:
+                min_val, max_val = self.validator.bottom(), self.validator.top()
+                new_value = max(min_val, min(new_value, max_val))
+
+            if is_value_integer:
+                self.setText(f"{int(new_value)}")
+            else:
+                self.setText(f"{new_value:.2f}")
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.setStyleSheet("")
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.dragging = False
+            event.accept()
+            self.emitValue()
+            self.clearFocus()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def emitValue(self):
+        current_value = self.value()
+        if current_value is not None:
+            self.valueSet.emit(current_value)
+
     def value(self):
         if self.text() == '':
             return None
         return float(self.text().replace(',', '.'))
+
+    def enterEvent(self, event):
+        if not self.hasFocus():
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        if self.underMouse():
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
+        super().focusOutEvent(event)
 
 
 class IntEdit(LineEdit):
