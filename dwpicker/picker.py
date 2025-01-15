@@ -1,5 +1,4 @@
 from functools import partial
-from collections import defaultdict
 
 from maya import cmds
 import maya.OpenMaya as om
@@ -108,6 +107,7 @@ class PickerStackedView(QtWidgets.QWidget):
         self.editable = editable
         self.pickers = []
         self.shapes = []
+        self.widget = None
         self.layers_menu = VisibilityLayersMenu()
         self.layers_menu.visibilities_changed.connect(self.update)
 
@@ -124,11 +124,15 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.unregister_callbacks()
 
     def reset(self, force_all=False):
-        if not force_all:
+        if not force_all and isinstance(self.widget, QtWidgets.QSplitter):
             for picker in self.pickers:
                 if picker.rect().contains(get_cursor(self)):
                     picker.reset()
                     return
+        elif not force_all:
+            picker = self.pickers[self.widget.currentIndex()]
+            picker.reset()
+            return
         # If no picker hovered, focus all.
         for picker in self.pickers:
             picker.reset()
@@ -150,14 +154,14 @@ class PickerStackedView(QtWidgets.QWidget):
         if not data['general']['panels.as_sub_tab']:
             panels = data['general']['panels']
             orientation = data['general']['panels.orientation']
-            panels = create_stack_splitters(panels, self.pickers, orientation)
+            self.widget = create_stack_splitters(panels, self.pickers, orientation)
         else:
-            panels = QtWidgets.QTabWidget()
+            self.widget = QtWidgets.QTabWidget()
             names = data['general']['panels.names']
             for picker, name in zip(self.pickers, names):
-                panels.addTab(picker, name)
+                self.widget.addTab(picker, name)
         clear_layout(self.layout)
-        self.layout.addWidget(panels)
+        self.layout.addWidget(self.widget)
 
     def set_picker_data(
             self, data, panels_changed=False, panels_resized=False):
