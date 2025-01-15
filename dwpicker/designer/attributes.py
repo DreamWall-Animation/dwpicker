@@ -249,10 +249,10 @@ class ShapeSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'shape.anchor')
         self.anchor.currentTextChanged.connect(method)
 
-        self.left = IntEdit(minimum=0)
+        self.left = IntEdit()
         method = partial(self.rectModified.emit, 'shape.left')
         self.left.valueSet.connect(method)
-        self.top = IntEdit(minimum=0)
+        self.top = IntEdit()
         method = partial(self.rectModified.emit, 'shape.top')
         self.top.valueSet.connect(method)
         self.width = IntEdit(minimum=0)
@@ -408,11 +408,11 @@ class ImageSettings(QtWidgets.QWidget):
         self.fit = BoolCombo(True)
         self.fit.valueSet.connect(partial(self.optionSet.emit, 'image.fit'))
 
-        self.width = FloatEdit()
+        self.width = FloatEdit(minimum=0)
         method = partial(self.optionSet.emit, 'image.width')
         self.width.valueSet.connect(method)
 
-        self.height = FloatEdit()
+        self.height = FloatEdit(minimum=0)
         method = partial(self.optionSet.emit, 'image.height')
         self.height.valueSet.connect(method)
 
@@ -480,7 +480,7 @@ class AppearenceSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'bordercolor.clicked')
         self.bordercolor_clicked.valueSet.connect(method)
 
-        self.bordercolor_transparency = FloatEdit(minimum=0, maximum=255)
+        self.bordercolor_transparency = IntEdit(minimum=0, maximum=255)
         method = partial(self.optionSet.emit, 'bordercolor.transparency')
         self.bordercolor_transparency.valueSet.connect(method)
 
@@ -496,7 +496,7 @@ class AppearenceSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'bgcolor.clicked')
         self.backgroundcolor_clicked.valueSet.connect(method)
 
-        self.backgroundcolor_transparency = FloatEdit(minimum=0, maximum=255)
+        self.backgroundcolor_transparency = IntEdit(minimum=0, maximum=255)
         method = partial(self.optionSet.emit, 'bgcolor.transparency')
         self.backgroundcolor_transparency.valueSet.connect(method)
 

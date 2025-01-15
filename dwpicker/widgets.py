@@ -1,3 +1,5 @@
+
+import sys
 from functools import partial, lru_cache
 from PySide2 import QtGui, QtCore, QtWidgets
 from dwpicker.compatibility import ensure_general_options_sanity
@@ -220,12 +222,12 @@ class TextEdit(LineEdit):
         return self.text()
 
 
-class FloatEdit(LineEdit):
+class NumEdit(LineEdit):
     valueSet = QtCore.Signal(float)
     VALIDATOR_CLS = QtGui.QDoubleValidator
 
-    def __init__(self, minimum=None, maximum=None, decimals=2, parent=None):
-        super().__init__(parent)
+    def __init__(self, minimum=None, maximum=None, parent=None):
+        super(NumEdit, self).__init__(parent)
         self.dragging = False
         self.last_mouse_pos = QtCore.QPoint()
 
@@ -235,65 +237,52 @@ class FloatEdit(LineEdit):
         self.minimum = minimum
         self.maximum = maximum
 
-        self.validator = self.VALIDATOR_CLS(
-            minimum, maximum, decimals, self
-        ) if minimum is not None or maximum is not None else None
-        if self.validator:
-            self.setValidator(self.validator)
-
         self.setMouseTracking(True)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MiddleButton:
-            self.setStyleSheet("background-color: #5285A6;")
-            self.clearFocus()
-            self.dragging = True
-            self.last_mouse_pos = event.globalPos()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
+        if event.button() != QtCore.Qt.MiddleButton:
+            return super(NumEdit, self).mousePressEvent(event)
+
+        self.setStyleSheet("background-color: #5285A6;")
+        self.clearFocus()
+        self.dragging = True
+        self.last_mouse_pos = event.globalPos()
+        event.accept()
 
     def mouseMoveEvent(self, event):
-        is_value_integer = False
-
-        if self.dragging:
+        if not self.dragging:
             self.setStyleSheet("")
-            delta = event.globalPos() - self.last_mouse_pos
-            self.last_mouse_pos = event.globalPos()
+            return super(NumEdit, self).mouseMoveEvent(event)
 
-            current_value = float(self.text()) if self.text() else 0.0
+        delta = event.globalPos() - self.last_mouse_pos
+        self.last_mouse_pos = event.globalPos()
+        current_value = float(self.text()) if self.text() else 0.0
 
-            if isinstance(self.minimum, int) or isinstance(self.maximum, int):
-                is_value_integer = True
-                step = 1
-            else:
-                step = 0.1
+        is_integer = self.VALIDATOR_CLS == QtGui.QIntValidator
+        step = 1 if is_integer else 0.1
+        adjustment = delta.x() * step
+        new_value = current_value + adjustment
 
-            adjustment = delta.x() * step
-            new_value = current_value + adjustment
+        if self.validator:
+            min_val, max_val = self.validator.bottom(), self.validator.top()
+            new_value = max(min_val, min(new_value, max_val))
 
-            if self.validator:
-                min_val, max_val = self.validator.bottom(), self.validator.top()
-                new_value = max(min_val, min(new_value, max_val))
-
-            if is_value_integer:
-                self.setText(f"{int(new_value)}")
-            else:
-                self.setText(f"{new_value:.2f}")
+        if is_integer:
+            self.setText(str(int(new_value)))
         else:
-            super().mouseMoveEvent(event)
+            self.setText("{0:.2f}".format(new_value))
 
     def mouseReleaseEvent(self, event):
         self.setStyleSheet("")
-        if event.button() == QtCore.Qt.MiddleButton:
-            self.dragging = False
-            event.accept()
-            self.emitValue()
-            self.clearFocus()
-        else:
-            super().mouseReleaseEvent(event)
+        if event.button() != QtCore.Qt.MiddleButton:
+            return super(NumEdit, self).mouseReleaseEvent(event)
 
-    def emitValue(self):
+        self.dragging = False
+        event.accept()
+        self.emit_value()
+        self.clearFocus()
+
+    def emit_value(self):
         current_value = self.value()
         if current_value is not None:
             self.valueSet.emit(current_value)
@@ -306,25 +295,54 @@ class FloatEdit(LineEdit):
     def enterEvent(self, event):
         if not self.hasFocus():
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
-        super().enterEvent(event)
+        super(NumEdit, self).enterEvent(event)
 
     def leaveEvent(self, event):
         QtWidgets.QApplication.restoreOverrideCursor()
-        super().leaveEvent(event)
+        super(NumEdit, self).leaveEvent(event)
 
     def focusInEvent(self, event):
         QtWidgets.QApplication.restoreOverrideCursor()
-        super().focusInEvent(event)
+        super(NumEdit, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
         if self.underMouse():
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.SplitHCursor)
-        super().focusOutEvent(event)
+        super(NumEdit, self).focusOutEvent(event)
 
 
-class IntEdit(LineEdit):
+class FloatEdit(NumEdit):
+    valueSet = QtCore.Signal(float)
+    VALIDATOR_CLS = QtGui.QDoubleValidator
+
+    def __init__(self, maximum=None, minimum=None, decimals=2, parent=None):
+        super(FloatEdit, self).__init__(maximum, minimum, parent)
+
+        if minimum is None and maximum is None:
+            self.validator = None
+        else:
+            # using sys.maxsize creates an overflow error, float('inf') is not
+            # sipported by python 2
+            maximum = 999999999. if maximum is None else maximum
+            self.validator = self.VALIDATOR_CLS(
+                minimum, maximum, decimals, self)
+            self.setValidator(self.validator)
+
+
+class IntEdit(NumEdit):
     valueSet = QtCore.Signal(int)
     VALIDATOR_CLS = QtGui.QIntValidator
+
+    def __init__(self, maximum=None, minimum=None, parent=None):
+        super(IntEdit, self).__init__(maximum, minimum, parent)
+
+        if minimum is None and maximum is None:
+            self.validator = None
+        else:
+            # using sys.maxsize creates an overflow error.
+            maximum = 999999999 if maximum is None else maximum
+            self.validator = self.VALIDATOR_CLS(minimum, maximum, self)
+            self.setValidator(self.validator)
 
     def value(self):
         if self.text() == '':
