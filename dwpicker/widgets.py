@@ -231,9 +231,6 @@ class NumEdit(LineEdit):
         self.dragging = False
         self.last_mouse_pos = QtCore.QPoint()
 
-        if minimum is not None and maximum is None:
-            maximum = float('inf')
-
         self.minimum = minimum
         self.maximum = maximum
 
