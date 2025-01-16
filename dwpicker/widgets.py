@@ -247,8 +247,9 @@ class NumEdit(LineEdit):
         event.accept()
 
     def mouseMoveEvent(self, event):
+        self.setStyleSheet("")
+
         if not self.dragging:
-            self.setStyleSheet("")
             return super(NumEdit, self).mouseMoveEvent(event)
 
         delta = event.globalPos() - self.last_mouse_pos
