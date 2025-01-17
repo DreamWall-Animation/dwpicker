@@ -97,7 +97,6 @@ class PickerDocument(QtCore.QObject):
             self.data['shapes'].extend(shapes_data)
 
         self.sync_shapes_caches()
-        self.undo_manager.set_data_modified(self.data)
 
     def remove_shapes(self, shapes):
         removed_ids = [shape.options['id'] for shape in shapes]
