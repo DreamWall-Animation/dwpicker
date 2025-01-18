@@ -305,7 +305,7 @@ class PickerView(QtWidgets.QWidget):
         self.update()
 
     def resizeEvent(self, event):
-        if not self.auto_center:
+        if not self.auto_center or event.oldSize() == QtCore.QSize(-1, -1):
             return
         self.viewportmapper.viewsize = self.size()
         size = (event.size() - event.oldSize()) / 2
