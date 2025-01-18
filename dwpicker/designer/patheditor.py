@@ -124,7 +124,7 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
         self.viewportmapper = ViewportMapper()
         self.viewportmapper.viewsize = self.size()
         self.selection_square = SelectionSquare()
-        self.manipulator = Manipulator()
+        self.manipulator = Manipulator(self.viewportmapper)
         self.transform = Transform()
         self.selection = PointSelection()
         self.interaction_manager = InteractionManager()
@@ -139,7 +139,7 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
             return
 
         cursor = self.viewportmapper.to_units_coords(get_cursor(self))
-        self.transform.direction = self.manipulator.get_direction(cursor)
+        self.transform.direction = self.manipulator.get_direction(event.pos())
         self.current_action = self.get_action()
         if self.current_action and self.current_action[0] == 'move point':
             self.selection.set([self.current_action[1]])
@@ -166,22 +166,23 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
         cursor = self.viewportmapper.to_units_coords(get_cursor(self))
         if self.manipulator.rect and self.manipulator.rect.contains(cursor):
             return 'move points', None
-        direction = self.manipulator.get_direction(cursor)
+        direction = self.manipulator.get_direction(get_cursor(self))
         if direction:
             return 'resize points', direction
+        tolerance = self.viewportmapper.to_units(5)
         for i, data in enumerate(self.path):
             point = QtCore.QPointF(*data['point'])
-            if distance(point, cursor) < 5:
+            if distance(point, cursor) < tolerance:
                 return 'move point', i
             if data['tangent_in']:
                 point = QtCore.QPointF(*data['tangent_in'])
-                if distance(point, cursor) < 5:
+                if distance(point, cursor) < tolerance:
                     return 'move in', i
             if data['tangent_out']:
                 point = QtCore.QPointF(*data['tangent_out'])
-                if distance(point, cursor) < 5:
+                if distance(point, cursor) < tolerance:
                     return 'move out', i
-        index = is_point_on_path_edge(self.path, cursor)
+        index = is_point_on_path_edge(self.path, cursor, tolerance)
         if index is not None:
             return 'create point', index
 
@@ -230,7 +231,6 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
                 self.transform.reference_rect.setTopLeft(rect.topLeft())
                 self.transform.reference_rect.setSize(rect.size())
                 self.manipulator.set_rect(QtCore.QRectF(self.transform.rect))
-                self.manipulator.update_geometries()
 
             elif self.current_action[0] == 'move point':
                 offset_path(self.path, offset, [self.current_action[1]])
@@ -365,7 +365,7 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
 
             conditions = (
                 self.manipulator.rect is not None and
-                all(self.manipulator.handler_rects()))
+                all(self.manipulator.viewport_handlers()))
 
             if conditions:
                 draw_manipulator(

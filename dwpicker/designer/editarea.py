@@ -6,7 +6,8 @@ from dwpicker.interactive import Manipulator, SelectionSquare, cursor_in_shape
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.optionvar import (
     ISOLATE_CURRENT_PANEL_SHAPES, SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS)
-from dwpicker.geometry import Transform, ViewportMapper, get_combined_rects
+from dwpicker.geometry import (
+    Transform, ViewportMapper, get_shapes_bounding_rects)
 from dwpicker.painting import (
     draw_editor, draw_shape, draw_manipulator, draw_selection_square,
     draw_current_panel)
@@ -43,7 +44,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.selection = Selection(self.document)
         self.selection_square = SelectionSquare()
-        self.manipulator = Manipulator()
+        self.manipulator = Manipulator(self.viewportmapper)
         self.transform = Transform(load_saved_snap())
 
         self.clicked_shape = None
@@ -75,12 +76,11 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def focus(self):
         shapes = self.selection.shapes or self.visible_shapes()
-        shapes_rects = [s.rect for s in shapes]
-        if not shapes_rects:
+        if not shapes:
             self.update()
             return
         self.viewportmapper.viewsize = self.size()
-        rect = get_combined_rects(shapes_rects)
+        rect = get_shapes_bounding_rects(shapes)
         self.viewportmapper.focus(rect)
         self.update()
 
@@ -114,7 +114,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         cursor = self.viewportmapper.to_units_coords(get_cursor(self))
         hovered_shape = self.get_hovered_shape(cursor)
-        self.transform.direction = self.manipulator.get_direction(cursor)
+        self.transform.direction = self.manipulator.get_direction(event.pos())
 
         if event.button() != QtCore.Qt.LeftButton:
             self.interaction_manager.update(
@@ -165,10 +165,8 @@ class ShapeEditArea(QtWidgets.QWidget):
             rect = self.manipulator.rect
             if self.transform.direction:
                 self.transform.resize(self.selection.shapes, cursor)
-                self.manipulator.update_geometries()
             elif rect is not None:
                 self.transform.move(shapes=self.selection, cursor=cursor)
-                self.manipulator.update_geometries()
             for shape in self.selection:
                 shape.synchronize_rect()
                 shape.update_path()
@@ -257,7 +255,7 @@ class ShapeEditArea(QtWidgets.QWidget):
     def update_selection(self, changed=True):
         shapes = [s for s in self.selection if s in self.visible_shapes()]
         if shapes:
-            rect = get_combined_rects([shape.rect for shape in shapes])
+            rect = get_shapes_bounding_rects(shapes)
         else:
             rect = None
         self.manipulator.set_rect(rect)
@@ -289,15 +287,18 @@ class ShapeEditArea(QtWidgets.QWidget):
                 current_panel_shapes.append(shape)
 
         if current_panel_shapes:
-            rect = get_combined_rects([s.rect for s in current_panel_shapes])
+            rect = get_shapes_bounding_rects(current_panel_shapes)
             draw_current_panel(painter, rect, self.viewportmapper)
 
         for shape in self.visible_shapes():
-            draw_shape(painter, shape, viewportmapper=self.viewportmapper)
+            draw_shape(
+                painter, shape,
+                draw_selected_state=False,
+                viewportmapper=self.viewportmapper)
 
         conditions = (
             self.manipulator.rect is not None and
-            all(self.manipulator.handler_rects()))
+            all(self.manipulator.viewport_handlers()))
 
         if conditions:
             draw_manipulator(

@@ -11,7 +11,7 @@ from dwpicker.arrayutils import (
     move_up_array_elements, move_down_array_elements)
 from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
 from dwpicker.interactive import Shape, get_shape_rect_from_options
-from dwpicker.geometry import get_combined_rects, rect_symmetry, path_symmetry
+from dwpicker.geometry import rect_symmetry, path_symmetry, get_shapes_bounding_rects
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.stack import count_panels
@@ -311,8 +311,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.set_selection_move_on_stack(move_elements_to_array_begin, False)
 
     def update_manipulator_rect(self):
-        rects = [shape.rect for shape in self.shape_editor.selection]
-        rect = get_combined_rects(rects)
+        rect = get_shapes_bounding_rects(self.shape_editor.selection)
         self.shape_editor.manipulator.set_rect(rect)
         self.shape_editor.update()
 
@@ -381,7 +380,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.transform.reference_rect = reference_rect
         self.shape_editor.transform.shift(
             self.shape_editor.selection.shapes, offset)
-        self.shape_editor.manipulator.update_geometries()
         for shape in self.shape_editor.selection:
             shape.synchronize_rect()
             shape.update_path()
@@ -394,9 +392,8 @@ class PickerEditor(QtWidgets.QWidget):
         if not self.shape_editor.selection:
             return
         align_shapes(self.shape_editor.selection, direction)
-        rects = [s.rect for s in self.shape_editor.selection]
-        self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
-        self.shape_editor.manipulator.update_geometries()
+        rect = get_shapes_bounding_rects(self.shape_editor.selection)
+        self.shape_editor.manipulator.set_rect(rect)
         self.shape_editor.update()
         self.selection_changed()
         self.document.record_undo()
@@ -409,9 +406,8 @@ class PickerEditor(QtWidgets.QWidget):
             arrange_horizontal(self.shape_editor.selection)
         else:
             arrange_vertical(self.shape_editor.selection)
-        rects = [s.rect for s in self.shape_editor.selection]
-        self.shape_editor.manipulator.set_rect(get_combined_rects(rects))
-        self.shape_editor.manipulator.update_geometries()
+        rect = get_shapes_bounding_rects(self.shape_editor.selection)
+        self.shape_editor.manipulator.set_rect(rect)
         self.shape_editor.update()
         self.selection_changed()
         self.document.record_undo()

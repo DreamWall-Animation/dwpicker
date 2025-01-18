@@ -414,6 +414,14 @@ def resize_rect_with_reference(rect, in_reference_rect, out_reference_rect):
     rect.setCoords(left, top, right, bottom)
 
 
+def get_shapes_bounding_rects(shapes):
+    rects = [
+        shape.rect if shape.options['shape'] != 'custom' else
+        shape.path.boundingRect()
+        for shape in shapes]
+    return get_combined_rects(rects)
+
+
 def resize_path_with_reference(path, in_reference_rect, out_reference_rect):
     for point in path:
         for key in ['point', 'tangent_in', 'tangent_out']:

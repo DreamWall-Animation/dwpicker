@@ -88,39 +88,37 @@ class SelectionSquare():
 
 
 class Manipulator():
-    def __init__(self):
+    def __init__(self, viewportmapper=None):
         self._rect = None
+        self.viewportmapper = viewportmapper
         self._is_hovered = False
-
-        self._tl_corner_rect = None
-        self._bl_corner_rect = None
-        self._tr_corner_rect = None
-        self._br_corner_rect = None
-        self._l_side_rect = None
-        self._r_side_rect = None
-        self._t_side_rect = None
-        self._b_side_rect = None
 
     @property
     def rect(self):
         return self._rect
 
-    def handler_rects(self):
+    def viewport_handlers(self):
+        rect = self.viewportmapper.to_viewport_rect(self.rect)
         return [
-            self._tl_corner_rect, self._bl_corner_rect, self._tr_corner_rect,
-            self._br_corner_rect, self._l_side_rect, self._r_side_rect,
-            self._t_side_rect, self._b_side_rect]
+            get_topleft_rect(rect) if rect else None,
+            get_bottomleft_rect(rect) if rect else None,
+            get_topright_rect(rect) if rect else None,
+            get_bottomright_rect(rect) if rect else None,
+            get_left_side_rect(rect) if rect else None,
+            get_right_side_rect(rect) if rect else None,
+            get_top_side_rect(rect) if rect else None,
+            get_bottom_side_rect(rect) if rect else None]
 
-    def get_direction(self, cursor):
+    def get_direction(self, viewport_cursor):
         if self.rect is None:
             return None
-        for i, rect in enumerate(self.handler_rects()):
-            if rect.contains(cursor):
+        for i, rect in enumerate(self.viewport_handlers()):
+            if rect.contains(viewport_cursor):
                 return DIRECTIONS[i]
 
     def hovered_rects(self, cursor):
         rects = []
-        for rect in self.handler_rects() + [self.rect]:
+        for rect in self.viewport_handlers() + [self.rect]:
             if not rect:
                 continue
             if rect.contains(cursor):
@@ -129,18 +127,6 @@ class Manipulator():
 
     def set_rect(self, rect):
         self._rect = rect
-        self.update_geometries()
-
-    def update_geometries(self):
-        rect = self.rect
-        self._tl_corner_rect = get_topleft_rect(rect) if rect else None
-        self._bl_corner_rect = get_bottomleft_rect(rect) if rect else None
-        self._tr_corner_rect = get_topright_rect(rect) if rect else None
-        self._br_corner_rect = get_bottomright_rect(rect) if rect else None
-        self._l_side_rect = get_left_side_rect(rect) if rect else None
-        self._r_side_rect = get_right_side_rect(rect) if rect else None
-        self._t_side_rect = get_top_side_rect(rect) if rect else None
-        self._b_side_rect = get_bottom_side_rect(rect) if rect else None
 
 
 def get_shape_rect_from_options(options):

@@ -94,11 +94,13 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
         x += snap[0]
 
 
-def draw_shape(painter, shape, force_world_space=True, viewportmapper=None):
+def draw_shape(
+        painter, shape, force_world_space=True,
+        draw_selected_state=True, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     options = shape.options
     content_rect = shape.content_rect()
-    if shape.clicked or shape.selected:
+    if shape.clicked or (shape.selected and draw_selected_state):
         bordercolor = QtGui.QColor(options['bordercolor.clicked'])
         backgroundcolor = QtGui.QColor(options['bgcolor.clicked'])
         bordersize = options['borderwidth.clicked']
@@ -222,8 +224,7 @@ def draw_manipulator(painter, manipulator, cursor, viewportmapper=None):
     pen = QtGui.QPen(QtGui.QColor('black'))
     brush = QtGui.QBrush(QtGui.QColor('white'))
     painter.setBrush(brush)
-    for rect in manipulator.handler_rects():
-        rect = viewportmapper.to_viewport_rect(rect)
+    for rect in manipulator.viewport_handlers():
         pen.setWidth(3 if rect in hovered else 1)
         painter.setPen(pen)
         painter.drawEllipse(rect)
