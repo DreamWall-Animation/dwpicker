@@ -3,9 +3,10 @@ from maya import cmds
 
 from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.geometry import (
-    grow_rect, ViewportMapper, to_shape_space_rect, to_shape_space)
-from dwpicker.shapepath import get_shape_space_painter_path
+from dwpicker.geometry import grow_rect
+from dwpicker.shape import to_shape_space_rect, to_shape_space
+from dwpicker.shapepath import get_shape_space_painter_path, get_absolute_path
+from dwpicker.viewport import ViewportMapper
 
 
 SELECTION_COLOR = '#3388FF'
@@ -19,16 +20,7 @@ def factor_sensitivity(factor):
     return factor * sensitivity
 
 
-def draw_editor(painter, rect, snap=None, viewportmapper=None):
-    viewportmapper = viewportmapper or ViewportMapper()
-    color = QtGui.QColor('#333333')
-    pen = QtGui.QPen(color)
-    pen.setWidthF(2)
-    brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
-    painter.setPen(pen)
-    painter.setBrush(brush)
-    painter.drawRect(rect)
-
+def draw_world_coordinates(painter, rect, color, viewportmapper):
     center = viewportmapper.to_viewport_coords(QtCore.QPoint(0, 0))
     top_center = QtCore.QPointF(center.x(), rect.top())
     bottom_center = QtCore.QPointF(center.x(), rect.bottom())
@@ -41,6 +33,20 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
     painter.setPen(pen)
     painter.drawLine(top_center, bottom_center)
     painter.drawLine(left_center, right_center)
+
+
+def draw_editor(painter, rect, snap=None, viewportmapper=None):
+    viewportmapper = viewportmapper or ViewportMapper()
+    color = QtGui.QColor('#333333')
+    pen = QtGui.QPen(color)
+    pen.setWidthF(2)
+    brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 25))
+    painter.setPen(pen)
+    painter.setBrush(brush)
+    painter.drawRect(rect)
+
+    draw_world_coordinates(painter, rect, color, viewportmapper)
+    center = viewportmapper.to_viewport_coords(QtCore.QPoint(0, 0))
 
     text = QtGui.QStaticText('bottom_right')
     x = center.x() - text.size().width() - 4
@@ -97,6 +103,7 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
 def draw_shape(
         painter, shape, force_world_space=True,
         draw_selected_state=True, viewportmapper=None):
+
     viewportmapper = viewportmapper or ViewportMapper()
     options = shape.options
     content_rect = shape.content_rect()
@@ -138,12 +145,9 @@ def draw_shape(
             options['shape.cornersy'], shape,
             force_world_space, viewportmapper)
         painter.drawRoundedRect(rect, x, y)
-    else:  # custom
-        path = get_shape_space_painter_path(
-            shape=shape,
-            force_world_space=force_world_space,
-            viewportmapper=viewportmapper)
-        painter.drawPath(path)
+    else:
+        qpath = shape.get_painter_path(force_world_space, viewportmapper)
+        painter.drawPath(qpath)
 
     if shape.pixmap is not None:
         rect = shape.image_rect or content_rect

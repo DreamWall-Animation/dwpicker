@@ -1,6 +1,5 @@
 from PySide2 import QtCore
 from dwpicker.geometry import split_line
-from dwpicker.shapepath import offset_path
 
 
 def align_shapes(shapes, direction):
@@ -8,61 +7,59 @@ def align_shapes(shapes, direction):
 
 
 def align_left(shapes):
-    left = min(s.rect.left() for s in shapes)
+    left = min(s.bounding_rect().left() for s in shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(left - shape.rect.left(), 0)
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveLeft(left)
+        shape_left = left + (shape.rect.left() - shape.bounding_rect().left())
+        shape.rect.moveLeft(shape_left)
         shape.synchronize_rect()
         shape.update_path()
 
 
 def align_h_center(shapes):
-    x = sum(s.rect.center().x() for s in shapes) / len(shapes)
+    x = sum(s.bounding_rect().center().x() for s in shapes) / len(shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(x - shape.rect.center().x(), 0)
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveCenter(QtCore.QPointF(x, shape.rect.center().y()))
+        offset = shape.bounding_rect().center().x() - shape.rect.center().x()
+        shape_x = x - offset
+        shape.rect.moveCenter(QtCore.QPointF(shape_x, shape.rect.center().y()))
         shape.synchronize_rect()
         shape.update_path()
 
 
 def align_right(shapes):
-    right = max(s.rect.right() for s in shapes)
+    right = max(s.bounding_rect().right() for s in shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(right - shape.rect.right(), 0)
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveRight(right)
+        offset = (shape.rect.left() - shape.bounding_rect().left())
+        shape_right = right - offset
+        shape.rect.moveRight(shape_right)
         shape.synchronize_rect()
         shape.update_path()
 
 
 def align_top(shapes):
-    top = min(s.rect.top() for s in shapes)
+    top = min(s.bounding_rect().top() for s in shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(0, top - shape.rect.top())
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveTop(top)
+        shape_top = top + (shape.rect.top() - shape.bounding_rect().top())
+        shape.rect.moveTop(shape_top)
         shape.synchronize_rect()
         shape.update_path()
 
 
 def align_v_center(shapes):
-    y = sum(s.rect.center().y() for s in shapes) / len(shapes)
+    y = sum(s.bounding_rect().center().y() for s in shapes) / len(shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(0, y - shape.rect.center().y())
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveCenter(QtCore.QPointF(shape.rect.center().x(), y))
+        offset = shape.bounding_rect().center().y() - shape.rect.center().y()
+        shape_y = y - offset
+        shape.rect.moveCenter(QtCore.QPointF(shape.rect.center().x(), shape_y))
         shape.synchronize_rect()
         shape.update_path()
 
 
 def align_bottom(shapes):
-    bottom = max(s.rect.bottom() for s in shapes)
+    bottom = max(s.bounding_rect().bottom() for s in shapes)
     for shape in shapes:
-        offset = QtCore.QPointF(0, bottom - shape.rect.bottom())
-        offset_path(shape.options['shape.path'], offset)
-        shape.rect.moveBottom(bottom)
+        offset = shape.rect.bottom() - shape.bounding_rect().bottom()
+        shape_bottom = bottom + offset
+        shape.rect.moveBottom(shape_bottom)
         shape.synchronize_rect()
         shape.update_path()
 
@@ -70,15 +67,14 @@ def align_bottom(shapes):
 def arrange_horizontal(shapes):
     if len(shapes) < 3:
         return
-    shapes = sorted(shapes, key=lambda s: s.rect.center().x())
+    shapes = sorted(shapes, key=lambda s: s.bounding_rect().center().x())
     centers = split_line(
-        point1=shapes[0].rect.center(),
-        point2=shapes[-1].rect.center(),
+        point1=shapes[0].bounding_rect().center(),
+        point2=shapes[-1].bounding_rect().center(),
         step_number=len(shapes))
     for shape, center in zip(shapes, centers):
-        offset = QtCore.QPointF(center.x() - shape.rect.center().x(), 0)
-        offset_path(shape.options['shape.path'], offset)
-        point = QtCore.QPointF(center.x(), shape.rect.center().y())
+        offset = shape.bounding_rect().center().x() - shape.rect.center().x()
+        point = QtCore.QPointF(center.x() - offset, shape.rect.center().y())
         shape.rect.moveCenter(point)
         shape.synchronize_rect()
         shape.update_path()
@@ -87,15 +83,14 @@ def arrange_horizontal(shapes):
 def arrange_vertical(shapes):
     if len(shapes) < 3:
         return
-    shapes = sorted(shapes, key=lambda s: s.rect.center().y())
+    shapes = sorted(shapes, key=lambda s: s.bounding_rect().center().y())
     centers = split_line(
-        point1=shapes[0].rect.center(),
-        point2=shapes[-1].rect.center(),
+        point1=shapes[0].bounding_rect().center(),
+        point2=shapes[-1].bounding_rect().center(),
         step_number=len(shapes))
     for shape, center in zip(shapes, centers):
-        offset = QtCore.QPointF(0, center.y() - shape.rect.center().y())
-        offset_path(shape.options['shape.path'], offset)
-        point = QtCore.QPointF(shape.rect.center().x(), center.y())
+        offset = shape.bounding_rect().center().y() - shape.rect.center().y()
+        point = QtCore.QPointF(shape.rect.center().x(), center.y() - offset)
         shape.rect.moveCenter(point)
         shape.synchronize_rect()
         shape.update_path()

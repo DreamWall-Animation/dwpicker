@@ -2,18 +2,21 @@ from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
 
 from dwpicker.geometry import (
-    ViewportMapper, Transform, distance, get_global_rect, grow_rect,
-    path_symmetry, resize_path_with_reference, resize_rect_with_direction)
+    distance, get_global_rect, grow_rect, path_symmetry)
 from dwpicker.qtutils import icon
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.interactive import SelectionSquare, Manipulator
 from dwpicker.painting import (
-    draw_selection_square, draw_manipulator, draw_tangents)
+    draw_selection_square, draw_manipulator, draw_tangents,
+    draw_world_coordinates)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import get_selection_mode
 from dwpicker.shapepath import (
     offset_tangent, get_default_path, offset_path, auto_tangent,
     create_polygon_shape, rotate_custom_shape)
+from dwpicker.transform import (
+    Transform, resize_path_with_reference, resize_rect_with_direction)
+from dwpicker.viewport import ViewportMapper
 
 
 class PathEditor(QtWidgets.QWidget):
@@ -22,22 +25,26 @@ class PathEditor(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(PathEditor, self).__init__(parent)
         self.setWindowTitle('Shape path editor')
-        self.canvas = ShapeEditorCanvas()
+        self.canvas = PathEditorCanvas()
         self.canvas.pathEdited.connect(self.pathEdited.emit)
 
         delete = QtWidgets.QAction(icon('delete.png'), 'Delete vertex', self)
         delete.triggered.connect(self.canvas.delete)
 
-        smooth_tangent = QtWidgets.QAction(icon('tangent.png'), 'Smooth tangents', self)
+        smooth_tangent = QtWidgets.QAction(
+            icon('tangent.png'), 'Smooth tangents', self)
         smooth_tangent.triggered.connect(self.canvas.smooth_tangents)
 
-        break_tangent = QtWidgets.QAction(icon('tangentbreak.png'), 'Break tangents', self)
+        break_tangent = QtWidgets.QAction(
+            icon('tangentbreak.png'), 'Break tangents', self)
         break_tangent.triggered.connect(self.canvas.break_tangents)
 
-        hsymmetry = QtWidgets.QAction(icon('h_symmetry.png'), 'Mirror horizontally', self)
+        hsymmetry = QtWidgets.QAction(
+            icon('h_symmetry.png'), 'Mirror horizontally', self)
         hsymmetry.triggered.connect(partial(self.canvas.symmetry, True))
 
-        vsymmetry = QtWidgets.QAction(icon('v_symmetry.png'), 'Mirror vertically', self)
+        vsymmetry = QtWidgets.QAction(
+            icon('v_symmetry.png'), 'Mirror vertically', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
         self.polygon_spinbox = QtWidgets.QSpinBox(self)
@@ -98,6 +105,7 @@ class PathEditor(QtWidgets.QWidget):
         self.setWindowFlag(QtCore.Qt.Tool, state)
         self.show()
         if state:
+            self.resize(400, 400)
             self.move(point)
         self.canvas.focus()
 
@@ -105,8 +113,7 @@ class PathEditor(QtWidgets.QWidget):
         if options is None:
             self.canvas.set_path(None)
             return
-        self.canvas.set_path(
-            options['shape.path'] or get_default_path(options))
+        self.canvas.set_path(options['shape.path'] or [])
 
     def path(self):
         return self.canvas.path
@@ -116,11 +123,11 @@ class PathEditor(QtWidgets.QWidget):
             [QtCore.QPointF(*p['point']) for p in self.canvas.path])
 
 
-class ShapeEditorCanvas(QtWidgets.QWidget):
+class PathEditorCanvas(QtWidgets.QWidget):
     pathEdited = QtCore.Signal()
 
     def __init__(self, parent=None):
-        super(ShapeEditorCanvas, self).__init__(parent)
+        super(PathEditorCanvas, self).__init__(parent)
         self.viewportmapper = ViewportMapper()
         self.viewportmapper.viewsize = self.size()
         self.selection_square = SelectionSquare()
@@ -355,6 +362,9 @@ class ShapeEditorCanvas(QtWidgets.QWidget):
             rect = QtCore.QRect(
                 0, 0, self.rect().width() - 1, self.rect().height() - 1)
             painter.drawRect(rect)
+            draw_world_coordinates(
+                painter, self.rect(), QtGui.QColor('#282828'),
+                self.viewportmapper)
             painter.setBrush(QtGui.QBrush())
             draw_shape_path(
                 painter, self.path, self.selection, self.viewportmapper)

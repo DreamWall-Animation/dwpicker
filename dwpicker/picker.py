@@ -8,9 +8,7 @@ from PySide2 import QtWidgets, QtGui, QtCore
 from dwpicker.compatibility import ensure_general_options_sanity
 from dwpicker.document import PickerDocument
 from dwpicker.dialog import warning, CommandEditorDialog
-from dwpicker.interactive import (
-    SelectionSquare, cursor_in_shape, rect_intersects_shape)
-from dwpicker.interactive import Shape
+from dwpicker.interactive import SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.geometry import split_line, get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
@@ -19,13 +17,15 @@ from dwpicker.optionvar import (
     DEFAULT_HEIGHT, DEFAULT_LABEL, LAST_COMMAND_LANGUAGE,
     SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
 from dwpicker.painting import (
-    ViewportMapper, draw_shape, draw_selection_square, draw_picker_focus)
+    draw_shape, draw_selection_square, draw_picker_focus)
 from dwpicker.qtutils import get_cursor, clear_layout
+from dwpicker.shape import Shape, cursor_in_shape, rect_intersects_shape
 from dwpicker.stack import create_stack_splitters, count_panels
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
     NameclashError)
 from dwpicker.templates import BUTTON, COMMAND
+from dwpicker.viewport import ViewportMapper
 
 
 SPLITTER_STYLE = """\
@@ -418,6 +418,7 @@ class PickerPanelView(QtWidgets.QWidget):
         self.document.add_shapes(shapes_data)
         self.layers_menu.set_shapes(self.document.shapes)
         self.document.shapes_changed.emit()
+        self.document.record_undo()
         self.drag_shapes = []
 
     def release(self, event):
@@ -614,6 +615,7 @@ class PickerPanelView(QtWidgets.QWidget):
         shape_data['shape.width'] = width
 
         self.document.add_shapes([shape_data])
+        self.document.record_undo()
         self.document.shapes_changed.emit()
 
     def paintEvent(self, _):
@@ -646,6 +648,8 @@ class PickerPanelView(QtWidgets.QWidget):
                 draw_selection_square(
                     painter, self.selection_square.rect)
         except BaseException as e:
+            import traceback
+            print(traceback.format_exc())
             print(str(e))
             pass  # avoid crash
             # TODO: log the error

@@ -10,10 +10,12 @@ from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
 from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
-from dwpicker.interactive import Shape, get_shape_rect_from_options
-from dwpicker.geometry import rect_symmetry, path_symmetry, get_shapes_bounding_rects
+from dwpicker.geometry import (
+    rect_symmetry, path_symmetry, get_shapes_bounding_rects,
+    rect_top_left_symmetry)
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.qtutils import set_shortcut, get_cursor
+from dwpicker.shape import Shape, get_shape_rect_from_options
 from dwpicker.stack import count_panels
 from dwpicker.templates import BUTTON, TEXT, BACKGROUND
 
@@ -24,7 +26,6 @@ from dwpicker.designer.attributes import AttributeEditor
 
 DIRECTION_OFFSETS = {
     'Left': (-1, 0), 'Right': (1, 0), 'Up': (0, -1), 'Down': (0, 1)}
-
 
 
 class PickerEditor(QtWidgets.QWidget):
@@ -96,7 +97,6 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor = AttributeEditor(self.document)
         self.attribute_editor.optionSet.connect(self.option_set)
         self.attribute_editor.optionsSet.connect(self.options_set)
-        self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
         self.attribute_editor.selectLayerContent.connect(self.select_layer)
         self.attribute_editor.panelSelected.connect(
@@ -213,42 +213,41 @@ class PickerEditor(QtWidgets.QWidget):
         self.document.shapes_changed.emit()
 
     def option_set(self, option, value):
+        update_geometries = False
+        update_selection = False
+        rect_options = (
+            'shape.top', 'shape.width', 'shape.height', 'shape.left')
+
         for shape in self.shape_editor.selection:
             shape.options[option] = value
-        self.shape_editor.update()
+            if option in ('shape.path', 'shape'):
+                if value == 'custom' and not shape.options['shape.path']:
+                    update_selection = True
+                shape.update_path()
+                shape.synchronize_image()
+                update_geometries = True
+
+            if option in rect_options:
+                shape.rect = QtCore.QRectF(
+                    shape.options['shape.left'],
+                    shape.options['shape.top'],
+                    shape.options['shape.width'],
+                    shape.options['shape.height'])
+                shape.update_path()
+                shape.synchronize_image()
+                update_geometries = True
+
+        if update_selection:
+            self.selection_changed()
+        if update_geometries:
+            self.update_manipulator_rect()
+
         if option == 'visibility_layer':
             self.layers_modified()
         else:
             self.document.shapes_changed.emit()
             self.document.record_undo()
-
-    def rect_modified(self, option, value):
-        shapes = self.shape_editor.selection
-        for shape in shapes:
-            shape.options[option] = value
-            if option == 'shape.height':
-                shape.rect.setHeight(value)
-                shape.synchronize_image()
-                continue
-
-            elif option == 'shape.width':
-                shape.rect.setWidth(value)
-                shape.synchronize_image()
-                continue
-
-            width = shape.rect.width()
-            height = shape.rect.height()
-            if option == 'shape.left':
-                shape.rect.setLeft(value)
-            else:
-                shape.rect.setTop(value)
-            shape.rect.setWidth(width)
-            shape.rect.setHeight(height)
-            shape.synchronize_image()
-
-        self.update_manipulator_rect()
-        self.document.record_undo()
-        self.document.shapes_changed.emit()
+        self.shape_editor.update()
 
     def selection_changed(self):
         shapes = self.shape_editor.selection
@@ -318,16 +317,22 @@ class PickerEditor(QtWidgets.QWidget):
     def do_symmetry(self, horizontal=True):
         shapes = self.shape_editor.selection.shapes
         for shape in shapes:
-            rect_symmetry(
-                rect=shape.rect,
-                point=self.shape_editor.manipulator.rect.center(),
-                horizontal=horizontal)
-            path_symmetry(
-                path=shape.options['shape.path'],
-                center=self.shape_editor.manipulator.rect.center(),
-                horizontal=horizontal)
-            shape.synchronize_rect()
-            shape.update_path()
+            if shape.options['shape'] == 'custom':
+                path_symmetry(
+                    path=shape.options['shape.path'],
+                    horizontal=horizontal)
+                rect_top_left_symmetry(
+                    rect=shape.rect,
+                    point=self.shape_editor.manipulator.rect.center(),
+                    horizontal=horizontal)
+                shape.synchronize_rect()
+                shape.update_path()
+            else:
+                rect_symmetry(
+                    rect=shape.rect,
+                    point=self.shape_editor.manipulator.rect.center(),
+                    horizontal=horizontal)
+                shape.synchronize_rect()
         self.shape_editor.update()
         self.document.shapes_changed.emit()
         if not cmds.optionVar(query=TRIGGER_REPLACE_ON_MIRROR):
@@ -335,6 +340,8 @@ class PickerEditor(QtWidgets.QWidget):
             return
         if not self.search_and_replace():
             self.document.record_undo()
+        self.attribute_editor.update()
+        self.update_manipulator_rect()
 
     def search_and_replace(self):
         dialog = SearchAndReplaceDialog()

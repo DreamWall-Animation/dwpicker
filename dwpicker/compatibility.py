@@ -6,6 +6,7 @@ version.
 import uuid
 from dwpicker.appinfos import VERSION
 from dwpicker.stack import count_panels
+from dwpicker.shapepath import get_relative_path
 
 
 def ensure_retro_compatibility(picker_data):
@@ -80,6 +81,8 @@ def ensure_retro_compatibility(picker_data):
     if tuple(version) < (1, 0, 0):
         for shape in picker_data['shapes']:
             shape['id'] = str(uuid.uuid4())
+            point = shape['shape.left'], shape['shape.top']
+            shape['shape.path'] = get_relative_path(point, shape['shape.path'])
 
     return picker_data
 

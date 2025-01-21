@@ -2,17 +2,19 @@ from functools import partial
 from PySide2 import QtCore, QtGui, QtWidgets
 from maya import cmds
 
-from dwpicker.interactive import Manipulator, SelectionSquare, cursor_in_shape
+from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.optionvar import (
     ISOLATE_CURRENT_PANEL_SHAPES, SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS)
-from dwpicker.geometry import (
-    Transform, ViewportMapper, get_shapes_bounding_rects)
+from dwpicker.geometry import get_shapes_bounding_rects
 from dwpicker.painting import (
     draw_editor, draw_shape, draw_manipulator, draw_selection_square,
     draw_current_panel)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
+from dwpicker.shape import cursor_in_shape
+from dwpicker.transform import Transform
+from dwpicker.viewport import ViewportMapper
 
 
 def load_saved_snap():
@@ -25,7 +27,6 @@ def load_saved_snap():
 
 class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
-    centerMoved = QtCore.Signal(int, int)
     callContextMenu = QtCore.Signal(QtCore.QPoint)
 
     def __init__(self, document, parent=None):
@@ -227,7 +228,7 @@ class ShapeEditArea(QtWidgets.QWidget):
     def select_shapes(self):
         shapes = [
             s for s in self.list_shapes()
-            if s.rect.intersects(self.selection_square.rect)]
+            if self.selection_square.intersects(s)]
         if shapes:
             self.selection.set(shapes)
             self.update_selection()

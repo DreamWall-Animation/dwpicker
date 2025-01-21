@@ -2,7 +2,7 @@
 import uuid
 from collections import defaultdict
 from PySide2 import QtCore
-from dwpicker.interactive import Shape
+from dwpicker.shape import Shape
 from dwpicker.templates import PICKER
 from dwpicker.undo import UndoManager
 from dwpicker.stack import count_panels

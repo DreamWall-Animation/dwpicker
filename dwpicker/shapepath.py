@@ -1,32 +1,29 @@
-
 import math
 from PySide2 import QtGui, QtCore
-from dwpicker.geometry import ViewportMapper, to_screenspace_coords
+from dwpicker.viewport import ViewportMapper, to_screenspace_coords
 
 
-def get_default_path(shape):
-    left = shape['shape.left']
-    top = shape['shape.top']
-    width = shape['shape.width']
-    height = shape['shape.height']
+def get_default_path(options):
+    width = options['shape.width']
+    height = options['shape.height']
     return [
         {
-            'point': [left, top],
+            'point': [0, 0],
             'tangent_in': None,
             'tangent_out': None,
         },
         {
-            'point': [left + width, top],
+            'point': [width, 0],
             'tangent_in': None,
             'tangent_out': None,
         },
         {
-            'point': [left + width, top + height],
+            'point': [width, height],
             'tangent_in': None,
             'tangent_out': None,
         },
         {
-            'point': [left, top + height],
+            'point': [0, height],
             'tangent_in': None,
             'tangent_out': None,
         },
@@ -114,32 +111,85 @@ def get_path(path):
     return painter_path
 
 
-def get_painter_path(path, viewportmapper=None):
-    return get_worldspace_path(path, viewportmapper)
+def get_absolute_path(reference_point, relative_path):
+    absolute_path = []
+    for point in relative_path:
+        tin = [
+                reference_point[0] + point['tangent_in'][0],
+                reference_point[1] + point['tangent_in'][1]
+            ] if point['tangent_in'] else None
+        to = [
+            reference_point[0] + point['tangent_out'][0],
+            reference_point[1] + point['tangent_out'][1]
+        ] if point['tangent_out'] else None
+
+        center = [
+            reference_point[0] + point['point'][0],
+            reference_point[1] + point['point'][1]]
+        absolute_path.append(
+            {'point': center, 'tangent_in': tin, 'tangent_out': to})
+    return absolute_path
+
+
+def get_relative_path(reference_point, absolute_path):
+    relative_path = []
+    for point in absolute_path:
+        tin = [
+                point['tangent_in'][0] - reference_point[0],
+                point['tangent_in'][1] - reference_point[1]
+            ] if point['tangent_in'] else None
+
+        to = [
+            point['tangent_out'][0] - reference_point[0],
+            point['tangent_out'][1] - reference_point[1]
+        ] if point['tangent_out'] else None
+
+        point = [
+            point['point'][0] - reference_point[0],
+            point['point'][1] - reference_point[1]]
+
+        relative_path.append(
+            {'point': point, 'tangent_in': tin, 'tangent_out': to})
+
+    return relative_path
+
+
+def get_shape_painter_path(shape, viewportmapper=None):
+    if not shape.options['shape.path']:
+        return
+
+    left, top = shape.options['shape.left'], shape.options['shape.top']
+    path = get_absolute_path((left, top), shape.options['shape.path'])
+    return get_worldspace_qpath(path, viewportmapper)
 
 
 def get_shape_space_painter_path(
         shape, force_world_space=True, viewportmapper=None):
+    path = get_absolute_path(shape)
     if shape.options['shape.space'] == 'world' or force_world_space:
-        return get_worldspace_path(shape.options['shape.path'], viewportmapper)
-    return get_screenspace_path(
-        path=shape.options['shape.path'],
+        return get_worldspace_qpath(path, viewportmapper)
+    return get_screenspace_qpath(
+        path=path,
         anchor=shape.options['shape.anchor'],
         viewport_size=viewportmapper.viewsize)
 
 
-def get_screenspace_path(path, anchor, viewport_size):
+def get_screenspace_qpath(path, point, anchor, viewport_size):
     if not path:
         return QtGui.QPainterPath()
+
+    def add(p1, p2):
+        return p1[0] + p2[0], p1[1] + p2[1]
+
     painter_path = QtGui.QPainterPath()
-    start = QtCore.QPointF(*path[0]['point'])
+    start = QtCore.QPointF(*add(path[0]['point'], point))
     painter_path.moveTo(to_screenspace_coords(start, anchor, viewport_size))
     for i in range(len(path)):
-        point = path[i]
-        point2 = path[i + 1 if i + 1 < len(path) else 0]
-        c1 = QtCore.QPointF(*(point['tangent_out'] or point['point']))
-        c2 = QtCore.QPointF(*(point2['tangent_in'] or point2['point']))
-        end = QtCore.QPointF(*point2['point'])
+        p1 = path[i]
+        p2 = path[i + 1 if i + 1 < len(path) else 0]
+        c1 = QtCore.QPointF(*add(p1['tangent_out'] or p1['point'], point))
+        c2 = QtCore.QPointF(*add(p2['tangent_in'] or p2['point'], point))
+        end = QtCore.QPointF(*add(p2['point'], point))
         painter_path.cubicTo(
             to_screenspace_coords(c1, anchor, viewport_size),
             to_screenspace_coords(c2, anchor, viewport_size),
@@ -147,7 +197,7 @@ def get_screenspace_path(path, anchor, viewport_size):
     return painter_path
 
 
-def get_worldspace_path(path, viewportmapper=None):
+def get_worldspace_qpath(path, viewportmapper=None):
     if not path:
         return QtGui.QPainterPath()
     viewportmapper = viewportmapper or ViewportMapper()
@@ -178,6 +228,7 @@ def create_polygon_shape(path_editor, polygon):
     path_editor.canvas.path = shape_path
     path_editor.pathEdited.emit()
     path_editor.canvas.focus()
+
 
 def rotate_custom_shape(path_editor, angle):
     if not path_editor.angle_spinbox_action.isVisible():

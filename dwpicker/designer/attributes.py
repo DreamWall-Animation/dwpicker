@@ -24,7 +24,6 @@ class AttributeEditor(QtWidgets.QWidget):
     imageModified = QtCore.Signal()
     optionSet = QtCore.Signal(str, object)
     optionsSet = QtCore.Signal(dict, bool)  # all options, affect rect
-    rectModified = QtCore.Signal(str, float)
     selectLayerContent = QtCore.Signal(str)
     panelSelected = QtCore.Signal(int)
     panelDoubleClicked = QtCore.Signal(int)
@@ -42,7 +41,6 @@ class AttributeEditor(QtWidgets.QWidget):
         self.shape = ShapeSettings()
         self.shape.optionSet.connect(self.optionSet.emit)
         self.shape.optionsSet.connect(self.optionsSet.emit)
-        self.shape.rectModified.connect(self.rectModified.emit)
         self.shape_toggler = WidgetToggler('Shape', self.shape)
 
         self.image = ImageSettings()
@@ -213,7 +211,6 @@ class GeneralSettings(QtWidgets.QWidget):
 class ShapeSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     optionsSet = QtCore.Signal(dict, bool)  # all options, affect rect
-    rectModified = QtCore.Signal(str, float)
 
     def __init__(self, parent=None):
         super(ShapeSettings, self).__init__(parent)
@@ -245,16 +242,16 @@ class ShapeSettings(QtWidgets.QWidget):
         self.anchor.currentTextChanged.connect(method)
 
         self.left = IntEdit()
-        method = partial(self.rectModified.emit, 'shape.left')
+        method = partial(self.optionSet.emit, 'shape.left')
         self.left.valueSet.connect(method)
         self.top = IntEdit()
-        method = partial(self.rectModified.emit, 'shape.top')
+        method = partial(self.optionSet.emit, 'shape.top')
         self.top.valueSet.connect(method)
         self.width = IntEdit(minimum=0)
-        method = partial(self.rectModified.emit, 'shape.width')
+        method = partial(self.optionSet.emit, 'shape.width')
         self.width.valueSet.connect(method)
         self.height = IntEdit(minimum=0)
-        method = partial(self.rectModified.emit, 'shape.height')
+        method = partial(self.optionSet.emit, 'shape.height')
         self.height.valueSet.connect(method)
         self.cornersx = IntEdit(minimum=0)
         method = partial(self.optionSet.emit, 'shape.cornersx')
@@ -309,27 +306,14 @@ class ShapeSettings(QtWidgets.QWidget):
     def path_edited(self):
         if self.shape.currentText() != 'custom':
             return
-
-        rect = self.path_editor.path_rect()
-        self.optionsSet.emit({
-            'shape': 'custom',
-            'shape.path': self.path_editor.path(),
-            'shape.left': rect.left(),
-            'shape.top': rect.top(),
-            'shape.width': rect.width(),
-            'shape.height': rect.height()},
-            True)
-        self.left.setText(str(rect.left()))
-        self.top.setText(str(rect.top()))
-        self.width.setText(str(rect.width()))
-        self.height.setText(str(rect.height()))
+        self.optionSet.emit('shape.path', self.path_editor.path())
 
     def shape_changed(self, _):
         self.path_editor.setEnabled(self.shape.currentText() == 'custom')
         self.path_editor.setVisible(self.shape.currentText() == 'custom')
-        if self.shape.currentText() != 'custom':
-            return self.optionSet.emit('shape', self.shape.currentText())
-        self.path_edited()
+        self.height.setEnabled(self.shape.currentText() != 'custom')
+        self.width.setEnabled(self.shape.currentText() != 'custom')
+        self.optionSet.emit('shape', self.shape.currentText())
         self.path_editor.canvas.focus()
 
     def space_changed(self, index):
@@ -363,6 +347,8 @@ class ShapeSettings(QtWidgets.QWidget):
         self.shape.blockSignals(True)
         self.shape.setCurrentText(value)
         self.shape.blockSignals(False)
+        self.height.setEnabled('custom' not in values)
+        self.width.setEnabled('custom' not in values)
 
         if len(options) == 1:
             self.path_editor.setEnabled(options[0]['shape'] == 'custom')

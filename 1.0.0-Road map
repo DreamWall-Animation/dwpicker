@@ -1,0 +1,15 @@
+- Refactoring data model
+
+-- TODO --
+
+- Store custom shapes coordinates relatives to topLeft
+- Hierarchy system
+- Unifiy checker in table views
+- Add access to Shape object from scripts
+- Constrain manipulator minimum size
+- Check to fix manipulator precision issues (currently not supporting QRectF)
+- Check to manage image on non-rect shapes (crop images out of background)
+- add Background image from editor
+- add multiple shapes from editor
+- add property: does not affect focus
+- Documentation
