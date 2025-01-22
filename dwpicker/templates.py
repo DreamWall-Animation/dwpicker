@@ -40,6 +40,7 @@ BUTTON = {
     'action.menu_commands': [],
     'image.path': '',
     'image.fit': True,
+    'image.ratio': True,
     'image.height': 32,
     'image.width': 32
 }
@@ -84,6 +85,7 @@ TEXT = {
     'action.menu_commands': [],
     'image.path': '',
     'image.fit': False,
+    'image.ratio': True,
     'image.height': 32,
     'image.width': 32,
 }
@@ -128,6 +130,7 @@ BACKGROUND = {
     'action.menu_commands': [],
     'image.path': '',
     'image.fit': False,
+    'image.ratio': True,
     'image.height': 32,
     'image.width': 32,
 }

@@ -84,6 +84,7 @@ def ensure_retro_compatibility(picker_data):
             point = shape['shape.left'], shape['shape.top']
             shape['shape.path'] = get_relative_path(point, shape['shape.path'])
             shape['ignored_by_focus'] = False
+            shape['image.ratio'] = False
 
     return picker_data
 

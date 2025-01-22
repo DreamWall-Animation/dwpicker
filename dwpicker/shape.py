@@ -193,14 +193,24 @@ class Shape():
     def synchronize_image(self):
         path = expand_path(self.options['image.path'])
         self.pixmap = QtGui.QPixmap(path)
-        if self.options['image.fit'] is True:
+        if self.options['image.fit'] and not self.options['image.ratio']:
             self.image_rect = None
             return
+        if not self.options['image.fit']:
+            self.image_rect = QtCore.QRectF(
+                self.rect.left(),
+                self.rect.top(),
+                self.options['image.width'],
+                self.options['image.height'])
+            self.image_rect.moveCenter(self.rect.center())
+        ratio = self.options['image.width'] / self.options['image.height']
+        width = self.options['shape.width']
+        height = self.options['shape.width'] * ratio
+        if self.options['shape.height'] < height:
+            width = self.options['shape.height'] * ratio
+            height = self.options['shape.height']
         self.image_rect = QtCore.QRectF(
-            self.rect.left(),
-            self.rect.top(),
-            self.options['image.width'],
-            self.options['image.height'])
+            self.rect.left(), self.rect.top(), width, height)
         self.image_rect.moveCenter(self.rect.center())
 
 

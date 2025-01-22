@@ -34,7 +34,6 @@ class UndoManager():
         self._undo_stack.append(self.data)
         self._current_state = deepcopy(data)
         self._modified = True
-        print('record undo', len(self._undo_stack))
 
     def set_data_saved(self):
         self._modified = False

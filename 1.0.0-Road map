@@ -4,12 +4,12 @@
 - add property: does not affect focus.
 - Check to fix manipulator precision issues (currently not supporting QRectF).
 - Check to manage image on non-rect shapes (crop images out of background).
+- Constrain manipulator minimum size.
 
 -- TODO --
 
 - Hierarchy system.
 - Unifiy checkers widget in table views.
-- Constrain manipulator minimum size.
 - add Background image from editor.
 - add multiple shapes from editor.
 - install module with drag and drop into maya.

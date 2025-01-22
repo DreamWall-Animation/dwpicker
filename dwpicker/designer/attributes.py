@@ -404,6 +404,10 @@ class ImageSettings(QtWidgets.QWidget):
         self.fit = BoolCombo(True)
         self.fit.valueSet.connect(partial(self.optionSet.emit, 'image.fit'))
 
+        self.ratio = BoolCombo(True)
+        method = partial(self.optionSet.emit, 'image.ratio')
+        self.ratio.valueSet.connect(method)
+
         self.width = FloatEdit(minimum=0)
         method = partial(self.optionSet.emit, 'image.width')
         self.width.valueSet.connect(method)
@@ -418,6 +422,7 @@ class ImageSettings(QtWidgets.QWidget):
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Path', self.path)
         self.layout.addRow('Fit to shape', self.fit)
+        self.layout.addRow('Preserve ratio', self.ratio)
         self.layout.addRow('Width', self.width)
         self.layout.addRow('Height', self.height)
 
@@ -435,6 +440,10 @@ class ImageSettings(QtWidgets.QWidget):
         values = list({option['image.fit'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.fit.setCurrentText(value)
+
+        values = list({option['image.ratio'] for option in options})
+        value = str(values[0]) if len(values) == 1 else None
+        self.ratio.setCurrentText(value)
 
         values = list({option['image.width'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
