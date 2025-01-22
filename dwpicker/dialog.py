@@ -48,10 +48,9 @@ def question(title, message, buttons=None, parent=None):
     return result == QtWidgets.QMessageBox.Ok
 
 
-def get_image_path(parent=None):
+def get_image_path(parent=None, dialog_title="Repath image..."):
     filename = QtWidgets.QFileDialog.getOpenFileName(
-        parent, "Repath image...",
-        get_image_directory(),
+        parent, dialog_title, get_image_directory(),
         filter="Images (*.jpg *.gif *.png *.tga)")[0]
     if not filename:
         return None

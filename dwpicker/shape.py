@@ -203,9 +203,10 @@ class Shape():
                 self.options['image.width'],
                 self.options['image.height'])
             self.image_rect.moveCenter(self.rect.center())
+            return
         ratio = self.options['image.width'] / self.options['image.height']
         width = self.options['shape.width']
-        height = self.options['shape.width'] * ratio
+        height = self.options['shape.width'] / ratio
         if self.options['shape.height'] < height:
             width = self.options['shape.height'] * ratio
             height = self.options['shape.height']

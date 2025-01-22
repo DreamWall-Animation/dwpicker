@@ -1,7 +1,7 @@
 from functools import partial
 from copy import deepcopy
 
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker import clipboard
@@ -9,11 +9,13 @@ from dwpicker.align import align_shapes, arrange_horizontal, arrange_vertical
 from dwpicker.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
     move_up_array_elements, move_down_array_elements)
-from dwpicker.dialog import SearchAndReplaceDialog, warning, SettingsPaster
+from dwpicker.dialog import (
+    SearchAndReplaceDialog, warning, SettingsPaster, get_image_path)
 from dwpicker.geometry import (
     rect_symmetry, path_symmetry, get_shapes_bounding_rects,
     rect_top_left_symmetry)
 from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
+from dwpicker.path import format_path
 from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.shape import Shape, get_shape_rect_from_options
 from dwpicker.stack import count_panels
@@ -63,7 +65,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.addButtonRequested.connect(method)
         method = partial(self.create_shape, TEXT)
         self.menu.addTextRequested.connect(method)
-        method = partial(self.create_shape, BACKGROUND, before=True)
+        method = partial(self.create_shape, BACKGROUND, before=True, image=True)
         self.menu.addBackgroundRequested.connect(method)
         method = self.set_selection_move_down
         self.menu.moveDownRequested.connect(method)
@@ -255,9 +257,22 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.set_options(options)
 
     def create_shape(
-            self, template, before=False, position=None, targets=None):
+            self, template, before=False, position=None, targets=None,
+            image=False):
+
         options = template.copy()
         options['panel'] = max((self.shape_editor.current_panel, 0))
+        filename = get_image_path(self, "Select background image.")
+        if filename and image:
+            filename = format_path(filename)
+            options['image.path'] = filename
+            qimage = QtGui.QImage(filename)
+            options['image.width'] = qimage.size().width()
+            options['image.height'] = qimage.size().height()
+            options['shape.width'] = qimage.size().width()
+            options['shape.height'] = qimage.size().height()
+            options['bgcolor.transparency'] = 255
+
         shape = Shape(options)
         if not position:
             center = self.shape_editor.rect().center()
@@ -268,6 +283,7 @@ class PickerEditor(QtWidgets.QWidget):
             shape.rect.moveTopLeft(tl)
         if targets:
             shape.set_targets(targets)
+
         shape.synchronize_rect()
         shape.update_path()
         self.document.add_shapes([shape.options], prepend=before)

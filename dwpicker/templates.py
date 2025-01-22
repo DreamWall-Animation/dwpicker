@@ -129,8 +129,8 @@ BACKGROUND = {
     'action.commands': [],
     'action.menu_commands': [],
     'image.path': '',
-    'image.fit': False,
-    'image.ratio': True,
+    'image.fit': True,
+    'image.ratio': False,
     'image.height': 32,
     'image.width': 32,
 }

@@ -2,7 +2,6 @@
 import os
 import json
 import webbrowser
-from copy import deepcopy
 from functools import partial
 
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -28,7 +27,7 @@ from dwpicker.optionvar import (
     LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
     USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
     save_optionvar, append_recent_filename, save_opened_filenames)
-from dwpicker.path import get_import_directory, get_open_directory
+from dwpicker.path import get_import_directory, get_open_directory, format_path
 from dwpicker.picker import PickerStackedView, list_targets
 from dwpicker.preference import PreferencesWindow
 from dwpicker.qtutils import set_shortcut, icon, maya_main_window, DockableBase
@@ -716,6 +715,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         if not filename:
             return
 
+        filename = format_path(filename)
         shape = BACKGROUND.copy()
         shape['image.path'] = filename
         image = QtGui.QImage(filename)
