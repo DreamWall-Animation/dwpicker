@@ -171,51 +171,57 @@ def resize_rect_with_reference(rect, in_reference_rect, out_reference_rect):
 
 
 def resize_rect_with_direction(rect, cursor, direction, force_square=False):
+    point = QtCore.QPointF(cursor)
+
     if direction == 'top_left':
-        if cursor.x() < rect.right() and cursor.y() < rect.bottom():
-            rect.setTopLeft(cursor)
-            if force_square:
-                left = rect.right() - rect.height()
-                rect.setLeft(left)
+        point.setX(min((point.x(), rect.right() - 1)))
+        point.setY(min((point.y(), rect.bottom() - 1)))
+        rect.setTopLeft(point)
+        if force_square:
+            left = rect.right() - rect.height()
+            rect.setLeft(left)
 
     elif direction == 'bottom_left':
-        if cursor.x() < rect.right() and cursor.y() > rect.top():
-            rect.setBottomLeft(cursor)
-            if force_square:
-                rect.setHeight(rect.width())
+        point.setX(min((point.x(), rect.right() - 1)))
+        point.setY(max((point.y(), rect.top() + 1)))
+        rect.setBottomLeft(point)
+        if force_square:
+            rect.setHeight(rect.width())
 
     elif direction == 'top_right':
-        if cursor.x() > rect.left() and cursor.y() < rect.bottom():
-            rect.setTopRight(cursor)
-            if force_square:
-                rect.setWidth(rect.height())
+        point.setX(max((point.x(), rect.left() + 1)))
+        point.setY(min((point.y(), rect.bottom() + 1)))
+        rect.setTopRight(point)
+        if force_square:
+            rect.setWidth(rect.height())
 
     elif direction == 'bottom_right':
-        if cursor.x() > rect.left() and cursor.y() > rect.top():
-            rect.setBottomRight(cursor)
-            if force_square:
-                rect.setHeight(rect.width())
+        point.setX(max((point.x(), rect.left() + 1)))
+        point.setY(max((point.y(), rect.top() + 1)))
+        rect.setBottomRight(point)
+        if force_square:
+            rect.setHeight(rect.width())
 
     elif direction == 'left':
-        if cursor.x() < rect.right():
-            rect.setLeft(cursor.x())
-            if force_square:
-                rect.setHeight(rect.width())
+        point.setX(min((point.x(), rect.right() - 1)))
+        rect.setLeft(point.x())
+        if force_square:
+            rect.setHeight(rect.width())
 
     elif direction == 'right':
-        if cursor.x() > rect.left():
-            rect.setRight(cursor.x())
-            if force_square:
-                rect.setHeight(rect.width())
+        point.setX(max((point.x(), rect.left() + 1)))
+        rect.setRight(point.x())
+        if force_square:
+            rect.setHeight(rect.width())
 
     elif direction == 'top':
-        if cursor.y() < rect.bottom():
-            rect.setTop(cursor.y())
-            if force_square:
-                rect.setWidth(rect.height())
+        point.setY(min((point.y(), rect.bottom() - 1)))
+        rect.setTop(point.y())
+        if force_square:
+            rect.setWidth(rect.height())
 
     elif direction == 'bottom':
-        if cursor.y() > rect.top():
-            rect.setBottom(cursor.y())
-            if force_square:
-                rect.setWidth(rect.height())
+        point.setY(max((point.y(), rect.top() + 1)))
+        rect.setBottom(point.y())
+        if force_square:
+            rect.setWidth(rect.height())
