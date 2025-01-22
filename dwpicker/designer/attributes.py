@@ -232,6 +232,10 @@ class ShapeSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'background')
         self.background.valueSet.connect(method)
 
+        self.ignored_by_focus = BoolCombo()
+        method = partial(self.optionSet.emit, 'ignored_by_focus')
+        self.ignored_by_focus.valueSet.connect(method)
+
         self.space = QtWidgets.QComboBox()
         self.space.addItems(SPACES)
         self.space.currentIndexChanged.connect(self.space_changed)
@@ -268,6 +272,7 @@ class ShapeSettings(QtWidgets.QWidget):
         layout1.addRow('Panel number', self.panel)
         layout1.addRow('Visibility layer', self.layer)
         layout1.addRow('Background', self.background)
+        layout1.addRow('Ignored by focus', self.ignored_by_focus)
         layout1.addRow('Shape', self.shape)
 
         layout2 = QtWidgets.QVBoxLayout()
@@ -324,6 +329,10 @@ class ShapeSettings(QtWidgets.QWidget):
         values = list({option['background'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.background.setCurrentText(value)
+
+        values = list({option['ignored_by_focus'] for option in options})
+        value = str(values[0]) if len(values) == 1 else None
+        self.ignored_by_focus.setCurrentText(value)
 
         values = list({option['panel'] for option in options})
         value = values[0] if len(values) == 1 else '' if not values else '...'

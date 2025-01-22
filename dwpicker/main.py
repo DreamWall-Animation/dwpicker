@@ -724,7 +724,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         shape['shape.width'] = image.size().width()
         shape['shape.height'] = image.size().height()
         shape['bgcolor.transparency'] = 255
-        self.document().add_shape(shape, prepend=True)
+        self.document().add_shapes([shape], prepend=True)
+        self.document().record_undo()
+        self.document().shapes_changed.emit()
 
 
 class DwPickerMenu(QtWidgets.QMenuBar):

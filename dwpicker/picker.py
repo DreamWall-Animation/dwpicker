@@ -285,7 +285,7 @@ class PickerPanelView(QtWidgets.QWidget):
         self.update()
 
     def visible_shapes(self):
-        return [
+            return [
             s for s in self.document.shapes_by_panel[self.panel] if
             not s.visibility_layer()
             or s.visibility_layer() not in self.layers_menu.hidden_layers]
@@ -293,7 +293,8 @@ class PickerPanelView(QtWidgets.QWidget):
     def reset(self, viewsize=None):
         shapes = [
             s for s in self.visible_shapes() if
-            s.options['shape.space'] == 'world']
+            s.options['shape.space'] == 'world' and not
+            s.options['ignored_by_focus']]
         shapes_rects = [s.rect for s in shapes if s.selected]
         if not shapes_rects:
             shapes_rects = [s.rect for s in shapes]

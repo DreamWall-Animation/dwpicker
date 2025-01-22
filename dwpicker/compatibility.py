@@ -83,6 +83,7 @@ def ensure_retro_compatibility(picker_data):
             shape['id'] = str(uuid.uuid4())
             point = shape['shape.left'], shape['shape.top']
             shape['shape.path'] = get_relative_path(point, shape['shape.path'])
+            shape['ignored_by_focus'] = False
 
     return picker_data
 

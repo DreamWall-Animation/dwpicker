@@ -4,6 +4,7 @@ from dwpicker.appinfos import VERSION
 BUTTON = {
     'background': False,
     'visibility_layer': None,
+    'ignored_by_focus': False,
     'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
     'shape.space': 'world',
@@ -47,6 +48,7 @@ BUTTON = {
 TEXT = {
     'background': False,
     'visibility_layer': None,
+    'ignored_by_focus': False,
     'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
     'shape.space': 'world',  # or screen
@@ -90,6 +92,7 @@ TEXT = {
 BACKGROUND = {
     'background': True,
     'visibility_layer': None,
+    'ignored_by_focus': True,
     'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
     'shape.space': 'world',  # or screen

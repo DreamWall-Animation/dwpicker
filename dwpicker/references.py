@@ -34,6 +34,9 @@ def ensure_images_path_exists(pickers):
 
 
 def list_missing_images(pickers_data):
+    print(type(pickers_data))
+    import pprint
+    pprint.pprint(pickers_data)
     return sorted(list(set([
         shape['image.path']
         for picker_data in pickers_data

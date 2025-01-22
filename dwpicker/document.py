@@ -91,7 +91,7 @@ class PickerDocument(QtCore.QObject):
         if prepend:
             for shape in reversed(shapes):
                 self.shapes.insert(0, shape)
-                self.data['shapes'].insert(0, shapes_data)
+                self.data['shapes'].insert(0, shape.options)
         else:
             self.shapes.extend(shapes)
             self.data['shapes'].extend(shapes_data)
