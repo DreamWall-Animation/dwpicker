@@ -13,8 +13,6 @@ class Transform:
         self.reference_rect = None
 
     def set_rect(self, rect):
-        if not isinstance(rect, QtCore.QRect):
-            raise ValueError()
         self.rect = rect
         if rect is None:
             self.reference_x = None
@@ -38,7 +36,7 @@ class Transform:
         for shape in shapes:
             resize_shape_with_reference(shape, self.reference_rect, self.rect)
 
-        self.reference_rect = QtCore.QRect(
+        self.reference_rect = QtCore.QRectF(
             self.rect.topLeft(), self.rect.size())
 
     def move(self, shapes, cursor):

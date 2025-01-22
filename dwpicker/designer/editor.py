@@ -381,7 +381,7 @@ class PickerEditor(QtWidgets.QWidget):
     def move_selection(self, direction):
         offset = DIRECTION_OFFSETS[direction]
         rect = self.shape_editor.manipulator.rect
-        reference_rect = QtCore.QRect(rect)
+        reference_rect = QtCore.QRectF(rect)
 
         self.shape_editor.transform.set_rect(rect)
         self.shape_editor.transform.reference_rect = reference_rect

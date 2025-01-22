@@ -142,7 +142,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         if self.manipulator.rect is not None:
             self.transform.set_rect(self.manipulator.rect)
-            self.transform.reference_rect = QtCore.QRect(self.manipulator.rect)
+            self.transform.reference_rect = QtCore.QRectF(self.manipulator.rect)
             self.transform.set_reference_point(cursor)
 
         self.update()

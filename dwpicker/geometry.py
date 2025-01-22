@@ -230,7 +230,7 @@ def proportional_rect(rect, percent=None):
     height = rect.height() * factor
     left = rect.left() + round((rect.width() - width) / 2)
     top = rect.top() + round((rect.height() - height) / 2)
-    return QtCore.QRect(left, top, width, height)
+    return QtCore.QRectF(left, top, width, height)
 
 
 def get_shapes_bounding_rects(shapes):
@@ -259,7 +259,7 @@ def get_combined_rects(rects):
     r = max(rect.right() for rect in rects)
     b = max(rect.bottom() for rect in rects)
 
-    return QtCore.QRect(l, t, r-l, b-t)
+    return QtCore.QRectF(l, t, r-l, b-t)
 
 
 def get_global_rect(points):

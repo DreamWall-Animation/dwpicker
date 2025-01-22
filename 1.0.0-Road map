@@ -1,17 +1,17 @@
 - Refactoring data model
 - Store custom shapes coordinates relatives to topLeft
 - Add access to Shape object from scripts.
+- add property: does not affect focus.
+- Check to fix manipulator precision issues (currently not supporting QRectF).
 
 -- TODO --
 
 - Hierarchy system.
 - Unifiy checkers widget in table views.
 - Constrain manipulator minimum size.
-- Check to fix manipulator precision issues (currently not supporting QRectF).
 - Check to manage image on non-rect shapes (crop images out of background).
 - add Background image from editor.
 - add multiple shapes from editor.
-- add property: does not affect focus.
 - install module with drag and drop into maya.
 - No requires selection to edit buttons in picker view.
 - PySide6 in parrallel branch.

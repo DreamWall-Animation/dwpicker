@@ -506,7 +506,7 @@ class ZoomLockedModel(QtCore.QAbstractTableModel):
 def get_color_icon(color, size=None, as_pixmap=False):
     px = QtGui.QPixmap(QtCore.QSize(*(size if size else (64, 64))))
     px.fill(QtCore.Qt.transparent)
-    rect = QtCore.QRect(0, 0, px.size().width(), px.size().height())
+    rect = QtCore.QRectF(0, 0, px.size().width(), px.size().height())
     painter = QtGui.QPainter(px)
     try:
         if not color:
@@ -557,7 +557,7 @@ class CheckDelegate(QtWidgets.QItemDelegate):
 
         center = option.rect.center()
         painter.setBrush(QtCore.Qt.NoBrush)
-        rect = QtCore.QRect(center.x() - 10, center.y() - 10, 20, 20)
+        rect = QtCore.QRectF(center.x() - 10, center.y() - 10, 20, 20)
         if not state:
             return
         font = QtGui.QFont()
@@ -584,7 +584,7 @@ class CheckWidget(QtWidgets.QWidget):
         painter = QtGui.QPainter(self)
         center = self.rect().center()
         painter.setBrush(QtCore.Qt.NoBrush)
-        rect = QtCore.QRect(center.x() - 15, center.y() - 15, 30, 30)
+        rect = QtCore.QRectF(center.x() - 15, center.y() - 15, 30, 30)
         painter.drawRect(rect)
         if not self.state:
             return

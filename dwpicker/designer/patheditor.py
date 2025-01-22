@@ -152,10 +152,8 @@ class PathEditorCanvas(QtWidgets.QWidget):
             self.selection.set([self.current_action[1]])
             self.update_manipulator_rect()
         if self.manipulator.rect is not None:
-            self.transform.set_rect(
-                self.manipulator.rect.toRect())
-            self.transform.reference_rect = QtCore.QRect(
-                self.manipulator.rect.toRect())
+            self.transform.set_rect(self.manipulator.rect)
+            self.transform.reference_rect = QtCore.QRectF(self.manipulator.rect)
             self.transform.set_reference_point(cursor)
 
         has_shape_hovered = bool(self.current_action)
@@ -237,7 +235,7 @@ class PathEditorCanvas(QtWidgets.QWidget):
                 rect = self.transform.rect
                 self.transform.reference_rect.setTopLeft(rect.topLeft())
                 self.transform.reference_rect.setSize(rect.size())
-                self.manipulator.set_rect(QtCore.QRectF(self.transform.rect))
+                self.manipulator.set_rect(self.transform.rect)
 
             elif self.current_action[0] == 'move point':
                 offset_path(self.path, offset, [self.current_action[1]])
