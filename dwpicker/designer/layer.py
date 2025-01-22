@@ -39,7 +39,7 @@ class VisibilityLayersEditor(QtWidgets.QWidget):
         if not indexes:
             return
 
-        layer = sorted(list(self.document.shapes_by_layers))[indexes[0].row()]
+        layer = sorted(list(self.document.shapes_by_layer))[indexes[0].row()]
         return layer
 
     def call_remove_layer(self):
@@ -47,7 +47,7 @@ class VisibilityLayersEditor(QtWidgets.QWidget):
         if not layer:
             return
 
-        for shape in self.document.shapes_by_layers[layer]:
+        for shape in self.document.shapes_by_layer[layer]:
             if shape.visibility_layer() == layer:
                 shape.options['visibility_layer'] = None
         self.model.layoutAboutToBeChanged.emit()
@@ -71,7 +71,7 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
         self.document = document
 
     def rowCount(self, _):
-        return len(self.document.shapes_by_layers)
+        return len(self.document.shapes_by_layer)
 
     def columnCount(self, _):
         return len(self.HEADERS)
@@ -91,7 +91,7 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
         if role != QtCore.Qt.CheckStateRole:
             return False
 
-        layer = sorted(list(self.document.shapes_by_layers))[index.row()]
+        layer = sorted(list(self.document.shapes_by_layer))[index.row()]
         hidden_layers = self.document.data['general']['hidden_layers']
         if value == QtCore.Qt.Unchecked and layer in hidden_layers:
             hidden_layers.remove(layer)
@@ -114,7 +114,7 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
                 return QtCore.Qt.AlignCenter
 
         hidden_layers = self.document.data['general']['hidden_layers']
-        layers = sorted(list(self.document.shapes_by_layers))
+        layers = sorted(list(self.document.shapes_by_layer))
         if role == QtCore.Qt.CheckStateRole:
             if index.column() == 0:
                 return (
@@ -129,4 +129,4 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
             return layers[index.row()]
         if index.column() == 2:
             layer = layers[index.row()]
-            return str(len(self.document.shapes_by_layers[layer]))
+            return str(len(self.document.shapes_by_layer[layer]))

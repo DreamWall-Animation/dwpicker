@@ -204,3 +204,10 @@ def toggle_layer_visibility(layername):
     else:
         picker.layers_menu.hidden_layers.append(layername)
     picker.update()
+
+
+def get_shape(shape_id):
+    picker = current()
+    if not picker:
+        return
+    return picker.document.shapes_by_id.get(shape_id)

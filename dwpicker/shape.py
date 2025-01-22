@@ -155,7 +155,7 @@ class Shape():
                 execute_code(
                     language=command['language'],
                     code=command['command'],
-                    targets=self.targets(),
+                    shape=self,
                     deferred=command['deferred'],
                     compact_undo=command['force_compact_undo'])
             except Exception as e:

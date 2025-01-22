@@ -25,7 +25,7 @@ class PickerDocument(QtCore.QObject):
         self.shapes = []
         self.shapes_by_panel = {}
         self.shapes_by_id = {}
-        self.shapes_by_layers = {}
+        self.shapes_by_layer = {}
         self.generate_shapes()
 
         self.shapes_changed.connect(self.emit_change)
@@ -75,13 +75,13 @@ class PickerDocument(QtCore.QObject):
     def sync_shapes_caches(self):
         self.shapes_by_panel = defaultdict(list)
         self.shapes_by_id = {}
-        self.shapes_by_layers = defaultdict(list)
+        self.shapes_by_layer = defaultdict(list)
         for shape in self.shapes:
             self.shapes_by_panel[shape.options['panel']].append(shape)
             self.shapes_by_id[shape.options['id']] = shape
             layer = shape.options['visibility_layer']
             if layer:
-                self.shapes_by_layers[layer].append(shape)
+                self.shapes_by_layer[layer].append(shape)
 
     def add_shapes(self, shapes_data, prepend=False):
         for options in shapes_data:

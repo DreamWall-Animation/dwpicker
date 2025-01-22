@@ -21,6 +21,11 @@ SHAPES_FILTERS = 'All shapes', 'Selected shapes'
 COMMAND_PLACEHOLDER = """\
 PYTHON:
 __targets__: List[str] (variable available by default in the script)
+__shape__: dict (clicked shape data as dict. Dict is editable).
+    example to toggle the background color:
+        current_color = __shape__['bgcolor.normal']
+        __shape__['bgcolor.normal'] = (
+            "black" if current_color == 'white' else "white")
 
 MEL:
 var $targets[] is availables by default.

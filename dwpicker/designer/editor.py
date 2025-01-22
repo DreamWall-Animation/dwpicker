@@ -516,7 +516,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.layers_modified()
 
     def select_layer(self, layer):
-        self.shape_editor.selection.set(self.document.shapes_by_layers[layer])
+        self.shape_editor.selection.set(self.document.shapes_by_layer[layer])
         self.shape_editor.update_selection()
         self.shape_editor.update()
         self.selection_changed()
