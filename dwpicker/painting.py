@@ -133,27 +133,7 @@ def draw_shape(
     painter.setBrush(QtGui.QBrush(backgroundcolor))
     rect = to_shape_space_rect(
         shape.rect, shape, force_world_space, viewportmapper)
-    if options['shape'] == 'square':
-        painter.drawRect(rect)
-    elif options['shape'] == 'round':
-        painter.drawEllipse(rect)
-    elif options['shape'] == 'rounded_rect':
-        x = to_shape_space(
-            options['shape.cornersx'], shape,
-            force_world_space, viewportmapper)
-        y = to_shape_space(
-            options['shape.cornersy'], shape,
-            force_world_space, viewportmapper)
-        painter.drawRoundedRect(rect, x, y)
-    else:
-        qpath = shape.get_painter_path(force_world_space, viewportmapper)
-        painter.drawPath(qpath)
-
-    if shape.pixmap is not None:
-        rect = shape.image_rect or content_rect
-        rect = to_shape_space_rect(
-            rect, shape, force_world_space, viewportmapper)
-        painter.drawPixmap(rect.toRect(), shape.pixmap)
+    draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper)
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))
@@ -172,6 +152,99 @@ def draw_shape(
     content_rect = to_shape_space_rect(
         content_rect, shape, force_world_space, viewportmapper)
     painter.drawText(content_rect, flags, text)
+
+
+def draw_shape_shape(painter: QtGui.QPainter, rect, shape, force_world_space, viewportmapper):
+    options = shape.options
+    content_rect = shape.content_rect()
+
+    if options['shape'] == 'square':
+        painter.drawRect(rect)
+        if shape.pixmap is not None:
+            painter.setClipRect(rect)
+            rect = shape.image_rect or content_rect
+            rect = to_shape_space_rect(
+                rect, shape, force_world_space, viewportmapper)
+            painter.drawPixmap(rect.toRect(), shape.pixmap)
+            painter.setClipping(False)
+
+    elif options['shape'] == 'round':
+        painter.drawEllipse(rect)
+        if shape.pixmap is not None:
+            qpath = QtGui.QPainterPath()
+            qpath.addEllipse(rect)
+            painter.setClipPath(qpath)
+            rect = shape.image_rect or content_rect
+            rect = to_shape_space_rect(
+                rect, shape, force_world_space, viewportmapper)
+            painter.drawPixmap(rect.toRect(), shape.pixmap)
+            painter.setClipping(False)
+
+    elif options['shape'] == 'rounded_rect':
+        x = to_shape_space(
+            options['shape.cornersx'], shape,
+            force_world_space, viewportmapper)
+        y = to_shape_space(
+            options['shape.cornersy'], shape,
+            force_world_space, viewportmapper)
+        painter.drawRoundedRect(rect, x, y)
+        if shape.pixmap is not None:
+            qpath = QtGui.QPainterPath()
+            qpath.addRoundedRect(rect, x, y)
+            painter.setClipPath(qpath)
+            rect = shape.image_rect or content_rect
+            rect = to_shape_space_rect(
+                rect, shape, force_world_space, viewportmapper)
+            painter.drawPixmap(rect.toRect(), shape.pixmap)
+            painter.setClipping(False)
+
+    else:
+        qpath = shape.get_painter_path(force_world_space, viewportmapper)
+        painter.drawPath(qpath)
+        if shape.pixmap is not None:
+            painter.setClipPath(qpath)
+            rect = shape.image_rect or content_rect
+            rect = to_shape_space_rect(
+                rect, shape, force_world_space, viewportmapper)
+            painter.drawPixmap(rect.toRect(), shape.pixmap)
+            painter.setClipping(False)
+
+
+def draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper):
+    options = shape.options
+    content_rect = shape.content_rect()
+    qpath = QtGui.QPainterPath()
+
+    if options['shape'] == 'square':
+        painter.drawRect(rect)
+        qpath.addRect(rect)
+
+    elif options['shape'] == 'round':
+        painter.drawEllipse(rect)
+        qpath.addEllipse(rect)
+
+    elif options['shape'] == 'rounded_rect':
+        x = to_shape_space(
+            options['shape.cornersx'], shape, force_world_space,
+            viewportmapper)
+        y = to_shape_space(
+            options['shape.cornersy'], shape, force_world_space,
+            viewportmapper)
+        painter.drawRoundedRect(rect, x, y)
+        qpath.addRoundedRect(rect, x, y)
+
+    else:
+        qpath = shape.get_painter_path(force_world_space, viewportmapper)
+        painter.drawPath(qpath)
+        qpath = qpath
+
+    if shape.pixmap is not None:
+        painter.setClipPath(qpath)
+        transformed_rect = shape.image_rect or content_rect
+        transformed_rect = to_shape_space_rect(
+            transformed_rect, shape, force_world_space, viewportmapper)
+        painter.drawPixmap(transformed_rect.toRect(), shape.pixmap)
+        painter.setClipping(False)
 
 
 def draw_selection_square(painter, rect, viewportmapper=None):
