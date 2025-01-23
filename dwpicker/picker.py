@@ -107,7 +107,7 @@ class PickerStackedView(QtWidgets.QWidget):
         self.editable = editable
         self.pickers = []
         self.widget = None
-        self.layers_menu = VisibilityLayersMenu()
+        self.layers_menu = VisibilityLayersMenu(document)
         self.layers_menu.visibilities_changed.connect(self.update)
 
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -163,7 +163,7 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.adjust_center(event.size(), event.oldSize())
 
     def copy_pickers(self):
-        self.pickers = [deepcopy(p) for p in self.pickers]
+        self.pickers = [p.copy() for p in self.pickers]
         for picker in self.pickers:
             picker.size_event_triggered.connect(self.picker_resized)
 
@@ -411,7 +411,6 @@ class PickerPanelView(QtWidgets.QWidget):
     def add_drag_shapes(self):
         shapes_data = [s.options for s in self.drag_shapes]
         self.document.add_shapes(shapes_data)
-        self.layers_menu.set_shapes(self.document.shapes)
         self.document.shapes_changed.emit()
         self.document.record_undo()
         self.drag_shapes = []
@@ -691,15 +690,20 @@ class PickerMenu(QtWidgets.QMenu):
 
 class VisibilityLayersMenu(QtWidgets.QMenu):
     visibilities_changed = QtCore.Signal()
-    def __init__(self, parent=None):
+    def __init__(self, document, parent=None):
         super(VisibilityLayersMenu, self).__init__('Visibility layers', parent)
-        self.hidden_layers = []
-        self.displayed = False
+        self.document = document
+        self.document.shapes_changed.connect(self.update_actions)
+        self.hidden_layers = document.data['general']['hidden_layers'][:]
+        self.update_actions()
 
-    def set_shapes(self, shapes):
-        layers = sorted(
-            {s.visibility_layer() for s in shapes if s.visibility_layer()})
+    @property
+    def displayed(self):
+        return bool(self.document.shapes_by_layer)
+
+    def update_actions(self):
         self.clear()
+        layers = list(self.document.shapes_by_layer)
         action = QtWidgets.QAction('Show all')
         for layer in layers:
             action = QtWidgets.QAction(layer, self)
@@ -707,7 +711,6 @@ class VisibilityLayersMenu(QtWidgets.QMenu):
             action.setChecked(layer not in self.hidden_layers)
             action.toggled.connect(partial(self.set_hidden_layer, layer))
             self.addAction(action)
-        self.displayed = bool(layers)
 
     def set_hidden_layer(self, layer, state):
         if state is False and layer not in self.hidden_layers:

@@ -12,8 +12,8 @@ from dwpicker.painting import (
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import get_selection_mode
 from dwpicker.shapepath import (
-    offset_tangent, get_default_path, offset_path, auto_tangent,
-    create_polygon_shape, rotate_custom_shape)
+    offset_tangent, offset_path, auto_tangent, create_polygon_shape,
+    rotate_custom_shape)
 from dwpicker.transform import (
     Transform, resize_path_with_reference, resize_rect_with_direction)
 from dwpicker.viewport import ViewportMapper

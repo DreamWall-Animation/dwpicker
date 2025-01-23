@@ -96,7 +96,7 @@ def ensure_general_options_sanity(options):
     while split_count > len(options['panels.colors']):
         options['panels.colors'].append(None)
     while split_count > len(options['panels.names']):
-        name = 'Panel' + str(len(options["panels.names"]))
+        name = 'Panel ' + str(len(options["panels.names"]))
         options['panels.names'].append(name)
 
 

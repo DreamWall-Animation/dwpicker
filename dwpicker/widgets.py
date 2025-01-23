@@ -539,7 +539,7 @@ class CheckDelegate(QtWidgets.QItemDelegate):
     def mouseReleaseEvent(self, event):
         if event.button() != QtCore.Qt.LeftButton:
             return
-        self.repaint()
+        self.update()
 
     def createEditor(self, parent, _, index):
         model = index.model()

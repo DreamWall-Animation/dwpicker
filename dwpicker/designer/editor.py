@@ -542,9 +542,9 @@ class PickerEditor(QtWidgets.QWidget):
         self.selection_changed()
         model = self.attribute_editor.generals.layers.model
         model.layoutAboutToBeChanged.emit()
-        self.document.shapes_changed.emit()
-        self.document.record_undo()
         self.document.sync_shapes_caches()
+        self.document.record_undo()
+        self.document.shapes_changed.emit()
         model.layoutChanged.emit()
 
     def create_visibility_layer(self):
