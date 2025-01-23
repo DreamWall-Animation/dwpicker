@@ -136,8 +136,7 @@ class VisbilityLayersModel(QtCore.QAbstractTableModel):
             self.layoutChanged.emit()
             return
         self.document.record_undo()
-        self.document.general_option_changed.emit(
-            'attribute_editor', 'hidden_layers')
+        self.document.general_option_changed.emit('editor', 'hidden_layers')
         self.layoutChanged.emit()
 
     def data(self, index, role=QtCore.Qt.UserRole):

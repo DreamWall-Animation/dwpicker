@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -12,8 +13,8 @@ from dwpicker.painting import (
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import get_selection_mode
 from dwpicker.shapepath import (
-    offset_tangent, offset_path, auto_tangent, create_polygon_shape,
-    rotate_custom_shape)
+    offset_tangent, offset_path, auto_tangent, create_polygon_path,
+    rotate_path)
 from dwpicker.transform import (
     Transform, resize_path_with_reference, resize_rect_with_direction)
 from dwpicker.viewport import ViewportMapper
@@ -25,6 +26,7 @@ class PathEditor(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(PathEditor, self).__init__(parent)
         self.setWindowTitle('Shape path editor')
+        self.buffer_path = None
         self.canvas = PathEditorCanvas()
         self.canvas.pathEdited.connect(self.pathEdited.emit)
 
@@ -47,25 +49,26 @@ class PathEditor(QtWidgets.QWidget):
             icon('v_symmetry.png'), 'Mirror vertically', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
-        self.polygon_spinbox = QtWidgets.QSpinBox(self)
-        self.polygon_spinbox.setToolTip('Sides')
-        self.polygon_spinbox.setMinimum(3)  # Minimum of 3 sides for a polygon
+        self.angle = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.angle.setMinimum(0)
+        self.angle.setMaximum(360)
+        self.angle.sliderPressed.connect(self.start_rotate)
+        self.angle.sliderReleased.connect(self.end_rotate)
+        self.angle.valueChanged.connect(self.rotate)
+        self.angle.setTickInterval(45)
+        self.angle.setSingleStep(45)
+        self.angle.setTickPosition(QtWidgets.QSlider.TicksBelow)
 
-        self.angle_spinbox = QtWidgets.QSpinBox(self)
-        self.angle_spinbox.setToolTip('Angle')
-        self.angle_spinbox.setValue(45)
-        self.angle_spinbox.setMinimum(-360)
-        self.angle_spinbox.setMaximum(360)
-        self.angle_spinbox.setVisible(False)
+        self.angle_step = QtWidgets.QSpinBox()
+        self.angle_step.setToolTip('Step')
+        self.angle_step.setMinimum(0)
+        self.angle_step.setMaximum(90)
+        self.angle_step.setValue(45)
+        self.angle_step.valueChanged.connect(self.angle.setTickInterval)
 
-        polygon_action = QtWidgets.QAction(
+        polygon = QtWidgets.QAction(
             icon('polygon.png'), 'Create Polygon', self)
-        polygon_action.triggered.connect(
-            partial(create_polygon_shape, self, self.polygon_spinbox))
-        rotation_action = QtWidgets.QAction(
-            icon('rotation.png'), 'Rotate Shape', self)
-        rotation_action.triggered.connect(
-            partial(rotate_custom_shape, self, self.angle_spinbox))
+        polygon.triggered.connect(self.create_polygon)
 
         toggle = QtWidgets.QAction(icon('dock.png'), 'Dock/Undock', self)
         toggle.triggered.connect(self.toggle_flag)
@@ -77,11 +80,9 @@ class PathEditor(QtWidgets.QWidget):
         self.toolbar.addAction(break_tangent)
         self.toolbar.addAction(hsymmetry)
         self.toolbar.addAction(vsymmetry)
-        self.polygon_spinbox_action = self.toolbar.addWidget(
-            self.polygon_spinbox)
-        self.toolbar.addAction(polygon_action)
-        self.angle_spinbox_action = self.toolbar.addWidget(self.angle_spinbox)
-        self.toolbar.addAction(rotation_action)
+        self.toolbar.addAction(polygon)
+        self.toolbar.addWidget(self.angle)
+        self.toolbar.addWidget(self.angle_step)
 
         self.toolbar2 = QtWidgets.QToolBar()
         self.toolbar2.setIconSize(QtCore.QSize(18, 18))
@@ -98,6 +99,36 @@ class PathEditor(QtWidgets.QWidget):
         layout.setSpacing(0)
         layout.addLayout(toolbars)
         layout.addWidget(self.canvas)
+
+    def start_rotate(self):
+        self.buffer_path = deepcopy(self.canvas.path)
+
+    def end_rotate(self):
+        self.buffer_path = None
+        self.pathEdited.emit()
+        self.angle.blockSignals(True)
+        self.angle.setValue(0)
+        self.angle.blockSignals(False)
+
+    def rotate(self, value):
+        step_size = self.angle_step.value()
+        value = round(value / step_size) * step_size
+        path = rotate_path(self.buffer_path, value, (0, 0))
+
+        if path is None:
+            return
+        self.canvas.path = path
+        self.canvas.update()
+
+    def create_polygon(self):
+        edges, result = QtWidgets.QInputDialog.getInt(
+            self, 'Polygon', 'Number of edges', value=3, minValue=3,
+            maxValue=15)
+        if not result:
+            return
+        path = create_polygon_path(radius=45, n=edges)
+        self.canvas.set_path(path)
+        self.pathEdited.emit()
 
     def toggle_flag(self):
         point = self.mapToGlobal(self.rect().topLeft())

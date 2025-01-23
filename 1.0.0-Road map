@@ -9,13 +9,14 @@
 - add Background image from editor.
 - add multiple shapes from editor.
 - Unifiy checkers widget in table views.
+- Improve custom path editor
 
 -- TODO --
 
 - Hierarchy system.
 - install module with drag and drop into maya.
 - No requires selection to edit buttons in picker view.
-- Improve custom path editor
+- Add path library
 - PySide6 in parrallel branch.
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
 - Documentation.
