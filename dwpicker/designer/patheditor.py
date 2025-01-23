@@ -1,3 +1,5 @@
+import os
+import json
 from copy import deepcopy
 from functools import partial
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -7,9 +9,11 @@ from dwpicker.geometry import (
 from dwpicker.qtutils import icon
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.interactive import SelectionSquare, Manipulator
+from dwpicker.optionvar import LAST_OPEN_DIRECTORY, save_optionvar
 from dwpicker.painting import (
     draw_selection_square, draw_manipulator, draw_tangents,
     draw_world_coordinates)
+from dwpicker.path import get_open_directory
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import get_selection_mode
 from dwpicker.shapepath import (
@@ -49,15 +53,18 @@ class PathEditor(QtWidgets.QWidget):
             icon('v_symmetry.png'), 'Mirror vertically', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
+        export_path = QtWidgets.QAction(icon('save.png'), 'Export path', self)
+        export_path.triggered.connect(self.export_path)
+
+        import_path = QtWidgets.QAction(icon('open.png'), 'Import path', self)
+        import_path.triggered.connect(self.import_path)
+
         self.angle = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.angle.setMinimum(0)
         self.angle.setMaximum(360)
         self.angle.sliderPressed.connect(self.start_rotate)
         self.angle.sliderReleased.connect(self.end_rotate)
         self.angle.valueChanged.connect(self.rotate)
-        self.angle.setTickInterval(45)
-        self.angle.setSingleStep(45)
-        self.angle.setTickPosition(QtWidgets.QSlider.TicksBelow)
 
         self.angle_step = QtWidgets.QSpinBox()
         self.angle_step.setToolTip('Step')
@@ -75,14 +82,24 @@ class PathEditor(QtWidgets.QWidget):
 
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.setIconSize(QtCore.QSize(18, 18))
+        self.toolbar.addAction(import_path)
+        self.toolbar.addAction(export_path)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(polygon)
         self.toolbar.addAction(delete)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(smooth_tangent)
         self.toolbar.addAction(break_tangent)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(hsymmetry)
         self.toolbar.addAction(vsymmetry)
-        self.toolbar.addAction(polygon)
-        self.toolbar.addWidget(self.angle)
-        self.toolbar.addWidget(self.angle_step)
+
+        toolbar3 = QtWidgets.QHBoxLayout()
+        toolbar3.setContentsMargins(0, 0, 0, 0)
+        toolbar3.addStretch()
+        toolbar3.addWidget(QtWidgets.QLabel('Rotate: '))
+        toolbar3.addWidget(self.angle)
+        toolbar3.addWidget(self.angle_step)
 
         self.toolbar2 = QtWidgets.QToolBar()
         self.toolbar2.setIconSize(QtCore.QSize(18, 18))
@@ -99,6 +116,29 @@ class PathEditor(QtWidgets.QWidget):
         layout.setSpacing(0)
         layout.addLayout(toolbars)
         layout.addWidget(self.canvas)
+        layout.addLayout(toolbar3)
+
+    def export_path(self):
+        directory = get_open_directory()
+        filename = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Export shape', directory, '*.dws')
+        if not filename[0]:
+            return
+        save_optionvar(LAST_OPEN_DIRECTORY, os.path.dirname(filename[0]))
+        with open(filename[0], 'w') as f:
+            json.dump(self.canvas.path, f, indent=2)
+
+    def import_path(self):
+        directory = get_open_directory()
+        filename = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Import shape', directory, '*.dws')
+        if not filename[0]:
+            return
+        save_optionvar(LAST_OPEN_DIRECTORY, os.path.dirname(filename[0]))
+        with open(filename[0], 'r') as f:
+            path = json.load(f)
+        self.canvas.set_path(path)
+        self.pathEdited.emit()
 
     def start_rotate(self):
         self.buffer_path = deepcopy(self.canvas.path)
