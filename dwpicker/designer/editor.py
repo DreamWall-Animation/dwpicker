@@ -143,8 +143,10 @@ class PickerEditor(QtWidgets.QWidget):
         return QtCore.QSize(1300, 750)
 
     def paste(self):
-        clipboad_copy = [s.copy() for s in clipboard.get()]
-        self.document.add_shapes(clipboad_copy)
+        clipboad_copy = [deepcopy(s) for s in clipboard.get()]
+        shapes = self.document.add_shapes(clipboad_copy)
+        self.shape_editor.selection.replace(shapes)
+        self.shape_editor.update_selection()
         self.document.record_undo()
         self.document.shapes_changed.emit()
 
@@ -155,9 +157,10 @@ class PickerEditor(QtWidgets.QWidget):
         settings = clipboard.get_settings()
         settings = {k: v for k, v in settings.items() if k in dialog.settings}
         for shape in self.shape_editor.selection:
-            shape.options.update(settings)
+            shape.options.update(deepcopy(settings))
             shape.rect = get_shape_rect_from_options(shape.options)
             shape.synchronize_image()
+            shape.update_path()
         self.document.record_undo()
         self.document.shapes_changed.emit()
         self.selection_changed()
@@ -256,22 +259,33 @@ class PickerEditor(QtWidgets.QWidget):
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
 
+    def create_shapes(self, targets, use_clipboard_data=False):
+        shapes = []
+        for target in targets:
+            template = deepcopy(BUTTON)
+            if use_clipboard_data:
+                template.update(deepcopy(clipboard.get_settings()))
+            template['action.targets'] = [target]
+            shapes.append(Shape(template))
+        self.shape_editor.drag_shapes = shapes
+
     def create_shape(
             self, template, before=False, position=None, targets=None,
             image=False):
 
-        options = template.copy()
+        options = deepcopy(template)
         options['panel'] = max((self.shape_editor.current_panel, 0))
-        filename = get_image_path(self, "Select background image.")
-        if filename and image:
-            filename = format_path(filename)
-            options['image.path'] = filename
-            qimage = QtGui.QImage(filename)
-            options['image.width'] = qimage.size().width()
-            options['image.height'] = qimage.size().height()
-            options['shape.width'] = qimage.size().width()
-            options['shape.height'] = qimage.size().height()
-            options['bgcolor.transparency'] = 255
+        if image:
+            filename = get_image_path(self, "Select background image.")
+            if filename:
+                filename = format_path(filename)
+                options['image.path'] = filename
+                qimage = QtGui.QImage(filename)
+                options['image.width'] = qimage.size().width()
+                options['image.height'] = qimage.size().height()
+                options['shape.width'] = qimage.size().width()
+                options['shape.height'] = qimage.size().height()
+                options['bgcolor.transparency'] = 255
 
         shape = Shape(options)
         if not position:
@@ -440,10 +454,11 @@ class PickerEditor(QtWidgets.QWidget):
         targets = cmds.ls(selection=True)
         button = QtWidgets.QAction('Add selection button', self)
         method = partial(
-            self.create_shape, BUTTON.copy(),
+            self.create_shape, deepcopy(BUTTON),
             position=position, targets=targets)
         button.triggered.connect(method)
-        template = BUTTON.copy()
+
+        template = deepcopy(BUTTON)
         template.update(clipboard.get_settings())
         method = partial(
             self.create_shape, template,
@@ -452,18 +467,29 @@ class PickerEditor(QtWidgets.QWidget):
         button2 = QtWidgets.QAction(text, self)
         button2.triggered.connect(method)
 
+        button3 = QtWidgets.QAction('Add selection multiple buttons', self)
+        button3.triggered.connect(partial(self.create_shapes, targets))
+        button3.setEnabled(len(targets) > 1)
+
+        text = 'Add selection multiple buttons (using settings clipboard)'
+        button4 = QtWidgets.QAction(text, self)
+        button4.triggered.connect(partial(self.create_shapes, targets, True))
+        button4.setEnabled(len(targets) > 1)
+
         cursor = get_cursor(self.shape_editor)
         s = self.shape_editor.get_hovered_shape(cursor)
         method = partial(self.update_targets, s)
         text = 'Update targets'
-        button3 = QtWidgets.QAction(text, self)
-        button3.setEnabled(bool(s))
-        button3.triggered.connect(method)
+        button5 = QtWidgets.QAction(text, self)
+        button5.setEnabled(bool(s))
+        button5.triggered.connect(method)
 
         menu = QtWidgets.QMenu()
         menu.addAction(button)
         menu.addAction(button2)
         menu.addAction(button3)
+        menu.addAction(button4)
+        menu.addAction(button5)
         menu.addSection('Visibility Layers')
 
         layers = sorted(list({

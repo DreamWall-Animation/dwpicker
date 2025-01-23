@@ -1,5 +1,6 @@
 
 import uuid
+from copy import deepcopy
 from collections import defaultdict
 from PySide2 import QtCore
 from dwpicker.shape import Shape
@@ -42,7 +43,7 @@ class PickerDocument(QtCore.QObject):
     @staticmethod
     def create():
         data = {
-            'general': PICKER.copy(),
+            'general': deepcopy(PICKER),
             'shapes': []}
         return PickerDocument(data)
 
@@ -97,6 +98,7 @@ class PickerDocument(QtCore.QObject):
             self.data['shapes'].extend(shapes_data)
 
         self.sync_shapes_caches()
+        return shapes
 
     def remove_shapes(self, shapes):
         removed_ids = [shape.options['id'] for shape in shapes]

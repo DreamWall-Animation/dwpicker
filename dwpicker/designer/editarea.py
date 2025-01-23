@@ -2,6 +2,7 @@ from functools import partial
 from PySide2 import QtCore, QtGui, QtWidgets
 from maya import cmds
 
+from dwpicker.align import align_shapes_on_line
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.optionvar import (
@@ -38,6 +39,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         method = partial(self.update_selection, False)
         self.document.data_changed.connect(method)
 
+        self.drag_shapes = []
         self.viewportmapper = ViewportMapper()
         self.viewportmapper.viewsize = self.size()
 
@@ -112,6 +114,16 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
+        if self.drag_shapes and event.button() == QtCore.Qt.LeftButton:
+            pos = self.viewportmapper.to_units_coords(event.pos())
+            align_shapes_on_line(self.drag_shapes, pos, pos)
+            self.interaction_manager.update(
+                event,
+                pressed=True,
+                has_shape_hovered=False,
+                dragging=bool(self.drag_shapes))
+            self.update()
+            return
 
         cursor = self.viewportmapper.to_units_coords(get_cursor(self))
         hovered_shape = self.get_hovered_shape(cursor)
@@ -163,6 +175,14 @@ class ShapeEditArea(QtWidgets.QWidget):
         cursor = self.viewportmapper.to_units_coords(get_cursor(self)).toPoint()
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
+            if self.drag_shapes:
+                point1 = self.viewportmapper.to_units_coords(
+                    self.interaction_manager.anchor)
+                point2 = self.viewportmapper.to_units_coords(event.pos())
+                align_shapes_on_line(self.drag_shapes, point1, point2)
+                self.increase_undo_on_release = True
+                return self.update()
+
             rect = self.manipulator.rect
             if self.transform.direction:
                 self.transform.resize(self.selection.shapes, cursor)
@@ -202,6 +222,9 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.interaction_manager.update(event, pressed=False)
             return
 
+        if self.drag_shapes:
+            self.add_drag_shapes()
+
         if self.increase_undo_on_release:
             self.document.record_undo()
             self.document.shapes_changed.emit()
@@ -219,11 +242,17 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def visible_shapes(self):
         if not self.isolate or self.current_panel < 0:
-            return self.document.shapes
+            return self.document.shapes[:]
 
         return [
             s for s in self.document.shapes if
             s.options['panel'] == self.current_panel]
+
+    def add_drag_shapes(self):
+        shapes_data = [s.options for s in self.drag_shapes]
+        self.document.add_shapes(shapes_data)
+        self.document.shapes_changed.emit()
+        self.drag_shapes = []
 
     def select_shapes(self):
         shapes = [
@@ -291,7 +320,11 @@ class ShapeEditArea(QtWidgets.QWidget):
             rect = get_shapes_bounding_rects(current_panel_shapes)
             draw_current_panel(painter, rect, self.viewportmapper)
 
-        for shape in self.visible_shapes():
+        shapes = self.visible_shapes()
+        if self.interaction_manager.left_click_pressed:
+            shapes.extend(self.drag_shapes)
+
+        for shape in shapes:
             draw_shape(
                 painter, shape,
                 draw_selected_state=False,

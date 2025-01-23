@@ -7,15 +7,16 @@
 - Constrain manipulator minimum size.
 - https://github.com/DreamWall-Animation/dwpicker/issues/129
 - add Background image from editor.
+- add multiple shapes from editor.
 
 -- TODO --
 
 - Hierarchy system.
 - Unifiy checkers widget in table views.
-- add multiple shapes from editor.
 - install module with drag and drop into maya.
 - No requires selection to edit buttons in picker view.
 - Improve custom path editor
 - PySide6 in parrallel branch.
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
 - Documentation.
+- Optimize QPainterPath computing

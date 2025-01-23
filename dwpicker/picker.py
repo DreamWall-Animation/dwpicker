@@ -5,12 +5,13 @@ from maya import cmds
 import maya.OpenMaya as om
 from PySide2 import QtWidgets, QtGui, QtCore
 
+from dwpicker.align import align_shapes_on_line
 from dwpicker.compatibility import ensure_general_options_sanity
 from dwpicker.document import PickerDocument
 from dwpicker.dialog import warning, CommandEditorDialog
 from dwpicker.interactive import SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
-from dwpicker.geometry import split_line, get_combined_rects
+from dwpicker.geometry import get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     save_optionvar, DEFAULT_BG_COLOR, DEFAULT_TEXT_COLOR, DEFAULT_WIDTH,
@@ -19,7 +20,8 @@ from dwpicker.optionvar import (
 from dwpicker.painting import (
     draw_shape, draw_selection_square, draw_picker_focus)
 from dwpicker.qtutils import get_cursor, clear_layout
-from dwpicker.shape import Shape, cursor_in_shape, rect_intersects_shape
+from dwpicker.shape import (
+    build_multiple_shapes, cursor_in_shape, rect_intersects_shape)
 from dwpicker.stack import create_stack_splitters, count_panels
 from dwpicker.selection import (
     select_targets, select_shapes_from_selection, get_selection_mode,
@@ -36,14 +38,6 @@ QSplitter::handle {
     height: 2px;
 }
 """
-
-
-def align_shapes_on_line(shapes, point1, point2):
-    centers = split_line(point1, point2, len(shapes))
-    for center, shape in zip(centers, shapes):
-        shape.rect.moveCenter(center)
-        shape.synchronize_rect()
-        shape.update_path()
 
 
 def set_shapes_hovered(
@@ -169,7 +163,7 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.adjust_center(event.size(), event.oldSize())
 
     def copy_pickers(self):
-        self.pickers = [p.copy() for p in self.pickers]
+        self.pickers = [deepcopy(p) for p in self.pickers]
         for picker in self.pickers:
             picker.size_event_triggered.connect(self.picker_resized)
 
@@ -295,9 +289,9 @@ class PickerPanelView(QtWidgets.QWidget):
             s for s in self.visible_shapes() if
             s.options['shape.space'] == 'world' and not
             s.options['ignored_by_focus']]
-        shapes_rects = [s.rect for s in shapes if s.selected]
+        shapes_rects = [s.bounding_rect() for s in shapes if s.selected]
         if not shapes_rects:
-            shapes_rects = [s.rect for s in shapes]
+            shapes_rects = [s.bounding_rect() for s in shapes]
         if not shapes_rects:
             self.update()
             return
@@ -468,6 +462,7 @@ class PickerPanelView(QtWidgets.QWidget):
                 self.interaction_manager.anchor)
             point2 = self.viewportmapper.to_units_coords(event.pos())
             align_shapes_on_line(self.drag_shapes, point1, point2)
+            return self.update()
 
         elif self.interaction_manager.mode == InteractionManager.SELECTION:
             if not self.selection_square.handeling:
@@ -585,7 +580,7 @@ class PickerPanelView(QtWidgets.QWidget):
             self.drag_shapes = shapes
             return
 
-        shape_data = BUTTON.copy()
+        shape_data = deepcopy(BUTTON)
         shape_data['panel'] = self.panel
         shape_data['shape.left'] = position.x()
         shape_data['shape.top'] = position.y()
@@ -656,15 +651,6 @@ class PickerPanelView(QtWidgets.QWidget):
             # TODO: log the error
         finally:
             painter.end()
-
-
-def build_multiple_shapes(targets, override):
-    shapes = [BUTTON.copy() for _ in range(len(targets))]
-    for shape, target in zip(shapes, targets):
-        if override:
-            shape.update(override)
-        shape['action.targets'] = [target]
-    return [Shape(shape) for shape in shapes]
 
 
 class CommandAction(QtWidgets.QAction):

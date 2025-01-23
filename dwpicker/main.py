@@ -2,6 +2,7 @@
 import os
 import json
 import webbrowser
+from copy import deepcopy
 from functools import partial
 
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -576,7 +577,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
     def call_new(self):
         self.add_picker({
-            'general': PICKER.copy(),
+            'general': deepcopy(PICKER),
             'shapes': []})
         self.store_local_pickers_data()
 
@@ -716,7 +717,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             return
 
         filename = format_path(filename)
-        shape = BACKGROUND.copy()
+        shape = deepcopy(BACKGROUND)
         shape['image.path'] = filename
         image = QtGui.QImage(filename)
         shape['image.width'] = image.size().width()

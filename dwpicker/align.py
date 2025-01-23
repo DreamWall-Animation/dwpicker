@@ -96,6 +96,14 @@ def arrange_vertical(shapes):
         shape.update_path()
 
 
+def align_shapes_on_line(shapes, point1, point2):
+    centers = split_line(point1, point2, len(shapes))
+    for center, shape in zip(centers, shapes):
+        shape.rect.moveCenter(center)
+        shape.synchronize_rect()
+        shape.update_path()
+
+
 _direction_matches = {
     'left': align_left,
     'h_center': align_h_center,

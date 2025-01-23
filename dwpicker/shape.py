@@ -1,3 +1,4 @@
+from copy import deepcopy
 from PySide2 import QtCore, QtGui
 from dwpicker.geometry import proportional_rect
 from dwpicker.languages import execute_code, EXECUTION_WARNING
@@ -6,7 +7,17 @@ from dwpicker.selection import select_targets
 from dwpicker.shapepath import (
     get_shape_painter_path, get_screenspace_qpath, get_absolute_path,
     get_default_path, get_worldspace_qpath)
+from dwpicker.templates import BUTTON
 from dwpicker.viewport import to_screenspace_coords
+
+
+def build_multiple_shapes(targets, override):
+    shapes = [deepcopy(BUTTON) for _ in range(len(targets))]
+    for shape, target in zip(shapes, targets):
+        if override:
+            shape.update(override)
+        shape['action.targets'] = [target]
+    return [Shape(shape) for shape in shapes]
 
 
 def rect_intersects_shape(

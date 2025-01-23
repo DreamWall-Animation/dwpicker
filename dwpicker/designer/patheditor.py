@@ -321,6 +321,8 @@ class PathEditorCanvas(QtWidgets.QWidget):
             return
 
         rect = get_global_rect(points)
+        rect.setHeight(max(rect.height(), .5))
+        rect.setWidth(max(rect.width(), .5))
         self.manipulator.set_rect(rect)
 
     def wheelEvent(self, event):
