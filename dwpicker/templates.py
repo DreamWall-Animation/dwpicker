@@ -1,13 +1,58 @@
 from dwpicker.appinfos import VERSION
 
 
+SHAPE_BUTTON = {
+    'background': False,
+    'visibility_layer': None,
+    'ignored_by_focus': False,
+    'panel': 0,
+    'shape': 'custom',  # or round or rounded_rect or custom
+    'shape.space': 'world',  # or screen
+    'shape.anchor': 'top_left',  # or bottom_left, top_right, bottom_right
+    'shape.path' : [],
+    'shape.left': 0.0,
+    'shape.top': 0.0,
+    'shape.width': 120.0,
+    'shape.height': 25.0,
+    'shape.cornersx': 4,
+    'shape.cornersy': 4,
+    'border': False,
+    'borderwidth.normal': 1.0,
+    'borderwidth.hovered': 1.25,
+    'borderwidth.clicked': 2,
+    'bordercolor.normal': '#000000',
+    'bordercolor.hovered': '#393939',
+    'bordercolor.clicked': '#FFFFFF',
+    'bordercolor.transparency': 0,
+    'bgcolor.normal': '#FFFD55',
+    'bgcolor.hovered': '#AAAAAA',
+    'bgcolor.clicked': '#DDDDDD',
+    'bgcolor.transparency': 0,
+    'text.content': '',
+    'text.size': 12,
+    'text.bold': False,
+    'text.italic': False,
+    'text.color': '#FFFFFF',
+    'text.valign': 'center',  # or 'top' or bottom
+    'text.halign': 'center',  # or 'left' or 'right'
+    'action.targets': [],
+    'action.commands': [],
+    'action.menu_commands': [],
+    'image.path': '',
+    'image.fit': True,
+    'image.ratio': True,
+    'image.height': 32,
+    'image.width': 32
+}
+
+
 BUTTON = {
     'background': False,
     'visibility_layer': None,
     'ignored_by_focus': False,
     'panel': 0,
     'shape': 'square',  # or round or rounded_rect or custom
-    'shape.space': 'world',
+    'shape.space': 'world',  # or screen
     'shape.anchor': 'top_left',  # or bottom_left, top_right, bottom_right
     'shape.path' : [],
     'shape.left': 0.0,

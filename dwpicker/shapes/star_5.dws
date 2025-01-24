@@ -1,0 +1,90 @@
+[
+  {
+    "point": [
+      0.0,
+      -45.25
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -13.574999999999932,
+      -13.575000000000387
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -45.25,
+      -13.575000000000387
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -18.10000000000018,
+      9.049999999999642
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -27.149999999999807,
+      45.25
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      0.0,
+      22.625
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      27.149999999999935,
+      45.25
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      18.100000000000094,
+      9.049999999999642
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      45.25,
+      -13.575000000000387
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      13.575000000000031,
+      -13.575000000000387
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      0.0,
+      -45.25
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  }
+]

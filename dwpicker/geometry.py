@@ -233,6 +233,18 @@ def proportional_rect(rect, percent=None):
     return QtCore.QRectF(left, top, width, height)
 
 
+def resize_rect_with_ratio(rect, reference_rect_output):
+    ratio = rect.width() / rect.height()
+    width = reference_rect_output.width()
+    height = reference_rect_output.width() / ratio
+    if reference_rect_output.height() < height:
+        width = reference_rect_output.height() * ratio
+        height = reference_rect_output.height()
+    rect = QtCore.QRectF(0, 0, width, height)
+    rect.moveCenter(reference_rect_output.center())
+    return rect
+
+
 def get_shapes_bounding_rects(shapes):
     rects = [
         shape.rect if shape.options['shape'] != 'custom' else

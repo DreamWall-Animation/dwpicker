@@ -12,13 +12,15 @@
 - Improve custom path editor ergonomy
 - Import export custom shape.path
 - install module with drag and drop into maya.
+- Add path library.
 
 -- TODO --
 
-- Hierarchy system.
 - No requires selection to edit buttons in picker view.
-- Add path library
-- PySide6 in parrallel branch.
+- Toggle panels system
+- Hierarchy system.
+- Image with custom and shape.fit == False seems failing
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
 - Documentation.
 - Optimize QPainterPath computing
+- PySide6 in parrallel branch.

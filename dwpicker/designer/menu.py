@@ -14,6 +14,7 @@ class MenuWidget(QtWidgets.QWidget):
     addTextRequested = QtCore.Signal()
     alignRequested = QtCore.Signal(str)
     arrangeRequested = QtCore.Signal(str)
+    buttonLibraryRequested = QtCore.Signal(QtCore.QPoint)
     centerValuesChanged = QtCore.Signal(int, int)
     copyRequested = QtCore.Signal()
     copySettingsRequested = QtCore.Signal()
@@ -100,6 +101,10 @@ class MenuWidget(QtWidgets.QWidget):
         self.snap.toggled.connect(self.snapx.setEnabled)
         self.snap.toggled.connect(self.snapy.setEnabled)
 
+        icon_ = icon('addshape.png')
+        self.call_library = QtWidgets.QAction(icon_, '', self)
+        self.call_library.setToolTip('Add button')
+        self.call_library.triggered.connect(self._call_library)
         icon_ = icon('addbutton.png')
         self.addbutton = QtWidgets.QAction(icon_, '', self)
         self.addbutton.setToolTip('Add button')
@@ -194,6 +199,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addWidget(self.snapx)
         self.toolbar.addWidget(self.snapy)
         self.toolbar.addSeparator()
+        self.toolbar.addAction(self.call_library)
         self.toolbar.addAction(self.addbutton)
         self.toolbar.addAction(self.addtext)
         self.toolbar.addAction(self.addbg)
@@ -220,6 +226,11 @@ class MenuWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.toolbar)
 
         self.load_ui_states()
+
+    def _call_library(self):
+        rect = self.toolbar.actionGeometry(self.call_library)
+        point = self.toolbar.mapToGlobal(rect.bottomLeft())
+        self.buttonLibraryRequested.emit(point)
 
     def load_ui_states(self):
         self.snap.setChecked(cmds.optionVar(query=SNAP_ITEMS))

@@ -18,8 +18,9 @@ from dwpicker.optionvar import BG_LOCKED, TRIGGER_REPLACE_ON_MIRROR
 from dwpicker.path import format_path
 from dwpicker.qtutils import set_shortcut, get_cursor
 from dwpicker.shape import Shape, get_shape_rect_from_options
+from dwpicker.shapelibrary import ShapeLibraryMenu
 from dwpicker.stack import count_panels
-from dwpicker.templates import BUTTON, TEXT, BACKGROUND
+from dwpicker.templates import BUTTON, TEXT, BACKGROUND, SHAPE_BUTTON
 
 from dwpicker.designer.editarea import ShapeEditArea
 from dwpicker.designer.menu import MenuWidget
@@ -48,6 +49,10 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_editor.set_lock_background_shape(bg_locked)
         self.shape_editor.selectedShapesChanged.connect(self.selection_changed)
 
+        self.shape_library_menu = ShapeLibraryMenu(self)
+        self.shape_library_menu.path_selected.connect(
+            self.create_library_shape)
+
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
         self.menu.copySettingsRequested.connect(self.copy_settings)
@@ -56,6 +61,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.pasteRequested.connect(self.paste)
         self.menu.pasteSettingsRequested.connect(self.paste_settings)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
+        self.menu.buttonLibraryRequested.connect(self.call_library)
         self.menu.useSnapToggled.connect(self.use_snap)
         method = self.shape_editor.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
@@ -117,6 +123,10 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
         self.vlayout.addLayout(self.hlayout)
+
+    def call_library(self, point):
+        self.shape_library_menu.move(point)
+        self.shape_library_menu.show()
 
     def isolate_shapes(self, state):
         self.shape_editor.isolate = state
@@ -269,6 +279,11 @@ class PickerEditor(QtWidgets.QWidget):
             shapes.append(Shape(template))
         self.shape_editor.drag_shapes = shapes
 
+    def create_library_shape(self, path):
+        options = deepcopy(SHAPE_BUTTON)
+        options['shape.path'] = deepcopy(path)
+        self.create_shape(options)
+
     def create_shape(
             self, template, before=False, position=None, targets=None,
             image=False):
@@ -291,7 +306,10 @@ class PickerEditor(QtWidgets.QWidget):
         if not position:
             center = self.shape_editor.rect().center()
             center = self.shape_editor.viewportmapper.to_units_coords(center)
-            shape.rect.moveCenter(center)
+            if not options['shape.path']:
+                shape.rect.moveCenter(center)
+            else:
+                shape.rect.moveTopLeft(center - shape.bounding_rect().center())
         else:
             tl = self.shape_editor.viewportmapper.to_units_coords(position)
             shape.rect.moveTopLeft(tl)
