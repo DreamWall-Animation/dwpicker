@@ -34,6 +34,8 @@ class PathEditor(QtWidgets.QWidget):
         super(PathEditor, self).__init__(parent)
         self.setWindowTitle('Shape path editor')
         self.buffer_path = None
+        self.rotate_center = None
+
         self.canvas = PathEditorCanvas()
         self.canvas.pathEdited.connect(self.pathEdited.emit)
 
@@ -154,21 +156,40 @@ class PathEditor(QtWidgets.QWidget):
 
     def start_rotate(self):
         self.buffer_path = deepcopy(self.canvas.path)
+        if not self.canvas.selection:
+            self.rotate_center = (0, 0)
+        elif len(self.canvas.selection) == 1:
+            index = self.canvas.selection[0]
+            self.rotate_center = self.buffer_path[index]['point']
+        else:
+            point = self.canvas.manipulator.rect.center()
+            self.rotate_center = point.toTuple()
 
     def end_rotate(self):
         self.buffer_path = None
+        self.rotate_center = None
         self.pathEdited.emit()
         self.angle.blockSignals(True)
         self.angle.setValue(0)
         self.angle.blockSignals(False)
 
     def rotate(self, value):
+        if self.buffer_path is None:
+            self.start_rotate()
+
         step_size = self.angle_step.value()
         value = round(value / step_size) * step_size
-        path = rotate_path(self.buffer_path, value, (0, 0))
-
+        if 1 < len(self.canvas.selection):
+            path = deepcopy(self.buffer_path)
+            points = [self.buffer_path[i] for i in self.canvas.selection]
+            rotated_path = rotate_path(points, value, self.rotate_center)
+            for i, point in zip(self.canvas.selection, rotated_path):
+                path[i] = point
+        else:
+            path = rotate_path(self.buffer_path, value, self.rotate_center)
         if path is None:
             return
+
         self.canvas.path = path
         if self.canvas.selection:
             points = [

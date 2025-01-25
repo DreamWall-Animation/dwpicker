@@ -19,12 +19,13 @@
 - Auto select created shape
 - Fix mirror shape path
 - Add center shape path
+- Rotate selected points
 
 -- TODO --
 
-- Rotate selected points
 - No requires selection to edit buttons in picker view.
 - Image with custom and shape.fit == False seems failing
+
 - Toggle panels system
 - Optimize QPainterPath computing
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
