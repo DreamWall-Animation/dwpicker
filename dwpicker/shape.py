@@ -213,17 +213,18 @@ class Shape():
                 self.rect.top(),
                 self.options['image.width'],
                 self.options['image.height'])
-            self.image_rect.moveCenter(self.rect.center())
+            print(self.bounding_rect().center())
+            self.image_rect.moveCenter(self.bounding_rect().center())
             return
+        rect = self.bounding_rect()
         ratio = self.options['image.width'] / self.options['image.height']
-        width = self.options['shape.width']
-        height = self.options['shape.width'] / ratio
-        if self.options['shape.height'] < height:
-            width = self.options['shape.height'] * ratio
-            height = self.options['shape.height']
-        self.image_rect = QtCore.QRectF(
-            self.rect.left(), self.rect.top(), width, height)
-        self.image_rect.moveCenter(self.rect.center())
+        width = rect.width()
+        height = rect.width() / ratio
+        if rect.height() < height:
+            width = rect.height() * ratio
+            height = rect.height()
+        self.image_rect = QtCore.QRectF(rect.left(), rect.top(), width, height)
+        self.image_rect.moveCenter(rect.center())
 
 
 def _find_commands(commands, button, ctrl=False, shift=False):

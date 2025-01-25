@@ -489,11 +489,13 @@ class PickerPanelView(QtWidgets.QWidget):
     def call_context_menu(self):
         if not self.editable:
             return
+
         screen_cursor = get_cursor(self)
         world_cursor = self.viewportmapper.to_units_coords(screen_cursor)
         shape = detect_hovered_shape(
             self.visible_shapes(), world_cursor, screen_cursor,
             self.viewportmapper)
+
         global_commands = self.document.data['general']['menu_commands']
         context_menu = PickerMenu(global_commands, shape)
 

@@ -20,11 +20,10 @@
 - Fix mirror shape path
 - Add center shape path
 - Rotate selected points
+- Image with custom and image.fit == False seems failing
 
 -- TODO --
 
-- No requires selection to edit buttons in picker view.
-- Image with custom and shape.fit == False seems failing
 
 - Toggle panels system
 - Optimize QPainterPath computing
