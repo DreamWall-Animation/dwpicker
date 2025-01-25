@@ -37,6 +37,12 @@ class PathEditor(QtWidgets.QWidget):
         self.canvas = PathEditorCanvas()
         self.canvas.pathEdited.connect(self.pathEdited.emit)
 
+        export_path = QtWidgets.QAction(icon('save.png'), 'Export path', self)
+        export_path.triggered.connect(self.export_path)
+
+        import_path = QtWidgets.QAction(icon('open.png'), 'Import path', self)
+        import_path.triggered.connect(self.import_path)
+
         delete = QtWidgets.QAction(icon('delete.png'), 'Delete vertex', self)
         delete.triggered.connect(self.canvas.delete)
 
@@ -56,11 +62,11 @@ class PathEditor(QtWidgets.QWidget):
             icon('v_symmetry.png'), 'Mirror vertically', self)
         vsymmetry.triggered.connect(partial(self.canvas.symmetry, False))
 
-        export_path = QtWidgets.QAction(icon('save.png'), 'Export path', self)
-        export_path.triggered.connect(self.export_path)
-
-        import_path = QtWidgets.QAction(icon('open.png'), 'Import path', self)
-        import_path.triggered.connect(self.import_path)
+        center_path = QtWidgets.QAction(
+            icon('frame.png'), 'Center path', self)
+        center_path.triggered.connect(partial(self.canvas.center_path))
+        center_path_button = QtWidgets.QToolButton()
+        center_path_button.setDefaultAction(center_path)
 
         self.angle = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.angle.setMinimum(0)
@@ -101,6 +107,7 @@ class PathEditor(QtWidgets.QWidget):
 
         toolbar3 = QtWidgets.QHBoxLayout()
         toolbar3.setContentsMargins(0, 0, 0, 0)
+        toolbar3.addWidget(center_path_button)
         toolbar3.addStretch()
         toolbar3.addWidget(QtWidgets.QLabel('Rotate: '))
         toolbar3.addWidget(self.angle)
@@ -391,11 +398,7 @@ class PathEditorCanvas(QtWidgets.QWidget):
                 indexes.append(i)
                 points.append(point)
         self.selection.set(indexes)
-
-        points = [
-            QtCore.QPointF(*self.path[i]['point'])
-            for i in self.selection]
-        self.update_manipulator_rect(points)
+        self.update_manipulator_rect()
 
     def update_manipulator_rect(self, points=None):
         if points is None:
@@ -471,6 +474,14 @@ class PathEditorCanvas(QtWidgets.QWidget):
         finally:
             painter.end()
 
+    def center_path(self):
+        qpath = path_to_qpath(self.path, ViewportMapper())
+        center = qpath.boundingRect().center()
+        offset_path(self.path, -center)
+        self.pathEdited.emit()
+        self.update_manipulator_rect()
+        self.update()
+
     def delete(self):
         if len(self.path) - len(self.selection) < 3:
             return QtWidgets.QMessageBox.critical(
@@ -523,7 +534,7 @@ class PathEditorCanvas(QtWidgets.QWidget):
         self.viewportmapper.focus(grow_rect(rect, 15))
         self.update()
 
-    def symmetry(self, horizontal=False):
+    def symmetry(self, horizontal=True):
         path = (
             [self.path[i] for i in self.selection] if
             self.selection else self.path)
@@ -599,8 +610,7 @@ class PointSelection():
         return self.elements.__iter__()
 
 
-
-def painter_path(path, viewportmapper):
+def path_to_qpath(path, viewportmapper):
     painter_path = QtGui.QPainterPath()
     start = QtCore.QPointF(*path[0]['point'])
     painter_path.moveTo(viewportmapper.to_viewport_coords(start))
@@ -619,7 +629,7 @@ def painter_path(path, viewportmapper):
 
 def draw_shape_path(painter, path, selection, viewportmapper):
     painter.setPen(QtCore.Qt.gray)
-    painter.drawPath(painter_path(path, viewportmapper))
+    painter.drawPath(path_to_qpath(path, viewportmapper))
     rect = QtCore.QRectF(0, 0, 5, 5)
     for i, point in enumerate(path):
         center = QtCore.QPointF(*point['point'])

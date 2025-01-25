@@ -181,6 +181,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.arrange_vertical.setToolTip('Distribute vertically')
 
         self.toolbar = QtWidgets.QToolBar()
+        self.toolbar.setIconSize(QtCore.QSize(24, 24))
         self.toolbar.addAction(self.delete)
         self.toolbar.addAction(self.copy)
         self.toolbar.addAction(self.paste)

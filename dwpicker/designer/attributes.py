@@ -86,7 +86,7 @@ class AttributeEditor(QtWidgets.QWidget):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.tab)
 
-        self.setFixedWidth(self.sizeHint().width() * 1.075)
+        self.setFixedWidth(self.sizeHint().width() * 1.05)
 
     def panel_selected(self, panel):
         self.panelSelected.emit(panel - 1)

@@ -316,15 +316,16 @@ def rect_top_left_symmetry(rect, point, horizontal=True):
     return rect
 
 
-def path_symmetry(path, horizontal=True):
+def path_symmetry(path, center=None, horizontal=True):
+    center = center or QtCore.QPointF(0, 0)
     for point in path:
         for key in ['point', 'tangent_in', 'tangent_out']:
             if point[key] is None:
                 continue
             if horizontal:
-                point[key][0] = -point[key][0]
+                point[key][0] = center.x() - (point[key][0] - center.x())
             else:
-                point[key][1] = -point[key][1]
+                point[key][1] = center.y() - (point[key][1] - center.y())
 
 
 def split_line(point1, point2, step_number):

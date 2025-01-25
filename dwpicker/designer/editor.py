@@ -42,6 +42,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.document.shapes_changed.connect(self.update)
         self.document.general_option_changed.connect(self.generals_modified)
         self.document.data_changed.connect(self.update)
+        self.document.data_changed.connect(self.selection_changed)
 
         self.shape_editor = ShapeEditArea(self.document)
         self.shape_editor.callContextMenu.connect(self.call_context_menu)
@@ -318,9 +319,12 @@ class PickerEditor(QtWidgets.QWidget):
 
         shape.synchronize_rect()
         shape.update_path()
-        self.document.add_shapes([shape.options], prepend=before)
+        shapes = self.document.add_shapes([shape.options], prepend=before)
         self.document.shapes_changed.emit()
         self.document.record_undo()
+        self.shape_editor.selection.replace(shapes)
+        self.selection_changed()
+        self.update_manipulator_rect()
 
     def update_targets(self, shape):
         shape.set_targets(cmds.ls(selection=True))

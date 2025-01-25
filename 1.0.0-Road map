@@ -16,15 +16,18 @@
 - Fix selection on Edit shape canvas (add selection fails)
 - Update selection manipulator after shape rotation
 - Implement selections mode in shape.path canvas
+- Auto select created shape
+- Fix mirror shape path
+- Add center shape path
 
 -- TODO --
 
-- Add center shape
+- Rotate selected points
 - No requires selection to edit buttons in picker view.
-- Toggle panels system
-- Hierarchy system.
 - Image with custom and shape.fit == False seems failing
-- https://github.com/DreamWall-Animation/dwpicker/issues/130
-- Documentation.
+- Toggle panels system
 - Optimize QPainterPath computing
+- https://github.com/DreamWall-Animation/dwpicker/issues/130
+- Hierarchy system.
+- Documentation.
 - PySide6 in parrallel branch.

@@ -250,9 +250,11 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def add_drag_shapes(self):
         shapes_data = [s.options for s in self.drag_shapes]
-        self.document.add_shapes(shapes_data)
+        shapes = self.document.add_shapes(shapes_data)
         self.document.shapes_changed.emit()
         self.drag_shapes = []
+        self.selection.replace(shapes)
+        self.update_selection()
 
     def select_shapes(self):
         shapes = [
