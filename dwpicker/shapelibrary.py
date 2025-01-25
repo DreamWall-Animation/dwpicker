@@ -13,11 +13,16 @@ from dwpicker.viewport import ViewportMapper
 SHAPES = (
     ('fat_arrow.dws', [0.0, 90, 180, 270]),
     ('thin_arrow.dws', [0.0, 90, 180, 270]),
+    ('tailess_arrow.dws', [0.0, 90, 180, 270]),
+    ('double_arrow.dws', [0.0, 90]),
     ('diamond.dws', [0.0]),
     ('pie.dws', [0.0, 90, 180, 270]),
     ('half_circle.dws', [0.0, 90, 180, 270]),
     ('star_5.dws', [0.0, 180.0]),
     ('star_6.dws', [0.0, 90.0]),
+    ('hexagon.dws', [0.0, 90.0]),
+    ('cross_arrow.dws', [0.0]),
+    ('cross.dws', [0.0]),
 )
 
 

@@ -1,0 +1,50 @@
+[
+  {
+    "point": [
+      45.0,
+      0.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      22.500000000000004,
+      38.97114317029974
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -22.49999999999999,
+      38.97114317029974
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -45.0,
+      5.5109105961630896e-15
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -22.50000000000002,
+      -38.97114317029973
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      22.49999999999997,
+      -38.971143170299754
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  }
+]

@@ -16,6 +16,8 @@
 
 -- TODO --
 
+- Fix selection on Edit shape canvas (add selection fails)
+- Implement selections mode in shape.path canvas
 - No requires selection to edit buttons in picker view.
 - Toggle panels system
 - Hierarchy system.

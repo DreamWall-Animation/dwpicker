@@ -1,0 +1,98 @@
+[
+  {
+    "point": [
+      -4.0,
+      -13.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -4.0,
+      -4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -13.0,
+      -4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -13.0,
+      4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -4.0,
+      4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      -4.0,
+      13.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      4.0,
+      13
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      4.0,
+      4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      13.0,
+      4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      13,
+      -4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      4.0,
+      -4.0
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  },
+  {
+    "point": [
+      4.0,
+      -13
+    ],
+    "tangent_in": null,
+    "tangent_out": null
+  }
+]
