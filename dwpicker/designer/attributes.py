@@ -425,6 +425,7 @@ class ImageSettings(QtWidgets.QWidget):
         self.layout.addRow('Preserve ratio', self.ratio)
         self.layout.addRow('Width', self.width)
         self.layout.addRow('Height', self.height)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
         for label in self.findChildren(QtWidgets.QLabel):
             alignment = QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -513,6 +514,7 @@ class AppearenceSettings(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('border visible', self.border)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addRow(Title('Border width (pxf)'))
         self.layout.addRow('normal', self.borderwidth_normal)
         self.layout.addRow('hovered', self.borderwidth_hovered)
@@ -529,6 +531,7 @@ class AppearenceSettings(QtWidgets.QWidget):
         self.layout.addRow('hovered', self.backgroundcolor_hovered)
         self.layout.addRow('clicked', self.backgroundcolor_clicked)
         self.layout.addRow('transparency', self.backgroundcolor_transparency)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
         for label in self.findChildren(QtWidgets.QLabel):
             alignment = QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -595,16 +598,34 @@ class ActionSettings(QtWidgets.QWidget):
         self._targets.returnPressed.connect(self.targets_changed)
 
         self._add_targets = QtWidgets.QPushButton('Add')
+        self._add_targets.released.connect(self.call_add_targets)
+        self._add_targets.setToolTip('Add selected objects')
+        self._add_targets.setFocusPolicy(QtCore.Qt.NoFocus)
+
         self._remove_targets = QtWidgets.QPushButton('Remove')
+        self._remove_targets.released.connect(self.call_remove_targets)
+        self._remove_targets.setToolTip('Remove selected objects')
+        self._remove_targets.setFocusPolicy(QtCore.Qt.NoFocus)
+
         self._replace_targets = QtWidgets.QPushButton('Replace')
-        self._targets_layout = QtWidgets.QHBoxLayout()
+        self._replace_targets.clicked.connect(self.call_replace_targets)
+        self._replace_targets.setToolTip('Replace target by current selection')
+        self._replace_targets.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self._clear_targets = QtWidgets.QPushButton('Clear')
+        self._clear_targets.clicked.connect(self.call_clear_targets)
+        self._clear_targets.setToolTip('Clear shape targets')
+        self._clear_targets.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        _targets = QtWidgets.QWidget()
+        self._targets_layout = QtWidgets.QHBoxLayout(_targets)
+        self._targets_layout.setContentsMargins(0, 0, 0, 0)
+        self._targets_layout.setSpacing(2)
+        self._targets_layout.addStretch()
         self._targets_layout.addWidget(self._add_targets)
         self._targets_layout.addWidget(self._remove_targets)
         self._targets_layout.addWidget(self._replace_targets)
-
-        self._add_targets.clicked.connect(self.call_add_targets)
-        self._remove_targets.clicked.connect(self.call_remove_targets)
-        self._replace_targets.clicked.connect(self.call_replace_targets)
+        self._targets_layout.addWidget(self._clear_targets)
 
         self._commands = CommandsEditor()
         method = partial(self.optionSet.emit, 'action.commands')
@@ -620,13 +641,12 @@ class ActionSettings(QtWidgets.QWidget):
         form.setHorizontalSpacing(5)
         form.addRow(Title('Selection'))
         form.addRow('Targets', self._targets)
-        form.addRow('Add Selected', self._targets_layout)
+        form.addWidget(_targets)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.layout.addLayout(form)
-        self.layout.addWidget(Title('Scripts'))
-        self.layout.addWidget(self._commands)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
         for label in self.findChildren(QtWidgets.QLabel):
             alignment = QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -634,8 +654,12 @@ class ActionSettings(QtWidgets.QWidget):
                 label.setAlignment(alignment)
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
+        self.layout.addWidget(Title('Scripts'))
+        self.layout.addWidget(self._commands)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addWidget(Title('Right Click Menu'))
         self.layout.addWidget(self._menu)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
     def targets(self):
         targets = str(self._targets.text())
@@ -644,15 +668,19 @@ class ActionSettings(QtWidgets.QWidget):
         except ValueError:
             return []
 
+    def call_clear_targets(self):
+        self._targets.setText('')
+        self.targets_changed()
+
     def call_add_targets(self):
         selection = cmds.ls(selection=True, flatten=True)
         if not selection:
             return
+
         targets = self.targets()
         edits = [item for item in selection if item not in targets]
         targets = targets if targets != [''] else []
         self._targets.setText(', '.join(targets + edits))
-        self._targets.setFocus()
         self.targets_changed()
 
     def call_remove_targets(self):
@@ -662,22 +690,16 @@ class ActionSettings(QtWidgets.QWidget):
 
         targets = [item for item in self.targets() if item not in selection]
         self._targets.setText(', '.join(targets))
-        self._targets.setFocus()
         self.targets_changed()
 
     def call_replace_targets(self):
         selection = cmds.ls(selection=True, flatten=True)
         if not selection:
             return
-
         self._targets.setText(', '.join(selection))
-        self._targets.setFocus()
         self.targets_changed()
 
     def targets_changed(self):
-        if not self._targets.text():
-            self.optionSet.emit('action.targets', [])
-            return
         values = [t.strip(" ") for t in self._targets.text().split(",")]
         self.optionSet.emit('action.targets', values)
 
@@ -732,6 +754,7 @@ class TextSettings(QtWidgets.QWidget):
         self.layout.addRow(Title('Alignement'))
         self.layout.addRow('Horizontal', self.halignement)
         self.layout.addRow('Vertical', self.valignement)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
         for label in self.findChildren(QtWidgets.QLabel):
             alignment = QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

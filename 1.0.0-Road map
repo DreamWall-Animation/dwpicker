@@ -21,13 +21,12 @@
 - Add center shape path
 - Rotate selected points
 - Image with custom and image.fit == False seems failing
+- https://github.com/DreamWall-Animation/dwpicker/issues/130
 
 -- TODO --
 
-
 - Toggle panels system
 - Optimize QPainterPath computing
-- https://github.com/DreamWall-Animation/dwpicker/issues/130
 - Hierarchy system.
 - Documentation.
 - PySide6 in parrallel branch.
