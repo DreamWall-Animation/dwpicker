@@ -2,14 +2,17 @@ import os
 import json
 from copy import deepcopy
 from functools import partial
+
 from PySide2 import QtWidgets, QtCore, QtGui
+from maya import cmds
 
 from dwpicker.geometry import (
     distance, get_global_rect, grow_rect, path_symmetry)
 from dwpicker.qtutils import icon
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.interactive import SelectionSquare, Manipulator
-from dwpicker.optionvar import LAST_OPEN_DIRECTORY, save_optionvar
+from dwpicker.optionvar import (
+    LAST_OPEN_DIRECTORY, SHAPE_PATH_ROTATION_STEP_ANGLE, save_optionvar)
 from dwpicker.painting import (
     draw_selection_square, draw_manipulator, draw_tangents,
     draw_world_coordinates)
@@ -70,8 +73,10 @@ class PathEditor(QtWidgets.QWidget):
         self.angle_step.setToolTip('Step')
         self.angle_step.setMinimum(0)
         self.angle_step.setMaximum(90)
-        self.angle_step.setValue(45)
-        self.angle_step.valueChanged.connect(self.angle.setTickInterval)
+        value = cmds.optionVar(query=SHAPE_PATH_ROTATION_STEP_ANGLE)
+        self.angle_step.setValue(value)
+        function = partial(save_optionvar, SHAPE_PATH_ROTATION_STEP_ANGLE)
+        self.angle_step.valueChanged.connect(function)
 
         polygon = QtWidgets.QAction(
             icon('polygon.png'), 'Create Polygon', self)
@@ -158,14 +163,20 @@ class PathEditor(QtWidgets.QWidget):
         if path is None:
             return
         self.canvas.path = path
+        if self.canvas.selection:
+            points = [
+                QtCore.QPointF(*path[i]['point'])
+                for i in self.canvas.selection]
+            self.canvas.update_manipulator_rect(points)
         self.canvas.update()
 
     def create_polygon(self):
         edges, result = QtWidgets.QInputDialog.getInt(
             self, 'Polygon', 'Number of edges', value=3, minValue=3,
-            maxValue=15)
+            maxValue=25)
         if not result:
             return
+
         path = create_polygon_path(radius=45, n=edges)
         self.canvas.set_path(path)
         self.pathEdited.emit()
@@ -380,6 +391,10 @@ class PathEditorCanvas(QtWidgets.QWidget):
                 indexes.append(i)
                 points.append(point)
         self.selection.set(indexes)
+
+        points = [
+            QtCore.QPointF(*self.path[i]['point'])
+            for i in self.selection]
         self.update_manipulator_rect(points)
 
     def update_manipulator_rect(self, points=None):
@@ -546,9 +561,9 @@ class PointSelection():
         elif self.mode == 'remove':
             if elements is None:
                 return
-            for shape in elements:
-                if shape in self.shapes:
-                    self.remove(shape)
+            for element in elements:
+                if element in self.elements:
+                    self.remove(element)
 
     def replace(self, elements):
         self.elements = elements

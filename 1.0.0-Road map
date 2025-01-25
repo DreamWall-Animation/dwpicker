@@ -13,11 +13,13 @@
 - Import export custom shape.path
 - install module with drag and drop into maya.
 - Add path library.
+- Fix selection on Edit shape canvas (add selection fails)
+- Update selection manipulator after shape rotation
+- Implement selections mode in shape.path canvas
 
 -- TODO --
 
-- Fix selection on Edit shape canvas (add selection fails)
-- Implement selections mode in shape.path canvas
+- Add center shape
 - No requires selection to edit buttons in picker view.
 - Toggle panels system
 - Hierarchy system.

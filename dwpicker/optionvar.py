@@ -39,6 +39,7 @@ SEARCH_FIELD_INDEX = 'dwpicker_designer_search_field_index'
 SETTINGS_GROUP_TO_COPY = 'dwpicker_settings_group_to_copy'
 SETTINGS_TO_COPY = 'dwpicker_settings_to_copy'
 SHAPES_FILTER_INDEX = 'dwpicker_designer_shape_filter_index'
+SHAPE_PATH_ROTATION_STEP_ANGLE = 'dwpicker_shape_path_rotation_step_angle'
 SNAP_ITEMS = 'dwpicker_designer_snap_items'
 SNAP_GRID_X = 'dwpicker_designer_snap_x'
 SNAP_GRID_Y = 'dwpicker_designer_snap_y'
@@ -96,6 +97,7 @@ OPTIONVARS = {
     RECENT_FILES: '',
     SEARCH_FIELD_INDEX: 0,
     SHAPES_FILTER_INDEX: 0,
+    SHAPE_PATH_ROTATION_STEP_ANGLE: 15,
     SETTINGS_GROUP_TO_COPY: 'bordercolor;text;image;bgcolor;shape;borderwidth;border',
     SETTINGS_TO_COPY: (
         'bgcolor.clicked;bgcolor.hovered;bgcolor.normal;bgcolor.transparency;'

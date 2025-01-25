@@ -91,11 +91,11 @@ class Selection():
         self.ids.extend([s.options['id'] for s in shapes if s not in self])
 
     def remove(self, shape):
-        self.ids.remove(shape.options.options['id'])
+        self.ids.remove(shape.options['id'])
 
     def invert(self, shapes):
         for shape in shapes:
-            if shape.options.options['id'] not in self.ids:
+            if shape.options['id'] not in self.ids:
                 self.add([shape])
             else:
                 self.remove(shape)
