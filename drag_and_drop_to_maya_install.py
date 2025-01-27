@@ -157,8 +157,14 @@ def onMayaDroppedPythonFile(*_):
     else:
         destination = os.path.join(get_user_scripts_dir(), 'dwpicker')
         source = os.path.join(dwpicker_directory, 'dwpicker')
-        print(source)
-        print(destination)
+        if os.path.exists(destination):
+            result = QtWidgets.QMessageBox.question(
+                get_maya_window(), 'Warning',
+                ('DwPicker seems already installed,'
+                 '\nWould you like to replace it ?'))
+            if result == QtWidgets.QMessageBox.No:
+                return
+            shutil.rmtree(destination)
         shutil.copytree(source, destination)
         command = "import dwpicker;dwpicker.show()"
         icon_path = os.path.join(destination, 'icons/dreamwallpicker.png')
