@@ -96,12 +96,19 @@ def show(
 
 
 def toggle():
+    """
+    Switch the DwPicker visibility.
+    """
     if not _dwpicker:
         return show()
     _dwpicker.setVisible(not _dwpicker.isVisible())
 
 
 def close():
+    """
+    Close properly the DwPicker.
+    It unregister all DwPicker remaining callbacks.
+    """
     global _dwpicker
     if not _dwpicker:
         return

@@ -94,6 +94,22 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.reload_callbacks)
         self.preferences_window.hotkey_changed.connect(self.register_shortcuts)
 
+        self.sub_panels_view = QtWidgets.QToolButton()
+        self.sub_panels_view.setCheckable(True)
+        self.sub_panels_view.setChecked(True)
+        self.sub_panels_view.setIcon(icon("panels.png"))
+        self.sub_panels_view.setFixedSize(17, 17)
+        self.sub_panels_view.released.connect(self.update_panels_display_mode)
+        self.sub_tabs_view = QtWidgets.QToolButton()
+        self.sub_tabs_view.setCheckable(True)
+        self.sub_tabs_view.setIcon(icon("tabs.png"))
+        self.sub_tabs_view.setFixedSize(17, 17)
+        self.sub_tabs_view.released.connect(self.update_panels_display_mode)
+
+        self.panel_buttons = QtWidgets.QButtonGroup()
+        self.panel_buttons.addButton(self.sub_panels_view, 0)
+        self.panel_buttons.addButton(self.sub_tabs_view, 1)
+
         self.namespace_label = QtWidgets.QLabel("Namespace: ")
         self.namespace_combo = QtWidgets.QComboBox()
         self.namespace_combo.setMinimumWidth(200)
@@ -120,6 +136,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_layout.addWidget(self.namespace_refresh)
         self.namespace_layout.addWidget(self.namespace_picker)
         self.namespace_layout.addStretch(1)
+        self.namespace_layout.addWidget(self.sub_panels_view)
+        self.namespace_layout.addWidget(self.sub_tabs_view)
 
         self.tab = QtWidgets.QTabWidget()
         self.tab.setTabsClosable(True)
@@ -144,6 +162,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.advanced_edit.triggered.connect(self.call_edit)
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
+        self.menubar.toggle_display.triggered.connect(self.toggle_display_mode)
         method = self.change_namespace_dialog
         self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
@@ -170,6 +189,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'open': (self.call_open, self.menubar.open),
             'save': (self.call_save, self.menubar.save),
             'close': (self.close, self.menubar.exit),
+            'toggle_display': (self.toggle_display_mode, self.menubar.toggle_display),
             'undo': (self.call_undo, self.menubar.undo),
             'redo': (self.call_redo, self.menubar.redo),
             'edit': (self.call_edit, self.menubar.advanced_edit),
@@ -243,10 +263,29 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         width = max_width + 20 # padding
         self.namespace_combo.setFixedWidth(max((200, width)))
 
+    def toggle_display_mode(self):
+        index = int(not bool(self.panel_buttons.checkedId()))
+        self.panel_buttons.button(index).setChecked(True)
+        self.update_panels_display_mode()
+
+    def update_panels_display_mode(self, *_):
+        state = bool(self.panel_buttons.checkedId())
+        picker = self.tab.currentWidget()
+        if picker is None:
+            return
+
+        picker.as_sub_tab = state
+        picker.create_pickers()
+        picker.create_panels()
+        QtCore.QTimer.singleShot(10, partial(picker.reset, force_all=True))
+        picker.update()
+
     def tab_index_changed(self, index):
         if not self.pickers:
             return
         picker = self.pickers[index]
+        index = int(picker.as_sub_tab)
+        self.panel_buttons.button(index).setChecked(True)
         if not picker:
             return
         namespace = detect_picker_namespace(picker.document.shapes)
@@ -455,10 +494,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             picker.reset()
 
     def general_changed(self, origin, option):
-        if origin == 'main_window':
-            return
-        if option == 'name':
+        if option == 'name' and origin != 'main_window':
             self.update_names()
+        if option == 'panels.as_sub_tab' and origin != 'main_window':
+            index = int(self.document().data['general']['panels.as_sub_tab'])
+            self.panel_buttons.button(index).setChecked(True)
 
     def update_names(self):
         for i in range(self.tab.count()):
@@ -745,6 +785,8 @@ class DwPickerMenu(QtWidgets.QMenuBar):
 
         self.advanced_edit = QtWidgets.QAction('Advanced &editing', parent)
         self.preferences = QtWidgets.QAction('Preferences', parent)
+        text = 'Toggle panel display mode'
+        self.toggle_display = QtWidgets.QAction(text, parent)
         self.change_title = QtWidgets.QAction('Change picker title', parent)
         self.change_namespace = QtWidgets.QAction('Change namespace', parent)
         self.add_background = QtWidgets.QAction('Add background item', parent)
@@ -768,6 +810,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.redo)
         self.edit.addSeparator()
         self.edit.addAction(self.advanced_edit)
+        self.edit.addAction(self.toggle_display)
         self.edit.addAction(self.preferences)
         self.edit.addSeparator()
         self.edit.addAction(self.change_title)

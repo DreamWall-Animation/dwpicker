@@ -22,10 +22,11 @@
 - Rotate selected points
 - Image with custom and image.fit == False seems failing
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
+- Check existing installation for drag and drop local install
+- Toggle panels system
 
 -- TODO --
 
-- Toggle panels system
 - Optimize QPainterPath computing
 - Hierarchy system.
 - Documentation.

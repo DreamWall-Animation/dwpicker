@@ -80,7 +80,7 @@ OPTIONVARS = {
     DEFAULT_HOTKEYS: (
         'focus=F,1;new=CTRL+N,1;open=CTRL+O,1;save=CTRL+S,1;close=CTRL+Q,1;'
         'undo=CTRL+Z,1;redo=CTRL+Y,1;edit=CTRL+E,1;next_tab=None,0;'
-        'previous_tab=None,0'),
+        'previous_tab=None,0;toggle_display=T,1'),
     DEFAULT_WIDTH: 30,
     DISABLE_IMPORT_CALLBACKS: 1,
     DISPLAY_QUICK_OPTIONS: 1,

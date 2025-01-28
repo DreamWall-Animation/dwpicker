@@ -107,9 +107,11 @@ class PickerStackedView(QtWidgets.QWidget):
         self.editable = editable
         self.pickers = []
         self.widget = None
+
         self.layers_menu = VisibilityLayersMenu(document)
         self.layers_menu.visibilities_changed.connect(self.update)
 
+        self.as_sub_tab = document.data['general']['panels.as_sub_tab']
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setStyleSheet(SPLITTER_STYLE)
@@ -125,9 +127,9 @@ class PickerStackedView(QtWidgets.QWidget):
             picker.unregister_callbacks()
 
     def reset(self, force_all=False):
-        if not force_all and isinstance(self.widget, QtWidgets.QSplitter):
+        if not force_all and not isinstance(self.widget, QtWidgets.QTabWidget):
             for picker in self.pickers:
-                if picker.rect().contains(get_cursor(self)):
+                if picker.rect().contains(get_cursor(picker)):
                     picker.reset()
                     return
 
@@ -169,7 +171,7 @@ class PickerStackedView(QtWidgets.QWidget):
 
     def create_panels(self):
         data = self.document.data
-        if not data['general']['panels.as_sub_tab']:
+        if not self.as_sub_tab:
             panels = data['general']['panels']
             orientation = data['general']['panels.orientation']
             self.widget = create_stack_splitters(
@@ -189,15 +191,14 @@ class PickerStackedView(QtWidgets.QWidget):
             self.create_pickers()
         self.create_panels()
 
-        if isinstance(self.widget, QtWidgets.QTabWidget):
-            value = self.document.data['general']['panels.names']
-            for i, name in enumerate(value):
-                self.widget.setTabText(i, name)
-
     def general_option_changed(self, _, option):
         value = self.document.data['general'][option]
         panels = self.document.data['general']['panels']
         reset = False
+        if option == 'panels.as_sub_tab':
+            state = self.document.data['general']['panels.as_sub_tab']
+            self.as_sub_tab = state
+
         if option in ('panels', 'panels.orientation', 'panels.as_sub_tab'):
             ensure_general_options_sanity(self.document.data['general'])
             if count_panels(panels) != len(self.pickers):
@@ -208,17 +209,16 @@ class PickerStackedView(QtWidgets.QWidget):
                 reset = option in ('panels.orientation', 'panels.as_sub_tab')
             self.create_panels()
 
-        is_tab = isinstance(self.widget, QtWidgets.QTabWidget)
-        if option == 'panels.names' and is_tab:
+        if option == 'panels.names' and self.as_sub_tab:
             for i, name in enumerate(value):
                 self.widget.setTabText(i, name)
 
         if option == 'hidden_layers':
             self.layers_menu.hidden_layers = value
 
-        self.update()
         if reset:
             QtCore.QTimer.singleShot(0, partial(self.reset, force_all=True))
+        self.update()
 
     def set_auto_center(self, state):
         for picker in self.pickers:
