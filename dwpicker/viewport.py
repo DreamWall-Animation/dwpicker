@@ -70,7 +70,9 @@ class ViewportMapper():
     def to_viewport_transform(self):
         transform = QtGui.QTransform()
         transform.scale(self.zoom, self.zoom)
-        transform.translate(-self.origin.x(), -self.origin.y())
+        transform.translate(
+            self.to_units(-self.origin.x()),
+            self.to_units(-self.origin.y()))
         return transform
 
     def to_units_transform(self):

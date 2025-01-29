@@ -326,6 +326,7 @@ class PickerPanelView(QtWidgets.QWidget):
         self.update()
 
     def mousePressEvent(self, event):
+
         self.setFocus(QtCore.Qt.MouseFocusReason)
         if self.drag_shapes and event.button() == QtCore.Qt.LeftButton:
             pos = self.viewportmapper.to_units_coords(event.pos())
@@ -374,6 +375,7 @@ class PickerPanelView(QtWidgets.QWidget):
         world_cursor = self.viewportmapper.to_units_coords(event.pos())
         zoom = self.interaction_manager.zoom_button_pressed
         shapes = self.visible_shapes()
+
         hovered_shape = detect_hovered_shape(
             shapes=shapes,
             world_cursor=world_cursor.toPoint(),
@@ -503,8 +505,6 @@ class PickerPanelView(QtWidgets.QWidget):
             if offset is not None:
                 self.viewportmapper.origin = (
                     self.viewportmapper.origin - offset)
-
-        self.update()
 
     def call_context_menu(self):
         if not self.editable:
@@ -639,29 +639,35 @@ class PickerPanelView(QtWidgets.QWidget):
         try:
             painter = QtGui.QPainter()
             painter.begin(self)
+            # Color background.
             color = self.document.data['general']['panels.colors'][self.panel]
             if color:
                 painter.setPen(QtCore.Qt.NoPen)
                 painter.setBrush(QtGui.QColor(color))
                 painter.drawRect(self.rect())
+
+            # Color border focus.
             if self.rect().contains(get_cursor(self)):
                 draw_picker_focus(painter, self.rect())
 
+            # List renderable shapes.
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
             hidden_layers = self.layers_menu.hidden_layers
             shapes = self.document.shapes_by_panel[self.panel]
             if self.interaction_manager.left_click_pressed:
                 shapes.extend(self.drag_shapes)
 
-            # Draw hierarchy connection:
+            # Draw hierarchy connections.
             if cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER):
                 for shape in shapes:
                     if shape.options['shape.space'] == 'screen':
                         continue
                     for child in shape.options['children']:
                         child = self.document.shapes_by_id.get(child)
-                        screenspace = child.options['shape.space'] == 'screen'
-                        if child is None or screenspace:
+                        skip = (
+                            not child or
+                            child.options['shape.space'] == 'screen')
+                        if skip:
                             continue
                         draw_connection(
                             painter, shape, child,

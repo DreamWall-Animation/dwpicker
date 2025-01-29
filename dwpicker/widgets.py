@@ -670,6 +670,7 @@ class ChildrenModel(QtCore.QAbstractListModel):
 
         if role == QtCore.Qt.FontRole:
             font = QtGui.QFont()
+            font.setStrikeOut(True)
             font.setItalic(True)
             return font
 

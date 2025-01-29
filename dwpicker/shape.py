@@ -69,6 +69,7 @@ def cursor_in_shape(
         viewpoert_cursor=None,
         force_world_space=True,
         viewportmapper=None):
+
     if force_world_space or shape.options['shape.space'] == 'world':
         if shape.path and shape.options['shape'] == 'custom':
             return shape.path.contains(world_cursor)
@@ -114,6 +115,7 @@ class Shape():
         self.image_rect = None
         self.path = get_shape_painter_path(self)
         self.synchronize_image()
+        self._buffer_path = None
 
     def set_clicked(self, cursor):
         self.clicked = self.rect.contains(cursor)
@@ -126,13 +128,15 @@ class Shape():
         if self.options['shape'] == 'custom' and not self.options['shape.path']:
             self.options['shape.path'] = get_default_path(self.options)
         self.path = get_shape_painter_path(self)
+        self._buffer_path = None
 
     def get_painter_path(self, force_world_space, viewportmapper=None):
-        left, top = self.options['shape.left'], self.options['shape.top']
-        path = self.options['shape.path'] or get_default_path(self.options)
-        data = get_absolute_path((left, top), path)
         if self.options['shape.space'] == 'world' or force_world_space:
-            return get_worldspace_qpath(data, viewportmapper)
+            if self._buffer_path is None:
+                left, top = self.options['shape.left'], self.options['shape.top']
+                path = self.options['shape.path'] or get_default_path(self.options)
+                self._buffer_path = get_worldspace_qpath(get_absolute_path((left, top), path))
+            return viewportmapper.to_viewport_path(self._buffer_path)
 
         return get_screenspace_qpath(
             path=self.options['shape.path'],

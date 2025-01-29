@@ -24,10 +24,14 @@
 - https://github.com/DreamWall-Animation/dwpicker/issues/130
 - Check existing installation for drag and drop local install
 - Toggle panels system
+- Hierarchy system.
+    - create double click system
+    - render connections
+    - sanity check deleted nodes
+    - possibility to connect the targets in the canvas
+    - delete connections from the attribute editor
+- Optimize QPainterPath computing
 
 -- TODO --
-
-- Optimize QPainterPath computing
-- Hierarchy system.
 - Documentation.
 - PySide6 in parrallel branch.

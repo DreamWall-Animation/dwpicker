@@ -48,7 +48,6 @@ class PickerDocument(QtCore.QObject):
         return PickerDocument(data)
 
     def record_undo(self):
-        print('record undo')
         self.undo_manager.set_data_modified(self.data)
 
     def undo(self):
