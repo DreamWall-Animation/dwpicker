@@ -15,10 +15,10 @@ from dwpicker.geometry import get_combined_rects
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     save_optionvar, DEFAULT_BG_COLOR, DEFAULT_TEXT_COLOR, DEFAULT_WIDTH,
-    DEFAULT_HEIGHT, DEFAULT_LABEL, LAST_COMMAND_LANGUAGE,
-    SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
+    DEFAULT_HEIGHT, DEFAULT_LABEL, DISPLAY_HIERARCHY_IN_PICKER,
+    LAST_COMMAND_LANGUAGE, SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
 from dwpicker.painting import (
-    draw_shape, draw_selection_square, draw_picker_focus)
+    draw_shape, draw_selection_square, draw_picker_focus, draw_connection)
 from dwpicker.qtutils import get_cursor, clear_layout
 from dwpicker.shape import (
     build_multiple_shapes, cursor_in_shape, rect_intersects_shape)
@@ -288,7 +288,7 @@ class PickerPanelView(QtWidgets.QWidget):
         shapes = [
             s for s in self.visible_shapes() if
             s.options['shape.space'] == 'world' and not
-            s.options['ignored_by_focus']]
+            s.options['shape.ignored_by_focus']]
         shapes_rects = [s.bounding_rect() for s in shapes if s.selected]
         if not shapes_rects:
             shapes_rects = [s.bounding_rect() for s in shapes]
@@ -346,6 +346,26 @@ class PickerPanelView(QtWidgets.QWidget):
             pressed=True,
             has_shape_hovered=hsh,
             dragging=bool(self.drag_shapes))
+
+    def mouseDoubleClickEvent(self, event):
+        world_cursor = self.viewportmapper.to_units_coords(event.pos())
+        shapes = self.visible_shapes()
+        clicked_shape = detect_hovered_shape(
+            shapes=shapes,
+            world_cursor=world_cursor.toPoint(),
+            screen_cursor=event.pos(),
+            viewportmapper=self.viewportmapper)
+
+        if not clicked_shape or event.button() != QtCore.Qt.LeftButton:
+            return
+
+        shift = self.interaction_manager.shift_pressed
+        ctrl = self.interaction_manager.ctrl_pressed
+        selection_mode = get_selection_mode(shift=shift, ctrl=ctrl)
+        shapes = self.document.all_children(clicked_shape.options['id'])
+        for shape in shapes:
+            shape.hovered = True
+        select_targets(self.visible_shapes(), selection_mode=selection_mode)
 
     def mouseReleaseEvent(self, event):
         shift = self.interaction_manager.shift_pressed
@@ -410,7 +430,7 @@ class PickerPanelView(QtWidgets.QWidget):
 
     def add_drag_shapes(self):
         shapes_data = [s.options for s in self.drag_shapes]
-        self.document.add_shapes(shapes_data)
+        self.document.add_shapes(shapes_data, hierarchize=True)
         self.document.shapes_changed.emit()
         self.document.record_undo()
         self.drag_shapes = []
@@ -626,11 +646,28 @@ class PickerPanelView(QtWidgets.QWidget):
                 painter.drawRect(self.rect())
             if self.rect().contains(get_cursor(self)):
                 draw_picker_focus(painter, self.rect())
+
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
             hidden_layers = self.layers_menu.hidden_layers
             shapes = self.document.shapes_by_panel[self.panel]
             if self.interaction_manager.left_click_pressed:
                 shapes.extend(self.drag_shapes)
+
+            # Draw hierarchy connection:
+            if cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER):
+                for shape in shapes:
+                    if shape.options['shape.space'] == 'screen':
+                        continue
+                    for child in shape.options['children']:
+                        child = self.document.shapes_by_id.get(child)
+                        screenspace = child.options['shape.space'] == 'screen'
+                        if child is None or screenspace:
+                            continue
+                        draw_connection(
+                            painter, shape, child,
+                            viewportmapper=self.viewportmapper)
+
+            # Draw shapes.
             for shape in shapes:
                 visible = (
                     not shape.visibility_layer() or
@@ -641,9 +678,12 @@ class PickerPanelView(QtWidgets.QWidget):
                     painter, shape,
                     force_world_space=False,
                     viewportmapper=self.viewportmapper)
+
+            # Draw Selection square/
             if self.selection_square.rect:
                 draw_selection_square(
                     painter, self.selection_square.rect)
+
         except BaseException as e:
             import traceback
             print(traceback.format_exc())

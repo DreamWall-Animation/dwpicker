@@ -345,5 +345,38 @@ def split_range(input_, output, step_number):
     return [int(input_ + (step * i)) for i in range(step_number)]
 
 
+def angle_at(path, percent):
+    halfway_point = path.pointAtPercent(percent)
+    tangent = path.percentAtLength(path.length() / 2)
+    dx = path.pointAtPercent(tangent - 0.01).x() - halfway_point.x()
+    dy = path.pointAtPercent(tangent - 0.01).y() - halfway_point.y()
+
+    angle_radians = math.atan2(dy, dx)
+    angle_degrees = math.degrees(angle_radians)
+    return angle_degrees
+
+
+def get_connection_path(start_point, end_point, viewportmapper):
+    path = QtGui.QPainterPath(viewportmapper.to_viewport_coords(start_point))
+    path.lineTo(viewportmapper.to_viewport_coords(end_point))
+    degrees = angle_at(path, 0.5)
+    center = path.pointAtPercent(0.5)
+
+    offset = 3 + viewportmapper.zoom
+    triangle = QtGui.QPolygonF([
+        QtCore.QPointF(center.x() - offset, center.y() - offset),
+        QtCore.QPointF(center.x() + offset, center.y()),
+        QtCore.QPointF(center.x() - offset, center.y() + offset),
+        QtCore.QPointF(center.x() - offset, center.y() - offset)])
+
+    transform = QtGui.QTransform()
+    transform.translate(center.x(), center.y())
+    transform.rotate(degrees)
+    transform.translate(-center.x(), -center.y())
+    triangle = transform.map(triangle)
+    path.addPolygon(triangle)
+    return path
+
+
 if __name__ == "__main__":
     assert split_range(0, 10, 11) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

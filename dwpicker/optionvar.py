@@ -24,6 +24,8 @@ DEFAULT_TEXT_COLOR = 'dwpicker_default_text_color'
 DEFAULT_WIDTH = 'dwpicker_default_width'
 DISABLE_IMPORT_CALLBACKS = 'dwpicker_disable_import_callbacks'
 DISPLAY_QUICK_OPTIONS = 'dwpicker_display_quick_options'
+DISPLAY_HIERARCHY_IN_CANVAS = 'dwpicker_display_hierarchy_in_canvas'
+DISPLAY_HIERARCHY_IN_PICKER = 'dwpicker_display_hierarchy_in_picker'
 OVERRIDE_PROD_PICKER_DIRECTORY_ENV = 'dwpicker_override_picker_directory_env'
 INSERT_TAB_AFTER_CURRENT = 'dwpicker_insert_tab_after_current'
 ISOLATE_CURRENT_PANEL_SHAPES = 'dwpicker_isolate_current_panel_shapes'
@@ -80,9 +82,11 @@ OPTIONVARS = {
     DEFAULT_HOTKEYS: (
         'focus=F,1;new=CTRL+N,1;open=CTRL+O,1;save=CTRL+S,1;close=CTRL+Q,1;'
         'undo=CTRL+Z,1;redo=CTRL+Y,1;edit=CTRL+E,1;next_tab=None,0;'
-        'previous_tab=None,0;toggle_display=T,1'),
+        'previous_tab=None,0;toggle_display=T,1;display_hierarchy=Y,1'),
+    DISPLAY_HIERARCHY_IN_CANVAS: 1,
     DEFAULT_WIDTH: 30,
     DISABLE_IMPORT_CALLBACKS: 1,
+    DISPLAY_HIERARCHY_IN_PICKER: 1,
     DISPLAY_QUICK_OPTIONS: 1,
     OVERRIDE_PROD_PICKER_DIRECTORY_ENV: 0,
     INSERT_TAB_AFTER_CURRENT: 0,

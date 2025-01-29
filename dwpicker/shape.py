@@ -100,6 +100,11 @@ def get_shape_rect_from_options(options):
 
 class Shape():
     def __init__(self, options):
+        # This is necessary for temprary Shape object used in multiple shapes
+        # creation.
+        if 'children' not in options:
+            options['children'] = []
+
         self.hovered = False
         self.clicked = False
         self.selected = False
@@ -213,7 +218,6 @@ class Shape():
                 self.rect.top(),
                 self.options['image.width'],
                 self.options['image.height'])
-            print(self.bounding_rect().center())
             self.image_rect.moveCenter(self.bounding_rect().center())
             return
         rect = self.bounding_rect()

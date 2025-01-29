@@ -5,12 +5,12 @@ from maya import cmds
 from dwpicker.align import align_shapes_on_line
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
-from dwpicker.optionvar import (
-    ISOLATE_CURRENT_PANEL_SHAPES, SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS)
+from dwpicker.optionvar import SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS
 from dwpicker.geometry import get_shapes_bounding_rects
 from dwpicker.painting import (
-    draw_editor, draw_shape, draw_manipulator, draw_selection_square,
-    draw_current_panel)
+    draw_editor_canvas, draw_shape, draw_manipulator, draw_selection_square,
+    draw_parenting_shapes, draw_current_panel, draw_shape_as_child_background,
+    draw_connection)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 from dwpicker.shape import cursor_in_shape
@@ -26,15 +26,19 @@ def load_saved_snap():
         cmds.optionVar(query=SNAP_GRID_Y))
 
 
-class ShapeEditArea(QtWidgets.QWidget):
+class ShapeEditCanvas(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
     callContextMenu = QtCore.Signal(QtCore.QPoint)
 
-    def __init__(self, document, parent=None):
-        super(ShapeEditArea, self).__init__(parent)
+    def __init__(self, document, display_options, parent=None):
+        super(ShapeEditCanvas, self).__init__(parent)
         self.setMouseTracking(True)
-        self.current_panel = -1
-        self.isolate = cmds.optionVar(query= ISOLATE_CURRENT_PANEL_SHAPES)
+
+        self.display_options = display_options
+        method = partial(self.update_selection, False)
+        self.display_options.options_changed.connect(method)
+        self.display_options.options_changed.connect(self.update)
+
         self.document = document
         method = partial(self.update_selection, False)
         self.document.data_changed.connect(method)
@@ -50,6 +54,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.manipulator = Manipulator(self.viewportmapper)
         self.transform = Transform(load_saved_snap())
 
+        self.parenting_shapes = None
         self.clicked_shape = None
         self.increase_undo_on_release = False
         self.lock_background_shape = True
@@ -62,11 +67,6 @@ class ShapeEditArea(QtWidgets.QWidget):
         # and compare the offset after zoom computation.
         factor = .25 if event.angleDelta().y() > 0 else -.25
         self.zoom(factor, event.pos())
-        self.update()
-
-    def set_current_panel(self, panel):
-        self.current_panel = panel
-        self.update_selection()
         self.update()
 
     def select_panel_shapes(self, panel):
@@ -129,6 +129,16 @@ class ShapeEditArea(QtWidgets.QWidget):
         hovered_shape = self.get_hovered_shape(cursor)
         self.transform.direction = self.manipulator.get_direction(event.pos())
 
+        if self.interaction_manager.ctrl_pressed and hovered_shape:
+            self.parenting_shapes = [hovered_shape, None]
+            self.interaction_manager.update(
+                event,
+                pressed=True,
+                has_shape_hovered=True,
+                dragging=True)
+            self.update()
+            return
+
         if event.button() != QtCore.Qt.LeftButton:
             self.interaction_manager.update(
                 event,
@@ -175,6 +185,11 @@ class ShapeEditArea(QtWidgets.QWidget):
         cursor = self.viewportmapper.to_units_coords(get_cursor(self)).toPoint()
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
+            if self.parenting_shapes:
+                self.parenting_shapes[1] = self.get_hovered_shape(cursor)
+                self.update()
+                return
+
             if self.drag_shapes:
                 point1 = self.viewportmapper.to_units_coords(
                     self.interaction_manager.anchor)
@@ -222,6 +237,11 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.interaction_manager.update(event, pressed=False)
             return
 
+        if self.parenting_shapes:
+            self.parent_shapes()
+            self.interaction_manager.update(event, pressed=False)
+            return
+
         if self.drag_shapes:
             self.add_drag_shapes()
 
@@ -240,17 +260,36 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selection_square.release()
         self.update()
 
+    def parent_shapes(self):
+        skip = (
+            not self.parenting_shapes[1] or
+            self.parenting_shapes[0].options['id'] ==
+            self.parenting_shapes[1].options['id'])
+        if skip:
+            self.parenting_shapes = None
+            self.update()
+            return
+        children = set(self.parenting_shapes[1].options['children'])
+        children.add(self.parenting_shapes[0].options['id'])
+        self.parenting_shapes[1].options['children'] = sorted(children)
+        self.document.shapes_changed.emit()
+        self.document.record_undo()
+        self.parenting_shapes = None
+
     def visible_shapes(self):
-        if not self.isolate or self.current_panel < 0:
+        conditions = (
+            not self.display_options.isolate or
+            self.display_options.current_panel < 0)
+        if conditions:
             return self.document.shapes[:]
 
         return [
             s for s in self.document.shapes if
-            s.options['panel'] == self.current_panel]
+            s.options['panel'] == self.display_options.current_panel]
 
     def add_drag_shapes(self):
         shapes_data = [s.options for s in self.drag_shapes]
-        shapes = self.document.add_shapes(shapes_data)
+        shapes = self.document.add_shapes(shapes_data, hierarchize=True)
         self.document.shapes_changed.emit()
         self.drag_shapes = []
         self.selection.replace(shapes)
@@ -309,24 +348,54 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def paint(self, painter):
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        draw_editor(
+        visible_shapes = self.visible_shapes()
+
+        # Draw background and marks.
+        draw_editor_canvas(
             painter, self.rect(),
             snap=self.transform.snap,
             viewportmapper=self.viewportmapper)
+
+        # Get the visible shapes.
         current_panel_shapes = []
         for shape in self.document.shapes:
-            if shape.options['panel'] == self.current_panel:
+            if shape.options['panel'] == self.display_options.current_panel:
                 current_panel_shapes.append(shape)
 
+        # Draw the current select panel boundaries.
         if current_panel_shapes:
             rect = get_shapes_bounding_rects(current_panel_shapes)
             draw_current_panel(painter, rect, self.viewportmapper)
 
-        shapes = self.visible_shapes()
-        if self.interaction_manager.left_click_pressed:
-            shapes.extend(self.drag_shapes)
+        # Draw highlighted selected children.
+        for id_ in self.display_options.highlighted_children_ids:
+            shape = self.document.shapes_by_id.get(id_)
+            if shape in visible_shapes:
+                draw_shape_as_child_background(
+                    painter, shape, viewportmapper=self.viewportmapper)
 
-        for shape in shapes:
+        if self.parenting_shapes:
+            draw_parenting_shapes(
+                painter=painter,
+                child=self.parenting_shapes[0],
+                potential_parent=self.parenting_shapes[1],
+                cursor=get_cursor(self),
+                viewportmapper=self.viewportmapper)
+
+        if self.display_options.display_hierarchy:
+            for shape in visible_shapes:
+                for child in shape.options['children']:
+                    child = self.document.shapes_by_id.get(child)
+                    if child is None:
+                        continue
+                    draw_connection(
+                        painter, shape, child,
+                        viewportmapper=self.viewportmapper)
+
+        if self.interaction_manager.left_click_pressed:
+            visible_shapes.extend(self.drag_shapes)
+
+        for shape in visible_shapes:
             draw_shape(
                 painter, shape,
                 draw_selected_state=False,

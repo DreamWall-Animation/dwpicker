@@ -24,10 +24,11 @@ from dwpicker.namespace import (
 from dwpicker.optionvar import (
     AUTO_FOCUS_BEHAVIOR, AUTO_SWITCH_TAB, AUTO_RESIZE_NAMESPACE_COMBO,
     CHECK_IMAGES_PATHS, AUTO_SET_NAMESPACE, DISABLE_IMPORT_CALLBACKS,
-    DISPLAY_QUICK_OPTIONS, INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY,
-    LAST_IMPORT_DIRECTORY, LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR,
-    USE_ICON_FOR_UNSAVED_TAB, WARN_ON_TAB_CLOSED,
-    save_optionvar, append_recent_filename, save_opened_filenames)
+    DISPLAY_HIERARCHY_IN_PICKER, DISPLAY_QUICK_OPTIONS,
+    INSERT_TAB_AFTER_CURRENT, LAST_OPEN_DIRECTORY, LAST_IMPORT_DIRECTORY,
+    LAST_SAVE_DIRECTORY, NAMESPACE_TOOLBAR, USE_ICON_FOR_UNSAVED_TAB,
+    WARN_ON_TAB_CLOSED, save_optionvar, append_recent_filename,
+    save_opened_filenames)
 from dwpicker.path import get_import_directory, get_open_directory, format_path
 from dwpicker.picker import PickerStackedView, list_targets
 from dwpicker.preference import PreferencesWindow
@@ -38,7 +39,6 @@ from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
 from dwpicker.templates import PICKER, BACKGROUND
-from dwpicker.undo import UndoManager
 
 
 ABOUT = """\
@@ -163,6 +163,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
         self.menubar.toggle_display.triggered.connect(self.toggle_display_mode)
+        method = self.toggle_display_hierarchy
+        self.menubar.toggle_display_hierarchy.triggered.connect(method)
         method = self.change_namespace_dialog
         self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
@@ -189,12 +191,16 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'open': (self.call_open, self.menubar.open),
             'save': (self.call_save, self.menubar.save),
             'close': (self.close, self.menubar.exit),
-            'toggle_display': (self.toggle_display_mode, self.menubar.toggle_display),
             'undo': (self.call_undo, self.menubar.undo),
             'redo': (self.call_redo, self.menubar.redo),
             'edit': (self.call_edit, self.menubar.advanced_edit),
             'next_tab': (self.call_next_tab, None),
             'previous_tab': (self.call_previous_tab, None),
+            'toggle_display': (
+                self.toggle_display_mode, self.menubar.toggle_display),
+            'display_hierarchy': (
+                self.toggle_display_hierarchy,
+                self.menubar.toggle_display_hierarchy)
             }
         for function_name, sc in self.shortcuts.items():
             sc.activated.disconnect(function_names_actions[function_name][0])
@@ -267,6 +273,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         index = int(not bool(self.panel_buttons.checkedId()))
         self.panel_buttons.button(index).setChecked(True)
         self.update_panels_display_mode()
+
+    def toggle_display_hierarchy(self):
+        state = not bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER))
+        save_optionvar(DISPLAY_HIERARCHY_IN_PICKER, int(state))
+        self.update()
 
     def update_panels_display_mode(self, *_):
         state = bool(self.panel_buttons.checkedId())
@@ -641,7 +652,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             self.editors[index] = editor
 
         self.editors[index].show()
-        self.editors[index].shape_editor.focus()
+        self.editors[index].shape_canvas.focus()
 
     def call_next_tab(self):
         index = self.tab.currentIndex() + 1
@@ -787,6 +798,8 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.preferences = QtWidgets.QAction('Preferences', parent)
         text = 'Toggle panel display mode'
         self.toggle_display = QtWidgets.QAction(text, parent)
+        text = 'Toggle display hierarchy'
+        self.toggle_display_hierarchy = QtWidgets.QAction(text, parent)
         self.change_title = QtWidgets.QAction('Change picker title', parent)
         self.change_namespace = QtWidgets.QAction('Change namespace', parent)
         self.add_background = QtWidgets.QAction('Add background item', parent)
@@ -810,8 +823,10 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.redo)
         self.edit.addSeparator()
         self.edit.addAction(self.advanced_edit)
-        self.edit.addAction(self.toggle_display)
         self.edit.addAction(self.preferences)
+        self.edit.addSeparator()
+        self.edit.addAction(self.toggle_display)
+        self.edit.addAction(self.toggle_display_hierarchy)
         self.edit.addSeparator()
         self.edit.addAction(self.change_title)
         self.edit.addSeparator()

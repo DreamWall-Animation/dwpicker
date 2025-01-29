@@ -48,6 +48,7 @@ class PickerDocument(QtCore.QObject):
         return PickerDocument(data)
 
     def record_undo(self):
+        print('record undo')
         self.undo_manager.set_data_modified(self.data)
 
     def undo(self):
@@ -84,11 +85,20 @@ class PickerDocument(QtCore.QObject):
             if layer:
                 self.shapes_by_layer[layer].append(shape)
 
-    def add_shapes(self, shapes_data, prepend=False):
+    def add_shapes(self, shapes_data, prepend=False, hierarchize=False):
         for options in shapes_data:
             options['id'] = str(uuid.uuid4())
+            options['children'] = []
 
-        shapes = [Shape(options) for options in shapes_data]
+        shapes = []
+        parent_shape = None
+        for options in shapes_data:
+            shape = Shape(options)
+            shapes.append(shape)
+            if parent_shape and hierarchize:
+                parent_shape.options['children'].append(shape.options['id'])
+            parent_shape = shape
+
         if prepend:
             for shape in reversed(shapes):
                 self.shapes.insert(0, shape)
@@ -105,3 +115,28 @@ class PickerDocument(QtCore.QObject):
         self.data['shapes'] = [
             s for s in self.data['shapes'] if s['id'] not in removed_ids]
         self.generate_shapes()
+
+    def all_children(self, id_):
+        if id_ not in self.shapes_by_id:
+            return []
+
+        shape = self.shapes_by_id[id_]
+        result = []
+        to_visit = [id_]
+        visited = set()
+
+        while to_visit:
+            current_id = to_visit.pop(0)
+
+            if current_id in visited:
+                continue
+
+            visited.add(current_id)
+            shape = self.shapes_by_id.get(current_id)
+
+            if shape:
+                result.append(shape)
+                children = shape.options.get('children', [])
+                to_visit.extend(c for c in children if c not in visited)
+
+        return result

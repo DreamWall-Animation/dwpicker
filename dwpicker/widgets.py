@@ -593,3 +593,85 @@ class CheckWidget(QtWidgets.QWidget):
         option = QtGui.QTextOption()
         option.setAlignment(QtCore.Qt.AlignCenter)
         painter.drawText(rect, V, option)
+
+
+class ChildrenWidget(QtWidgets.QWidget):
+    children_changed = QtCore.Signal(list)
+
+    def __init__(self, document, display_options, parent=None):
+        super(ChildrenWidget, self).__init__(parent)
+        self.display_options = display_options
+        self.model = ChildrenModel(document)
+        self.list = QtWidgets.QListView()
+        self.list.setModel(self.model)
+        self.list.selectionModel().selectionChanged.connect(
+            self.hightlight_children)
+        mode = QtWidgets.QAbstractItemView.ExtendedSelection
+        self.list.setSelectionMode(mode)
+        self.delete = QtWidgets.QPushButton('Delete')
+        self.delete.released.connect(self.call_delete)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.list)
+        layout.addWidget(self.delete)
+
+    def hightlight_children(self, *_):
+        indexes = self.list.selectedIndexes()
+        ids = [self.model.data(i, QtCore.Qt.DisplayRole) for i in indexes]
+        self.display_options.highlighted_children_ids = ids
+        self.display_options.options_changed.emit()
+
+    def clear(self):
+        self.model.layoutAboutToBeChanged.emit()
+        self.display_options.highlighted_children_ids = []
+        self.list.selectionModel().clear()
+        self.model.children = []
+        self.model.layoutChanged.emit()
+
+    def call_delete(self):
+        indexes = self.list.selectedIndexes()
+        indexes = sorted(indexes, key=lambda i: i.row(), reverse=True)
+        self.model.layoutAboutToBeChanged.emit()
+        for index in indexes:
+            self.model.children.pop(index.row())
+        self.model.layoutChanged.emit()
+        self.display_options.highlighted_children_ids = []
+        self.display_options.options_changed.emit()
+        self.children_changed.emit(self.model.children[:])
+
+    def set_children(self, children):
+        self.model.layoutAboutToBeChanged.emit()
+        self.model.children = children[:]
+        self.model.layoutChanged.emit()
+
+
+class ChildrenModel(QtCore.QAbstractListModel):
+    def __init__(self, document, parent=None):
+        super(ChildrenModel, self).__init__(parent)
+        self.document = document
+        self.children = []
+
+    def rowCount(self, _):
+        return len(self.children)
+
+    def data(self, index, role):
+        id_ = self.children[index.row()]
+        if role == QtCore.Qt.DisplayRole:
+            return id_
+
+        if id_ in self.document.shapes_by_id:
+            return
+
+        if role == QtCore.Qt.BackgroundRole:
+            brush = QtGui.QBrush(QtGui.QColor('#555555'))
+            brush.setStyle(QtCore.Qt.BDiagPattern)
+            return brush
+
+        if role == QtCore.Qt.FontRole:
+            font = QtGui.QFont()
+            font.setItalic(True)
+            return font
+
+        if role == QtCore.Qt.TextColorRole:
+            return QtGui.QColor('#999999')

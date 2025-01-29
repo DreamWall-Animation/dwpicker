@@ -3,9 +3,8 @@ from maya import cmds
 
 from dwpicker.optionvar import ZOOM_SENSITIVITY
 from dwpicker.qtutils import VALIGNS, HALIGNS
-from dwpicker.geometry import grow_rect
+from dwpicker.geometry import grow_rect, get_connection_path
 from dwpicker.shape import to_shape_space_rect, to_shape_space
-from dwpicker.shapepath import get_shape_space_painter_path, get_absolute_path
 from dwpicker.viewport import ViewportMapper
 
 
@@ -13,6 +12,7 @@ SELECTION_COLOR = '#3388FF'
 PANEL_COLOR = '#00FFFF'
 FOCUS_COLOR = '#FFFFFF'
 MANIPULATOR_BORDER = 5
+CONNECTION_COLOR = '#666666'
 
 
 def factor_sensitivity(factor):
@@ -35,7 +35,45 @@ def draw_world_coordinates(painter, rect, color, viewportmapper):
     painter.drawLine(left_center, right_center)
 
 
-def draw_editor(painter, rect, snap=None, viewportmapper=None):
+def draw_parenting_shapes(
+        painter, child, potential_parent, cursor, viewportmapper):
+    draw_shape_as_child_background(
+        painter, child, 'yellow',
+        alpha=150, padding=3, pen_width=5,
+        viewportmapper=viewportmapper)
+    if potential_parent:
+        draw_shape_as_child_background(
+            painter, potential_parent, 'white', alpha=255, padding=3,
+            pen_width=5,
+            viewportmapper=viewportmapper)
+        draw_connection(
+            painter, potential_parent, child, 'white',
+            viewportmapper=viewportmapper)
+        return
+    end_point = child.bounding_rect().center()
+    start_point = viewportmapper.to_units_coords(cursor)
+    path = get_connection_path(start_point, end_point, viewportmapper)
+    pen = QtGui.QPen('yellow')
+    pen.setWidthF(2)
+    pen.setJoinStyle(QtCore.Qt.MiterJoin)
+    painter.setPen(pen)
+    painter.setBrush(QtGui.QColor(CONNECTION_COLOR))
+    painter.drawPath(path)
+
+
+def draw_connection(painter, parent, child, color=None, viewportmapper=None):
+    start_point = parent.bounding_rect().center()
+    end_point = child.bounding_rect().center()
+    path = get_connection_path(start_point, end_point, viewportmapper)
+    pen = QtGui.QPen(color or CONNECTION_COLOR)
+    pen.setWidthF(1.5)
+    pen.setJoinStyle(QtCore.Qt.MiterJoin)
+    painter.setPen(pen)
+    painter.setBrush(QtGui.QColor(CONNECTION_COLOR))
+    painter.drawPath(path)
+
+
+def draw_editor_canvas(painter, rect, snap=None, viewportmapper=None):
     viewportmapper = viewportmapper or ViewportMapper()
     color = QtGui.QColor('#333333')
     pen = QtGui.QPen(color)
@@ -100,6 +138,23 @@ def draw_editor(painter, rect, snap=None, viewportmapper=None):
         x += snap[0]
 
 
+def draw_shape_as_child_background(
+        painter, shape, color=None, padding=5, pen_width=1.5, alpha=30,
+        viewportmapper=None):
+    rect = viewportmapper.to_viewport_rect(shape.bounding_rect())
+    rect = grow_rect(rect, padding)
+    color = QtGui.QColor(color or 'yellow')
+    color.setAlpha(alpha)
+    pen = QtGui.QPen(color)
+    pen.setWidthF(pen_width)
+    pen.setStyle(QtCore.Qt.DashLine)
+    painter.setPen(pen)
+    brush = QtGui.QBrush(color)
+    brush.setStyle(QtCore.Qt.BDiagPattern)
+    painter.setBrush(brush)
+    painter.drawRect(rect)
+
+
 def draw_shape(
         painter, shape, force_world_space=True,
         draw_selected_state=True, viewportmapper=None):
@@ -152,63 +207,6 @@ def draw_shape(
     content_rect = to_shape_space_rect(
         content_rect, shape, force_world_space, viewportmapper)
     painter.drawText(content_rect, flags, text)
-
-
-# def draw_shape_shape(painter: QtGui.QPainter, rect, shape, force_world_space, viewportmapper):
-#     options = shape.options
-#     content_rect = shape.content_rect()
-
-#     if options['shape'] == 'square':
-#         painter.drawRect(rect)
-#         if shape.pixmap is not None:
-#             painter.setClipRect(rect)
-#             rect = shape.image_rect or content_rect
-#             rect = to_shape_space_rect(
-#                 rect, shape, force_world_space, viewportmapper)
-#             painter.drawPixmap(rect.toRect(), shape.pixmap)
-#             painter.setClipping(False)
-
-#     elif options['shape'] == 'round':
-#         painter.drawEllipse(rect)
-#         if shape.pixmap is not None:
-#             qpath = QtGui.QPainterPath()
-#             qpath.addEllipse(rect)
-#             painter.setClipPath(qpath)
-#             rect = shape.image_rect or content_rect
-#             rect = to_shape_space_rect(
-#                 rect, shape, force_world_space, viewportmapper)
-#             painter.drawPixmap(rect.toRect(), shape.pixmap)
-#             painter.setClipping(False)
-
-#     elif options['shape'] == 'rounded_rect':
-#         x = to_shape_space(
-#             options['shape.cornersx'], shape,
-#             force_world_space, viewportmapper)
-#         y = to_shape_space(
-#             options['shape.cornersy'], shape,
-#             force_world_space, viewportmapper)
-#         painter.drawRoundedRect(rect, x, y)
-#         if shape.pixmap is not None:
-#             qpath = QtGui.QPainterPath()
-#             qpath.addRoundedRect(rect, x, y)
-#             painter.setClipPath(qpath)
-#             rect = shape.image_rect or content_rect
-#             rect = to_shape_space_rect(
-#                 rect, shape, force_world_space, viewportmapper)
-#             painter.drawPixmap(rect.toRect(), shape.pixmap)
-#             painter.setClipping(False)
-
-#     else:
-#         qpath = shape.get_painter_path(force_world_space, viewportmapper)
-#         painter.drawPath(qpath)
-#         if shape.pixmap is not None:
-#             painter.setClipPath(qpath)
-#             rect = shape.image_rect or content_rect
-#             rect = to_shape_space_rect(
-#                 rect, shape, force_world_space, viewportmapper)
-#             print('rect', rect)
-#             painter.drawPixmap(rect.toRect(), shape.pixmap)
-#             painter.setClipping(False)
 
 
 def draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper):

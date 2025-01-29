@@ -10,8 +10,8 @@ from dwpicker.designer.layer import VisibilityLayersEditor
 from dwpicker.designer.patheditor import PathEditor
 from dwpicker.stack import ORIENTATIONS
 from dwpicker.widgets import (
-    BoolCombo, BrowseEdit, ColorEdit, IntEdit, FloatEdit, LayerEdit,
-    TextEdit, Title, WidgetToggler, ZoomsLockedEditor)
+    BoolCombo, BrowseEdit, ColorEdit, ChildrenWidget, IntEdit, FloatEdit,
+    LayerEdit, TextEdit, Title, WidgetToggler, ZoomsLockedEditor)
 
 
 LEFT_CELL_WIDTH = 90
@@ -25,15 +25,13 @@ class AttributeEditor(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     optionsSet = QtCore.Signal(dict, bool)  # all options, affect rect
     selectLayerContent = QtCore.Signal(str)
-    panelSelected = QtCore.Signal(int)
     panelDoubleClicked = QtCore.Signal(int)
 
-    def __init__(self, document, parent=None):
+    def __init__(self, document, display_options, parent=None):
         super(AttributeEditor, self).__init__(parent)
         self.document = document
 
-        self.generals = GeneralSettings(self.document)
-        self.generals.panelSelected.connect(self.panel_selected)
+        self.generals = GeneralSettings(self.document, display_options)
         self.generals.panelDoubleClicked.connect(self.panel_double_clicked)
         mtd = self.selectLayerContent.emit
         self.generals.layers.selectLayerContent.connect(mtd)
@@ -55,7 +53,7 @@ class AttributeEditor(QtWidgets.QWidget):
         self.text.optionSet.connect(self.optionSet.emit)
         self.text_toggler = WidgetToggler('Text', self.text)
 
-        self.action = ActionSettings()
+        self.action = ActionSettings(document, display_options)
         self.action.optionSet.connect(self.optionSet.emit)
         self.action_toggler = WidgetToggler('Action', self.action)
 
@@ -88,9 +86,6 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.setFixedWidth(self.sizeHint().width() * 1.05)
 
-    def panel_selected(self, panel):
-        self.panelSelected.emit(panel - 1)
-
     def panel_double_clicked(self, panel):
         self.panelDoubleClicked.emit(panel - 1)
 
@@ -109,12 +104,13 @@ class AttributeEditor(QtWidgets.QWidget):
 
 
 class GeneralSettings(QtWidgets.QWidget):
-    panelSelected = QtCore.Signal(int)
     panelDoubleClicked = QtCore.Signal(int)
 
-    def __init__(self, document, parent=None):
+    def __init__(self, document, display_options, parent=None):
         super(GeneralSettings, self).__init__(parent)
         self.document = document
+        self.display_options = display_options
+
         self.document.general_option_changed.connect(self.update_options)
         self.document.data_changed.connect(self.update_options)
 
@@ -135,7 +131,7 @@ class GeneralSettings(QtWidgets.QWidget):
         self.stack = StackEditor()
         self.stack.setMinimumHeight(100)
         self.stack.panelsChanged.connect(self.stack_changed)
-        self.stack.panelSelected.connect(self.panelSelected.emit)
+        self.stack.panelSelected.connect(self.panel_selected)
         self.stack.panelDoubleClicked.connect(self.panelDoubleClicked.emit)
 
         self.layers = VisibilityLayersEditor(self.document)
@@ -175,6 +171,10 @@ class GeneralSettings(QtWidgets.QWidget):
         layout.addWidget(self.commands)
         layout.addStretch()
         self.update_options()
+
+    def panel_selected(self, index):
+        self.display_options.current_panel = index - 1
+        self.display_options.options_changed.emit()
 
     def stack_changed(self):
         self.set_general('panels', self.stack.data)
@@ -233,7 +233,7 @@ class ShapeSettings(QtWidgets.QWidget):
         self.background.valueSet.connect(method)
 
         self.ignored_by_focus = BoolCombo()
-        method = partial(self.optionSet.emit, 'ignored_by_focus')
+        method = partial(self.optionSet.emit, 'shape.ignored_by_focus')
         self.ignored_by_focus.valueSet.connect(method)
 
         self.space = QtWidgets.QComboBox()
@@ -330,7 +330,7 @@ class ShapeSettings(QtWidgets.QWidget):
         value = str(values[0]) if len(values) == 1 else None
         self.background.setCurrentText(value)
 
-        values = list({option['ignored_by_focus'] for option in options})
+        values = list({option['shape.ignored_by_focus'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.ignored_by_focus.setCurrentText(value)
 
@@ -592,7 +592,7 @@ class AppearenceSettings(QtWidgets.QWidget):
 class ActionSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
 
-    def __init__(self, parent=None):
+    def __init__(self, document, display_options, parent=None):
         super(ActionSettings, self).__init__(parent)
         self._targets = QtWidgets.QLineEdit()
         self._targets.returnPressed.connect(self.targets_changed)
@@ -635,6 +635,11 @@ class ActionSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'action.menu_commands')
         self._menu.valueSet.connect(method)
 
+        self.select_one_shape_label = QtWidgets.QLabel('Select only one shape')
+        self.children = ChildrenWidget(document, display_options)
+        method = partial(self.optionSet.emit, 'children')
+        self.children.children_changed.connect(method)
+
         form = QtWidgets.QFormLayout()
         form.setSpacing(0)
         form.setContentsMargins(0, 0, 0, 0)
@@ -659,6 +664,10 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addWidget(Title('Right Click Menu'))
         self.layout.addWidget(self._menu)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
+        self.layout.addWidget(Title('Hierarchy'))
+        self.layout.addWidget(self.select_one_shape_label)
+        self.layout.addWidget(self.children)
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
 
     def targets(self):
@@ -708,6 +717,10 @@ class ActionSettings(QtWidgets.QWidget):
         self._targets.setText(", ".join(sorted(values)))
         self._commands.set_options(options)
         self._menu.set_options(options)
+        self.select_one_shape_label.setVisible(len(options) != 1)
+        self.children.clear()
+        if len(options) == 1:
+            self.children.set_children(options[0]['children'])
 
 
 class TextSettings(QtWidgets.QWidget):

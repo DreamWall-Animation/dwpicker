@@ -3,8 +3,8 @@ from maya import cmds
 from PySide2 import QtGui, QtWidgets, QtCore
 
 from dwpicker.optionvar import (
-    BG_LOCKED, ISOLATE_CURRENT_PANEL_SHAPES, SNAP_ITEMS, SNAP_GRID_X,
-    SNAP_GRID_Y, save_optionvar)
+    BG_LOCKED, DISPLAY_HIERARCHY_IN_CANVAS, ISOLATE_CURRENT_PANEL_SHAPES,
+    SNAP_ITEMS, SNAP_GRID_X, SNAP_GRID_Y, save_optionvar)
 from dwpicker.qtutils import icon
 
 
@@ -20,7 +20,6 @@ class MenuWidget(QtWidgets.QWidget):
     copySettingsRequested = QtCore.Signal()
     deleteRequested = QtCore.Signal()
     editCenterToggled = QtCore.Signal(bool)
-    isolateCurrentPanel = QtCore.Signal(bool)
     lockBackgroundShapeToggled = QtCore.Signal(bool)
     moveDownRequested = QtCore.Signal()
     moveUpRequested = QtCore.Signal()
@@ -35,8 +34,9 @@ class MenuWidget(QtWidgets.QWidget):
     undoRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self, display_options, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
+        self.display_options = display_options
 
         self.delete = QtWidgets.QAction(icon('delete.png'), '', self)
         self.delete.setToolTip('Delete selection')
@@ -80,8 +80,14 @@ class MenuWidget(QtWidgets.QWidget):
         self.isolate = QtWidgets.QAction(icon('isolate.png'), '', self)
         self.isolate.setToolTip('Isolate current panel shapes')
         self.isolate.setCheckable(True)
-        self.isolate.triggered.connect(self.save_ui_states)
-        self.isolate.toggled.connect(self.isolateCurrentPanel.emit)
+        self.isolate.toggled.connect(self.isolate_panel)
+
+        self.hierarchy = QtWidgets.QAction(icon('hierarchy.png'), '', self)
+        self.hierarchy.setToolTip('Display hierarchy')
+        self.hierarchy.setCheckable(True)
+        state = bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_CANVAS))
+        self.hierarchy.setChecked(state)
+        self.hierarchy.toggled.connect(self.toggle_display_hierarchy)
 
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
@@ -195,6 +201,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.lock_bg)
         self.toolbar.addAction(self.isolate)
+        self.toolbar.addAction(self.hierarchy)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.snap)
         self.toolbar.addWidget(self.snapx)
@@ -227,6 +234,15 @@ class MenuWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.toolbar)
 
         self.load_ui_states()
+
+    def toggle_display_hierarchy(self, state):
+        save_optionvar(DISPLAY_HIERARCHY_IN_CANVAS, int(state))
+        self.display_options.display_hierarchy = state
+        self.display_options.options_changed.emit()
+
+    def isolate_panel(self, state):
+        self.display_options.isolate = state
+        self.display_options.options_changed.emit()
 
     def _call_library(self):
         rect = self.toolbar.actionGeometry(self.call_library)
