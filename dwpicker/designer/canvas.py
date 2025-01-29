@@ -374,13 +374,20 @@ class ShapeEditCanvas(QtWidgets.QWidget):
                 draw_shape_as_child_background(
                     painter, shape, viewportmapper=self.viewportmapper)
 
-        if self.parenting_shapes:
-            draw_parenting_shapes(
-                painter=painter,
-                child=self.parenting_shapes[0],
-                potential_parent=self.parenting_shapes[1],
-                cursor=get_cursor(self),
+        if self.interaction_manager.left_click_pressed:
+            visible_shapes.extend(self.drag_shapes)
+
+        cutter = QtGui.QPainterPath()
+        cutter.setFillRule(QtCore.Qt.WindingFill)
+
+        for shape in visible_shapes:
+            qpath = draw_shape(
+                painter, shape,
+                draw_selected_state=False,
                 viewportmapper=self.viewportmapper)
+            screen_space = shape.options['shape.space'] == 'screen'
+            if not shape.options['background'] or screen_space:
+                cutter.addPath(qpath)
 
         if self.display_options.display_hierarchy:
             for shape in visible_shapes:
@@ -389,16 +396,15 @@ class ShapeEditCanvas(QtWidgets.QWidget):
                     if child is None:
                         continue
                     draw_connection(
-                        painter, shape, child,
+                        painter, shape, child, cutter=cutter,
                         viewportmapper=self.viewportmapper)
 
-        if self.interaction_manager.left_click_pressed:
-            visible_shapes.extend(self.drag_shapes)
-
-        for shape in visible_shapes:
-            draw_shape(
-                painter, shape,
-                draw_selected_state=False,
+        if self.parenting_shapes:
+            draw_parenting_shapes(
+                painter=painter,
+                child=self.parenting_shapes[0],
+                potential_parent=self.parenting_shapes[1],
+                cursor=get_cursor(self),
                 viewportmapper=self.viewportmapper)
 
         conditions = (

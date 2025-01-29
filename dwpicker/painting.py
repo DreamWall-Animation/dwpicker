@@ -61,10 +61,11 @@ def draw_parenting_shapes(
     painter.drawPath(path)
 
 
-def draw_connection(painter, parent, child, color=None, viewportmapper=None):
+def draw_connection(
+        painter, parent, child, color=None, cutter=None, viewportmapper=None):
     start_point = parent.bounding_rect().center()
     end_point = child.bounding_rect().center()
-    path = get_connection_path(start_point, end_point, viewportmapper)
+    path = get_connection_path(start_point, end_point, cutter, viewportmapper)
     pen = QtGui.QPen(color or CONNECTION_COLOR)
     pen.setWidthF(1.5)
     pen.setJoinStyle(QtCore.Qt.MiterJoin)
@@ -188,7 +189,8 @@ def draw_shape(
     painter.setBrush(QtGui.QBrush(backgroundcolor))
     rect = to_shape_space_rect(
         shape.rect, shape, force_world_space, viewportmapper)
-    draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper)
+    r = draw_shape_shape(
+        painter, rect, shape, force_world_space, viewportmapper)
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))
@@ -207,6 +209,7 @@ def draw_shape(
     content_rect = to_shape_space_rect(
         content_rect, shape, force_world_space, viewportmapper)
     painter.drawText(content_rect, flags, text)
+    return r
 
 
 def draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper):
@@ -244,6 +247,7 @@ def draw_shape_shape(painter, rect, shape, force_world_space, viewportmapper):
             transformed_rect, shape, force_world_space, viewportmapper)
         painter.drawPixmap(transformed_rect.toRect(), shape.pixmap)
         painter.setClipping(False)
+    return qpath
 
 
 def draw_selection_square(painter, rect, viewportmapper=None):

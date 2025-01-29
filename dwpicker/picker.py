@@ -499,6 +499,7 @@ class PickerPanelView(QtWidgets.QWidget):
                 sensitivity = float(cmds.optionVar(query=ZOOM_SENSITIVITY))
                 factor = (offset.x() + offset.y()) / sensitivity
                 self.zoom(factor, self.interaction_manager.zoom_anchor)
+            return self.update()
 
         elif self.interaction_manager.mode == InteractionManager.NAVIGATION:
             offset = self.interaction_manager.mouse_offset(event.pos())
@@ -658,6 +659,24 @@ class PickerPanelView(QtWidgets.QWidget):
             if self.interaction_manager.left_click_pressed:
                 shapes.extend(self.drag_shapes)
 
+            cutter = QtGui.QPainterPath()
+            cutter.setFillRule(QtCore.Qt.WindingFill)
+
+            # Draw shapes.
+            for shape in shapes:
+                visible = (
+                    not shape.visibility_layer() or
+                    not shape.visibility_layer() in hidden_layers)
+                if not visible:
+                    continue
+                qpath = draw_shape(
+                    painter, shape,
+                    force_world_space=False,
+                    viewportmapper=self.viewportmapper)
+                screen_space = shape.options['shape.space'] == 'screen'
+                if not shape.options['background'] or screen_space:
+                    cutter.addPath(qpath)
+
             # Draw hierarchy connections.
             if cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER):
                 for shape in shapes:
@@ -671,20 +690,8 @@ class PickerPanelView(QtWidgets.QWidget):
                         if skip:
                             continue
                         draw_connection(
-                            painter, shape, child,
+                            painter, shape, child, cutter=cutter,
                             viewportmapper=self.viewportmapper)
-
-            # Draw shapes.
-            for shape in shapes:
-                visible = (
-                    not shape.visibility_layer() or
-                    not shape.visibility_layer() in hidden_layers)
-                if not visible:
-                    continue
-                draw_shape(
-                    painter, shape,
-                    force_world_space=False,
-                    viewportmapper=self.viewportmapper)
 
             # Draw Selection square/
             if self.selection_square.rect:

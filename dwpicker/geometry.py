@@ -356,11 +356,20 @@ def angle_at(path, percent):
     return angle_degrees
 
 
-def get_connection_path(start_point, end_point, viewportmapper):
-    path = QtGui.QPainterPath(viewportmapper.to_viewport_coords(start_point))
-    path.lineTo(viewportmapper.to_viewport_coords(end_point))
-    degrees = angle_at(path, 0.5)
-    center = path.pointAtPercent(0.5)
+def get_connection_path(
+        start_point, end_point, cutter=None, viewportmapper=None):
+
+    start_point = viewportmapper.to_viewport_coords(start_point)
+    end_point = viewportmapper.to_viewport_coords(end_point)
+
+    path = QtGui.QPainterPath(start_point)
+    path.lineTo(end_point)
+    path = QtGui.QPainterPathStroker().createStroke(path)
+
+    line = QtGui.QPainterPath(start_point)
+    line.lineTo(end_point)
+    degrees = angle_at(line, 0.5)
+    center = line.pointAtPercent(0.5)
 
     offset = 3 + viewportmapper.zoom
     triangle = QtGui.QPolygonF([
@@ -375,6 +384,8 @@ def get_connection_path(start_point, end_point, viewportmapper):
     transform.translate(-center.x(), -center.y())
     triangle = transform.map(triangle)
     path.addPolygon(triangle)
+    if cutter is not None:
+        path = path.subtracted(cutter)
     return path
 
 
