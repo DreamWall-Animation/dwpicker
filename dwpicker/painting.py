@@ -46,13 +46,15 @@ def draw_parenting_shapes(
             painter, potential_parent, 'white', alpha=255, padding=3,
             pen_width=5,
             viewportmapper=viewportmapper)
-        draw_connection(
-            painter, potential_parent, child, 'white',
-            viewportmapper=viewportmapper)
+        start_point = potential_parent.bounding_rect().center()
+        end_point = child.bounding_rect().center()
+        path = get_connection_path(start_point, end_point, viewportmapper)
+        draw_connections(painter, path, 'white')
         return
     end_point = child.bounding_rect().center()
     start_point = viewportmapper.to_units_coords(cursor)
-    path = get_connection_path(start_point, end_point, viewportmapper)
+    path = get_connection_path(
+        start_point, end_point, viewportmapper=viewportmapper)
     pen = QtGui.QPen('yellow')
     pen.setWidthF(2)
     pen.setJoinStyle(QtCore.Qt.MiterJoin)
@@ -61,11 +63,7 @@ def draw_parenting_shapes(
     painter.drawPath(path)
 
 
-def draw_connection(
-        painter, parent, child, color=None, cutter=None, viewportmapper=None):
-    start_point = parent.bounding_rect().center()
-    end_point = child.bounding_rect().center()
-    path = get_connection_path(start_point, end_point, cutter, viewportmapper)
+def draw_connections(painter, path, color=None):
     pen = QtGui.QPen(color or CONNECTION_COLOR)
     pen.setWidthF(1.5)
     pen.setJoinStyle(QtCore.Qt.MiterJoin)

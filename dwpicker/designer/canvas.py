@@ -6,11 +6,11 @@ from dwpicker.align import align_shapes_on_line
 from dwpicker.interactive import Manipulator, SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.optionvar import SNAP_GRID_X, SNAP_GRID_Y, SNAP_ITEMS
-from dwpicker.geometry import get_shapes_bounding_rects
+from dwpicker.geometry import get_shapes_bounding_rects, get_connection_path
 from dwpicker.painting import (
     draw_editor_canvas, draw_shape, draw_manipulator, draw_selection_square,
     draw_parenting_shapes, draw_current_panel, draw_shape_as_child_background,
-    draw_connection)
+    draw_connections)
 from dwpicker.qtutils import get_cursor
 from dwpicker.selection import Selection, get_selection_mode
 from dwpicker.shape import cursor_in_shape
@@ -100,13 +100,13 @@ class ShapeEditCanvas(QtWidgets.QWidget):
     def set_lock_background_shape(self, state):
         self.lock_background_shape = state
 
-    def get_hovered_shape(self, cursor):
-        for shape in reversed(self.list_shapes()):
+    def get_hovered_shape(self, cursor, skip_backgrounds=False):
+        for shape in reversed(self.list_shapes(skip_backgrounds)):
             if cursor_in_shape(shape, cursor):
                 return shape
 
-    def list_shapes(self):
-        if self.lock_background_shape:
+    def list_shapes(self, skip_background=False):
+        if self.lock_background_shape or skip_background:
             return [
                 shape for shape in self.visible_shapes()
                 if not shape.is_background()]
@@ -186,7 +186,8 @@ class ShapeEditCanvas(QtWidgets.QWidget):
 
         if self.interaction_manager.mode == InteractionManager.DRAGGING:
             if self.parenting_shapes:
-                self.parenting_shapes[1] = self.get_hovered_shape(cursor)
+                self.parenting_shapes[1] = self.get_hovered_shape(
+                    cursor, skip_backgrounds=True)
                 self.update()
                 return
 
@@ -389,15 +390,20 @@ class ShapeEditCanvas(QtWidgets.QWidget):
             if not shape.options['background'] or screen_space:
                 cutter.addPath(qpath)
 
+        connections_path = QtGui.QPainterPath()
         if self.display_options.display_hierarchy:
             for shape in visible_shapes:
                 for child in shape.options['children']:
                     child = self.document.shapes_by_id.get(child)
                     if child is None:
                         continue
-                    draw_connection(
-                        painter, shape, child, cutter=cutter,
-                        viewportmapper=self.viewportmapper)
+                    start_point = shape.bounding_rect().center()
+                    end_point = child.bounding_rect().center()
+                    path = get_connection_path(
+                        start_point, end_point, self.viewportmapper)
+                    connections_path.addPath(path)
+        connections_path = connections_path.subtracted(cutter)
+        draw_connections(painter, connections_path)
 
         if self.parenting_shapes:
             draw_parenting_shapes(

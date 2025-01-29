@@ -11,14 +11,14 @@ from dwpicker.document import PickerDocument
 from dwpicker.dialog import warning, CommandEditorDialog
 from dwpicker.interactive import SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
-from dwpicker.geometry import get_combined_rects
+from dwpicker.geometry import get_combined_rects, get_connection_path
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.optionvar import (
     save_optionvar, DEFAULT_BG_COLOR, DEFAULT_TEXT_COLOR, DEFAULT_WIDTH,
     DEFAULT_HEIGHT, DEFAULT_LABEL, DISPLAY_HIERARCHY_IN_PICKER,
     LAST_COMMAND_LANGUAGE, SYNCHRONYZE_SELECTION, ZOOM_SENSITIVITY)
 from dwpicker.painting import (
-    draw_shape, draw_selection_square, draw_picker_focus, draw_connection)
+    draw_shape, draw_selection_square, draw_picker_focus, draw_connections)
 from dwpicker.qtutils import get_cursor, clear_layout
 from dwpicker.shape import (
     build_multiple_shapes, cursor_in_shape, rect_intersects_shape)
@@ -678,6 +678,7 @@ class PickerPanelView(QtWidgets.QWidget):
                     cutter.addPath(qpath)
 
             # Draw hierarchy connections.
+            connections_path = QtGui.QPainterPath()
             if cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER):
                 for shape in shapes:
                     if shape.options['shape.space'] == 'screen':
@@ -689,9 +690,14 @@ class PickerPanelView(QtWidgets.QWidget):
                             child.options['shape.space'] == 'screen')
                         if skip:
                             continue
-                        draw_connection(
-                            painter, shape, child, cutter=cutter,
-                            viewportmapper=self.viewportmapper)
+
+                        start_point = shape.bounding_rect().center()
+                        end_point = child.bounding_rect().center()
+                        path = get_connection_path(
+                            start_point, end_point, self.viewportmapper)
+                        connections_path.addPath(path)
+            connections_path = connections_path.subtracted(cutter)
+            draw_connections(painter, connections_path)
 
             # Draw Selection square/
             if self.selection_square.rect:

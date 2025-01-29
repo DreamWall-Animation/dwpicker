@@ -357,7 +357,7 @@ def angle_at(path, percent):
 
 
 def get_connection_path(
-        start_point, end_point, cutter=None, viewportmapper=None):
+        start_point, end_point, viewportmapper=None):
 
     start_point = viewportmapper.to_viewport_coords(start_point)
     end_point = viewportmapper.to_viewport_coords(end_point)
@@ -384,8 +384,6 @@ def get_connection_path(
     transform.translate(-center.x(), -center.y())
     triangle = transform.map(triangle)
     path.addPolygon(triangle)
-    if cutter is not None:
-        path = path.subtracted(cutter)
     return path
 
 
