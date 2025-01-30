@@ -1,0 +1,34 @@
+site_name: "DreamWall Picker"
+nav:
+  - Home: index.md
+  - Download: download.md
+  - Install: install.md
+  - Community tutorials: https://www.youtube.com/watch?v=yP8SKvDcgEE&list=PLZTsi89r6ezGp0T3PWntUEyGe7yA3q8Y3&index=1
+  - Advanced usage:
+    - images.md
+    - overlays.md
+    - customshapes.md
+    - panels.md
+    - hierarchy.md
+    - layers.md
+  - Scripting:
+    - api.md
+    - namespace.md
+    - scripts.md
+  - Support: support.md
+theme:
+  # name: readthedocs
+  name: material
+  color_mode: dark
+  user_color_mode_toggle:
+    - material/theme-light-dark
+  palette:
+    primary: black
+    background: black
+  toggle:
+      icon: material/theme-light-dark  # Icône pour basculer entre clair et sombre
+  logo: images/dreamwallpicker.png
+# extra_css:
+#   - css.css
+repo_url: https://github.com/DreamWall-Animation/dwpicker
+repo_name: "DreamWall Picker"
