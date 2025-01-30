@@ -15,6 +15,7 @@ Authors: Lionel Brouyère, Olivier Evers
 
 ## **Key Features**
 
+- Support from Maya 2018 to 2025
 - Fast, ergonomic and straigh-forward designer canvas.
 - Highly customizable buttons.
 - Multiple backgrounds.
