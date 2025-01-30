@@ -128,8 +128,13 @@ class ShapeEditCanvas(QtWidgets.QWidget):
         cursor = self.viewportmapper.to_units_coords(get_cursor(self))
         hovered_shape = self.get_hovered_shape(cursor)
         self.transform.direction = self.manipulator.get_direction(event.pos())
+        parenting = (
+            self.interaction_manager.alt_pressed and not
+            self.interaction_manager.ctrl_pressed and not
+            self.interaction_manager.shift_pressed and
+            hovered_shape and not hovered_shape.options['background'])
 
-        if self.interaction_manager.ctrl_pressed and hovered_shape:
+        if parenting:
             self.parenting_shapes = [hovered_shape, None]
             self.interaction_manager.update(
                 event,
@@ -229,7 +234,6 @@ class ShapeEditCanvas(QtWidgets.QWidget):
         self.update()
 
     def mouseReleaseEvent(self, event):
-
         if event.button() == QtCore.Qt.RightButton:
             self.interaction_manager.update(event, pressed=False)
             return self.callContextMenu.emit(event.pos())
@@ -270,6 +274,7 @@ class ShapeEditCanvas(QtWidgets.QWidget):
             self.parenting_shapes = None
             self.update()
             return
+
         children = set(self.parenting_shapes[1].options['children'])
         children.add(self.parenting_shapes[0].options['id'])
         self.parenting_shapes[1].options['children'] = sorted(children)

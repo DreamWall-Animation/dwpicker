@@ -655,20 +655,17 @@ class PickerPanelView(QtWidgets.QWidget):
             # List renderable shapes.
             painter.setRenderHints(QtGui.QPainter.Antialiasing)
             hidden_layers = self.layers_menu.hidden_layers
-            shapes = self.document.shapes_by_panel[self.panel]
+            shapes = [
+                shape for shape in self.document.shapes_by_panel[self.panel] if
+                not shape.visibility_layer() or
+                shape.visibility_layer() not in hidden_layers]
             if self.interaction_manager.left_click_pressed:
                 shapes.extend(self.drag_shapes)
 
+            # Draw shapes and create a mask for arrows shapes.
             cutter = QtGui.QPainterPath()
             cutter.setFillRule(QtCore.Qt.WindingFill)
-
-            # Draw shapes.
             for shape in shapes:
-                visible = (
-                    not shape.visibility_layer() or
-                    not shape.visibility_layer() in hidden_layers)
-                if not visible:
-                    continue
                 qpath = draw_shape(
                     painter, shape,
                     force_world_space=False,
@@ -685,12 +682,12 @@ class PickerPanelView(QtWidgets.QWidget):
                         continue
                     for child in shape.options['children']:
                         child = self.document.shapes_by_id.get(child)
-                        skip = (
-                            not child or
-                            child.options['shape.space'] == 'screen')
-                        if skip:
+                        hidden = (
+                            child and
+                            child.visibility_layer() and
+                            child.visibility_layer() in hidden_layers)
+                        if hidden or child.options['shape.space'] == 'screen':
                             continue
-
                         start_point = shape.bounding_rect().center()
                         end_point = child.bounding_rect().center()
                         path = get_connection_path(
