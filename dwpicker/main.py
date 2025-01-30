@@ -747,20 +747,20 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_combo.setCurrentText(namespace)
 
     def change_namespace(self, namespace):
-        picker = self.tab.currentWidget()
-        if not picker:
+        document = self.document()
+        if not document:
             return
         switch_namespace_function = (
             self.replace_namespace_custom_function or switch_namespace)
-        for shape in picker.shapes:
+        for shape in document.shapes:
             if not shape.targets():
                 continue
             targets = [
                 switch_namespace_function(t, namespace)
                 for t in shape.targets()]
             shape.options['action.targets'] = targets
-
-        self.data_changed_from_picker(picker)
+        document.record_undo()
+        document.shapes_changed.emit()
 
     def add_background(self):
         filename = get_image_path(self)
