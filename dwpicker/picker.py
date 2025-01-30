@@ -507,6 +507,7 @@ class PickerPanelView(QtWidgets.QWidget):
                 self.viewportmapper.origin = (
                     self.viewportmapper.origin - offset)
             return self.update()
+        self.update()
 
     def call_context_menu(self):
         if not self.editable:
