@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets, QtCore
+from dwpicker.pyside import QtWidgets, QtCore
 from maya import cmds
 from dwpicker.optionvar import ZOOM_BUTTON
 

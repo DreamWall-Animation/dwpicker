@@ -1,4 +1,4 @@
-from PySide2 import QtCore
+from dwpicker.pyside import QtCore
 from dwpicker.shapepath import get_absolute_path, get_relative_path
 
 class Transform:

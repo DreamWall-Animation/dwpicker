@@ -1,5 +1,5 @@
 from copy import deepcopy
-from PySide2 import QtCore, QtGui
+from dwpicker.pyside import QtCore, QtGui
 from dwpicker.geometry import proportional_rect
 from dwpicker.languages import execute_code, EXECUTION_WARNING
 from dwpicker.path import expand_path

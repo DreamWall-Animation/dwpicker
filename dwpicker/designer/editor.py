@@ -1,7 +1,7 @@
 from functools import partial
 from copy import deepcopy
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker import clipboard
@@ -550,7 +550,6 @@ class PickerEditor(QtWidgets.QWidget):
             action.triggered.connect(partial(self.assign_to_panel, i))
             assign_to_panel.addAction(action)
         menu.addMenu(assign_to_panel)
-
         menu.exec_(self.shape_canvas.mapToGlobal(position))
 
     def clear_children(self, hovered_shape):

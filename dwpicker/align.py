@@ -1,4 +1,4 @@
-from PySide2 import QtCore
+from dwpicker.pyside import QtCore
 from dwpicker.geometry import split_line
 
 
@@ -28,9 +28,8 @@ def align_h_center(shapes):
 def align_right(shapes):
     right = max(s.bounding_rect().right() for s in shapes)
     for shape in shapes:
-        offset = (shape.rect.left() - shape.bounding_rect().left())
-        shape_right = right - offset
-        shape.rect.moveRight(shape_right)
+        offset = right - shape.bounding_rect().right()
+        shape.rect.moveLeft(shape.rect.left() + offset)
         shape.synchronize_rect()
         shape.update_path()
 

@@ -1,5 +1,5 @@
 import math
-from PySide2 import QtGui, QtCore
+from dwpicker.pyside import QtGui, QtCore
 from dwpicker.viewport import ViewportMapper, to_screenspace_coords
 
 

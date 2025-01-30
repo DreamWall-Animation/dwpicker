@@ -62,7 +62,7 @@ def execute_python(
         code = DEFERRED_PYTHON.format(code=code)
     targets = (shape.targets() or []) if shape else []
     targets = ', '.join(('"{}"'.format(target) for target in targets))
-    shape_id = shape.options['id']
+    shape_id = shape.options['id'] if shape else None
     code = PYTHON_TARGETS_VARIABLE.format(
         targets=targets, shape_id=shape_id, code=code)
     exec(code, globals())

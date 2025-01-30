@@ -1,5 +1,5 @@
 
-from PySide2 import QtCore
+from dwpicker.pyside import QtCore
 from maya import cmds
 from dwpicker.optionvar import (
     ISOLATE_CURRENT_PANEL_SHAPES, DISPLAY_HIERARCHY_IN_CANVAS)

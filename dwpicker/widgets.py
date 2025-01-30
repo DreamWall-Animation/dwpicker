@@ -1,7 +1,7 @@
 
 import sys
 from functools import partial, lru_cache
-from PySide2 import QtGui, QtCore, QtWidgets
+from dwpicker.pyside import QtGui, QtCore, QtWidgets
 from dwpicker.compatibility import ensure_general_options_sanity
 from dwpicker.colorwheel import ColorDialog
 from dwpicker.dialog import get_image_path

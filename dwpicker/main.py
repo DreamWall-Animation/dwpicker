@@ -5,7 +5,7 @@ import webbrowser
 from copy import deepcopy
 from functools import partial
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from dwpicker.pyside import QtWidgets, QtCore, QtGui
 
 from maya import cmds
 import maya.OpenMaya as om
@@ -273,13 +273,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         index = int(not bool(self.panel_buttons.checkedId()))
         self.panel_buttons.button(index).setChecked(True)
         self.update_panels_display_mode()
-        self.set_focus()
+        self.setFocus()
 
     def toggle_hierarchy_display(self):
         state = not bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER))
         save_optionvar(DISPLAY_HIERARCHY_IN_PICKER, int(state))
         self.update()
-        self.set_focus()
+        self.setFocus()
 
     def update_panels_display_mode(self, *_):
         state = bool(self.panel_buttons.checkedId())

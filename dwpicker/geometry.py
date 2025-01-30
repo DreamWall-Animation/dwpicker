@@ -1,5 +1,5 @@
 import math
-from PySide2 import QtCore, QtGui
+from dwpicker.pyside import QtCore, QtGui
 
 
 POINT_RADIUS = 8

@@ -1,5 +1,5 @@
 
-from PySide2 import QtWidgets, QtCore
+from dwpicker.pyside import QtWidgets, QtCore
 
 
 ORIENTATIONS = {

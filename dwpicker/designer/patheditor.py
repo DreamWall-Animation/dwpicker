@@ -3,7 +3,7 @@ import json
 from copy import deepcopy
 from functools import partial
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from maya import cmds
 
 from dwpicker.geometry import (

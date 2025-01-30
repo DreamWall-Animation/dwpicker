@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui
+from dwpicker.pyside import QtCore, QtGui
 from maya import cmds
 
 from dwpicker.optionvar import ZOOM_SENSITIVITY

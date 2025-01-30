@@ -1,5 +1,5 @@
 
-from PySide2 import QtCore, QtGui
+from dwpicker.pyside import QtCore, QtGui
 
 
 class ViewportMapper():

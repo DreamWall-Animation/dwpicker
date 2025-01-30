@@ -1,6 +1,6 @@
 import json
 import os
-from PySide2 import QtGui
+from dwpicker.pyside import QtGui
 
 from dwpicker.templates import PICKER, BUTTON, BACKGROUND
 from dwpicker.ingest.animschool.parser import parse_animschool_picker, save_png

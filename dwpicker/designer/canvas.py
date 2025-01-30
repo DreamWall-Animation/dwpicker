@@ -1,5 +1,5 @@
 from functools import partial
-from PySide2 import QtCore, QtGui, QtWidgets
+from dwpicker.pyside import QtCore, QtGui, QtWidgets
 from maya import cmds
 
 from dwpicker.align import align_shapes_on_line
@@ -113,6 +113,11 @@ class ShapeEditCanvas(QtWidgets.QWidget):
         return self.visible_shapes()
 
     def mousePressEvent(self, event):
+        skip = (
+            event.button() == QtCore.Qt.RightButton and
+            self.interaction_manager.left_click_pressed)
+        if skip:
+            return
         self.setFocus(QtCore.Qt.MouseFocusReason)  # This is not automatic
         if self.drag_shapes and event.button() == QtCore.Qt.LeftButton:
             pos = self.viewportmapper.to_units_coords(event.pos())

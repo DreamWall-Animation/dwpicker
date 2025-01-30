@@ -1,6 +1,6 @@
 
 
-from PySide2 import QtCore
+from dwpicker.pyside import QtCore
 
 from dwpicker.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,

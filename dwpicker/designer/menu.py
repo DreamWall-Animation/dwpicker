@@ -1,6 +1,6 @@
 from functools import partial
 from maya import cmds
-from PySide2 import QtGui, QtWidgets, QtCore
+from dwpicker.pyside import QtGui, QtWidgets, QtCore
 
 from dwpicker.optionvar import (
     BG_LOCKED, DISPLAY_HIERARCHY_IN_CANVAS, ISOLATE_CURRENT_PANEL_SHAPES,

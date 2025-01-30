@@ -1,5 +1,5 @@
 from decimal import Decimal, getcontext
-from PySide2 import QtWidgets, QtGui, QtCore
+from dwpicker.pyside import QtWidgets, QtGui, QtCore
 
 
 HANDLER_WIDTH = 16

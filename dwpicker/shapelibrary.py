@@ -2,7 +2,7 @@
 import os
 import json
 from copy import deepcopy
-from PySide2 import QtWidgets, QtCore, QtGui
+from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from dwpicker.geometry import grow_rect, resize_rect_with_ratio
 from dwpicker.qtutils import get_cursor
 from dwpicker.shapepath import get_worldspace_qpath, rotate_path

@@ -2,7 +2,7 @@
 import uuid
 from copy import deepcopy
 from collections import defaultdict
-from PySide2 import QtCore
+from dwpicker.pyside import QtCore
 from dwpicker.shape import Shape
 from dwpicker.templates import PICKER
 from dwpicker.undo import UndoManager

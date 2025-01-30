@@ -3,7 +3,7 @@ from functools import partial
 
 from maya import cmds
 import maya.OpenMaya as om
-from PySide2 import QtWidgets, QtGui, QtCore
+from dwpicker.pyside import QtWidgets, QtGui, QtCore
 
 from dwpicker.align import align_shapes_on_line
 from dwpicker.compatibility import ensure_general_options_sanity
@@ -259,7 +259,7 @@ class PickerPanelView(QtWidgets.QWidget):
         return picker
 
     def showEvent(self, event):
-        if self._shonw:
+        if self._shown:
             return super(PickerPanelView, self).showEvent(event)
         self._shown = True
         self.reset(self.size(), selection_only=False)
@@ -571,8 +571,6 @@ class PickerPanelView(QtWidgets.QWidget):
                 compact_undo=command['force_compact_undo'])
         except Exception as e:
             import traceback
-            print(EXECUTION_WARNING.format(
-                name=self.options['text.content'], error=e))
             print(traceback.format_exc())
 
     def update_button(self, shape):

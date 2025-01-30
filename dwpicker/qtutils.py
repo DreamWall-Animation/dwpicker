@@ -1,11 +1,11 @@
 import inspect
 import os
 import sys
-from PySide2 import QtGui, QtWidgets, QtCore
+from dwpicker.pyside import QtGui, QtWidgets, QtCore
 from maya import cmds
 import maya.OpenMayaUI as omui
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
-import shiboken2
+from dwpicker.pyside import shiboken2
 
 
 # Ensure backward compatibility.

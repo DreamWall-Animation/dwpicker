@@ -1,5 +1,5 @@
 import math
-from PySide2 import QtWidgets, QtGui, QtCore
+from dwpicker.pyside import QtWidgets, QtGui, QtCore
 from dwpicker.qtutils import get_cursor
 from dwpicker.geometry import (
     get_relative_point, get_point_on_line, get_absolute_angle_c)

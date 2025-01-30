@@ -1,5 +1,5 @@
 from copy import deepcopy
-from PySide2 import QtWidgets, QtCore
+from dwpicker.pyside import QtWidgets, QtCore
 from dwpicker.templates import COMMAND, MENU_COMMAND
 from dwpicker.qtutils import icon
 from dwpicker.dialog import CommandEditorDialog, MenuCommandEditorDialog
