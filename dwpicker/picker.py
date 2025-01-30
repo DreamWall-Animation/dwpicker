@@ -232,6 +232,8 @@ class PickerPanelView(QtWidgets.QWidget):
             self, document, editable=True, panel=0, layers_menu=None,
             parent=None):
         super(PickerPanelView, self).__init__(parent)
+        self._shown = False
+
         self.document = document
         self.document.shapes_changed.connect(self.update)
         self.callbacks = []
@@ -255,6 +257,12 @@ class PickerPanelView(QtWidgets.QWidget):
         self.unregister_callbacks()
         self.deleteLater()
         return picker
+
+    def showEvent(self, event):
+        if self._shonw:
+            return super(PickerPanelView, self).showEvent(event)
+        self._shown = True
+        self.reset(self.size(), selection_only=False)
 
     @property
     def zoom_locked(self):
@@ -284,12 +292,14 @@ class PickerPanelView(QtWidgets.QWidget):
             not s.visibility_layer()
             or s.visibility_layer() not in self.layers_menu.hidden_layers]
 
-    def reset(self, viewsize=None):
+    def reset(self, viewsize=None, selection_only=True):
         shapes = [
             s for s in self.visible_shapes() if
             s.options['shape.space'] == 'world' and not
             s.options['shape.ignored_by_focus']]
-        shapes_rects = [s.bounding_rect() for s in shapes if s.selected]
+        shapes_rects = [
+            s.bounding_rect() for s in shapes if
+            not selection_only or s.selected]
         if not shapes_rects:
             shapes_rects = [s.bounding_rect() for s in shapes]
         if not shapes_rects:
