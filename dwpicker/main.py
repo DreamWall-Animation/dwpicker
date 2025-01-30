@@ -273,11 +273,13 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         index = int(not bool(self.panel_buttons.checkedId()))
         self.panel_buttons.button(index).setChecked(True)
         self.update_panels_display_mode()
+        self.set_focus()
 
     def toggle_display_hierarchy(self):
         state = not bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER))
         save_optionvar(DISPLAY_HIERARCHY_IN_PICKER, int(state))
         self.update()
+        self.set_focus()
 
     def update_panels_display_mode(self, *_):
         state = bool(self.panel_buttons.checkedId())
