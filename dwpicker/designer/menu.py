@@ -87,7 +87,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.hierarchy.setCheckable(True)
         state = bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_CANVAS))
         self.hierarchy.setChecked(state)
-        self.hierarchy.toggled.connect(self.toggle_display_hierarchy)
+        self.hierarchy.toggled.connect(self.toggle_hierarchy_display)
 
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
@@ -235,7 +235,7 @@ class MenuWidget(QtWidgets.QWidget):
 
         self.load_ui_states()
 
-    def toggle_display_hierarchy(self, state):
+    def toggle_hierarchy_display(self, state):
         save_optionvar(DISPLAY_HIERARCHY_IN_CANVAS, int(state))
         self.display_options.display_hierarchy = state
         self.display_options.options_changed.emit()

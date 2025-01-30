@@ -163,8 +163,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.preferences.triggered.connect(self.call_preferences)
         self.menubar.change_title.triggered.connect(self.change_title)
         self.menubar.toggle_display.triggered.connect(self.toggle_display_mode)
-        method = self.toggle_display_hierarchy
-        self.menubar.toggle_display_hierarchy.triggered.connect(method)
+        method = self.toggle_hierarchy_display
+        self.menubar.toggle_hierarchy_display.triggered.connect(method)
         method = self.change_namespace_dialog
         self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
@@ -199,8 +199,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
             'toggle_display': (
                 self.toggle_display_mode, self.menubar.toggle_display),
             'display_hierarchy': (
-                self.toggle_display_hierarchy,
-                self.menubar.toggle_display_hierarchy)
+                self.toggle_hierarchy_display,
+                self.menubar.toggle_hierarchy_display)
             }
         for function_name, sc in self.shortcuts.items():
             sc.activated.disconnect(function_names_actions[function_name][0])
@@ -275,7 +275,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.update_panels_display_mode()
         self.set_focus()
 
-    def toggle_display_hierarchy(self):
+    def toggle_hierarchy_display(self):
         state = not bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_PICKER))
         save_optionvar(DISPLAY_HIERARCHY_IN_PICKER, int(state))
         self.update()
@@ -800,8 +800,8 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.preferences = QtWidgets.QAction('Preferences', parent)
         text = 'Toggle panel display mode'
         self.toggle_display = QtWidgets.QAction(text, parent)
-        text = 'Toggle display hierarchy'
-        self.toggle_display_hierarchy = QtWidgets.QAction(text, parent)
+        text = 'Toggle hierarchy display'
+        self.toggle_hierarchy_display = QtWidgets.QAction(text, parent)
         self.change_title = QtWidgets.QAction('Change picker title', parent)
         self.change_namespace = QtWidgets.QAction('Change namespace', parent)
         self.add_background = QtWidgets.QAction('Add background item', parent)
@@ -828,7 +828,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.preferences)
         self.edit.addSeparator()
         self.edit.addAction(self.toggle_display)
-        self.edit.addAction(self.toggle_display_hierarchy)
+        self.edit.addAction(self.toggle_hierarchy_display)
         self.edit.addSeparator()
         self.edit.addAction(self.change_title)
         self.edit.addSeparator()
