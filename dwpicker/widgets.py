@@ -229,10 +229,13 @@ class NumEdit(LineEdit):
     def __init__(self, minimum=None, maximum=None, parent=None):
         super(NumEdit, self).__init__(parent)
         self.dragging = False
+        self.init_mouse_pos = QtCore.QPoint()
         self.last_mouse_pos = QtCore.QPoint()
 
         self.minimum = minimum
         self.maximum = maximum
+        # Minimum horizontal pixels to move before adjusting value
+        self.drag_threshold = 15
 
         self.setMouseTracking(True)
 
@@ -243,17 +246,25 @@ class NumEdit(LineEdit):
         self.setStyleSheet("background-color: #5285A6;")
         self.clearFocus()
         self.dragging = True
+        self.init_mouse_pos = event.globalPos()
         self.last_mouse_pos = event.globalPos()
         event.accept()
 
     def mouseMoveEvent(self, event):
-        self.setStyleSheet("")
-
         if not self.dragging:
             return super(NumEdit, self).mouseMoveEvent(event)
 
         delta = event.globalPos() - self.last_mouse_pos
         self.last_mouse_pos = event.globalPos()
+
+        delta_threshold = abs(
+            self.init_mouse_pos.x() - self.last_mouse_pos.x())
+        if self.drag_threshold:
+            if delta_threshold < self.drag_threshold:
+                return
+            self.drag_threshold = False
+
+        self.setStyleSheet("")
         current_value = float(self.text()) if self.text() else 0.0
 
         is_integer = self.VALIDATOR_CLS == QtGui.QIntValidator
@@ -271,6 +282,7 @@ class NumEdit(LineEdit):
             self.setText("{0:.2f}".format(new_value))
 
     def mouseReleaseEvent(self, event):
+        self.drag_threshold = 15
         self.setStyleSheet("")
         if event.button() != QtCore.Qt.MiddleButton:
             return super(NumEdit, self).mouseReleaseEvent(event)
