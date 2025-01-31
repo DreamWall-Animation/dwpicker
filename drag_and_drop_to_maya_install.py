@@ -1,7 +1,12 @@
 import os
-import shiboken2
 import shutil
-from PySide2 import QtWidgets, QtCore
+
+try:
+    from shiboken2 import wrapInstance
+    from PySide2 import QtWidgets, QtCore
+except ModuleNotFoundError:
+    from shiboken6 import wrapInstance
+    from PySide6 import QtWidgets, QtCore
 
 from maya import cmds, mel
 import maya.OpenMayaUI as omui
@@ -33,7 +38,7 @@ def get_maya_window():
         return None
     ptr = omui.MQtUtil.mainWindow()
     if ptr is not None:
-        return shiboken2.wrapInstance(int(ptr), QtWidgets.QWidget)
+        return wrapInstance(int(ptr), QtWidgets.QWidget)
 
 
 def list_shelves():
