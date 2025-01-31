@@ -39,6 +39,6 @@ To ensure this situation could never happen again, we simply decided to make our
 
 Enjoy ! ;D
 
-## **Who's DreamWall Studio ?**
+## **Who DreamWall Studio ?**
 
 [DreamWall](https://dreamwall.be/en) is an animation studio located in Charleroi, Belgium, operating for more than 15 years. The studio specializes in producing 2D and 3D animated content for television, film, and digital platforms. DreamWall collaborates on projects for clients both in Belgium and internationally.
