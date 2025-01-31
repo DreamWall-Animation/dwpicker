@@ -107,6 +107,7 @@ class PickerStackedView(QtWidgets.QWidget):
         self.editable = editable
         self.pickers = []
         self.widget = None
+        self.last_selected_tab = None
 
         self.layers_menu = VisibilityLayersMenu(document)
         self.layers_menu.visibilities_changed.connect(self.update)
@@ -181,9 +182,15 @@ class PickerStackedView(QtWidgets.QWidget):
             names = data['general']['panels.names']
             for picker, name in zip(self.pickers, names):
                 self.widget.addTab(picker, name)
+            if self.last_selected_tab:
+                self.widget.setCurrentIndex(self.last_selected_tab)
+            self.widget.currentChanged.connect(self.on_tab_changed)
 
         clear_layout(self.layout)
         self.layout.addWidget(self.widget)
+
+    def on_tab_changed(self, index):
+        self.last_selected_tab = index
 
     def full_refresh(self):
         panels = self.document.data['general']['panels']
