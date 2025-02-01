@@ -286,10 +286,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker = self.tab.currentWidget()
         if picker is None:
             return
-
+        focused_panel = picker.reset()
         picker.as_sub_tab = state
         picker.create_pickers()
-        picker.create_panels()
+        picker.create_panels(panel=focused_panel)
         QtCore.QTimer.singleShot(10, partial(picker.reset, force_all=True))
         picker.update()
 

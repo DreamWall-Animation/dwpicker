@@ -132,7 +132,7 @@ class PickerStackedView(QtWidgets.QWidget):
             for picker in self.pickers:
                 if picker.rect().contains(get_cursor(picker)):
                     picker.reset()
-                    return
+                    return picker.panel
 
         elif not force_all:
             picker = self.pickers[self.widget.currentIndex()]
@@ -170,7 +170,7 @@ class PickerStackedView(QtWidgets.QWidget):
         for picker in self.pickers:
             picker.size_event_triggered.connect(self.picker_resized)
 
-    def create_panels(self):
+    def create_panels(self, panel=None):
         data = self.document.data
         if not self.as_sub_tab:
             panels = data['general']['panels']
@@ -182,7 +182,13 @@ class PickerStackedView(QtWidgets.QWidget):
             names = data['general']['panels.names']
             for picker, name in zip(self.pickers, names):
                 self.widget.addTab(picker, name)
-            if self.last_selected_tab:
+
+            # Check "if panel is not None" (0 is a valid value,
+            # so "if panel" would be incorrect)
+            if panel is not None:
+                self.widget.setCurrentIndex(panel)
+                self.last_selected_tab = panel
+            elif self.last_selected_tab:
                 self.widget.setCurrentIndex(self.last_selected_tab)
             self.widget.currentChanged.connect(self.on_tab_changed)
 
