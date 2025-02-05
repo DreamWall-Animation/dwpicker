@@ -12,7 +12,7 @@ from dwpicker.dialog import warning, CommandEditorDialog
 from dwpicker.interactive import SelectionSquare
 from dwpicker.interactionmanager import InteractionManager
 from dwpicker.geometry import get_combined_rects, get_connection_path
-from dwpicker.languages import execute_code, EXECUTION_WARNING
+from dwpicker.languages import execute_code
 from dwpicker.optionvar import (
     save_optionvar, DEFAULT_BG_COLOR, DEFAULT_TEXT_COLOR, DEFAULT_WIDTH,
     DEFAULT_HEIGHT, DEFAULT_LABEL, DISPLAY_HIERARCHY_IN_PICKER,
@@ -710,7 +710,9 @@ class PickerPanelView(QtWidgets.QWidget):
                             child and
                             child.visibility_layer() and
                             child.visibility_layer() in hidden_layers)
-                        if hidden or child.options['shape.space'] == 'screen':
+                        screen_space = child.options['shape.space'] == 'screen'
+                        panel = child.options['panel'] != shape.options['panel']
+                        if hidden or screen_space or panel:
                             continue
                         start_point = shape.bounding_rect().center()
                         end_point = child.bounding_rect().center()
