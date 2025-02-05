@@ -300,6 +300,8 @@ class ShapeEditCanvas(QtWidgets.QWidget):
 
     def add_drag_shapes(self):
         shapes_data = [s.options for s in self.drag_shapes]
+        for data in shapes_data:
+            data['panel'] = max((self.display_options.current_panel, 0))
         shapes = self.document.add_shapes(shapes_data, hierarchize=True)
         self.document.shapes_changed.emit()
         self.drag_shapes = []
