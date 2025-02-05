@@ -214,6 +214,9 @@ class ShapeSettings(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(ShapeSettings, self).__init__(parent)
+        self.id_ = QtWidgets.QLineEdit()
+        self.id_.setReadOnly(True)
+
         self.shape = QtWidgets.QComboBox()
         self.shape.addItems(SHAPE_TYPES)
         self.shape.currentIndexChanged.connect(self.shape_changed)
@@ -268,6 +271,8 @@ class ShapeSettings(QtWidgets.QWidget):
         layout1.setSpacing(0)
         layout1.setContentsMargins(0, 0, 0, 0)
         layout1.setHorizontalSpacing(5)
+        layout1.addRow('Id', self.id_)
+        layout1.addItem(QtWidgets.QSpacerItem(0, 8))
         layout1.addRow(Title('Display'))
         layout1.addRow('Panel number', self.panel)
         layout1.addRow('Visibility layer', self.layer)
@@ -326,6 +331,10 @@ class ShapeSettings(QtWidgets.QWidget):
         self.optionSet.emit('shape.space', self.space.currentText())
 
     def set_options(self, options):
+        values = list({option['id'] for option in options})
+        value = str(values[0]) if len(values) == 1 else '...'
+        self.id_.setText(value)
+
         values = list({option['background'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.background.setCurrentText(value)
