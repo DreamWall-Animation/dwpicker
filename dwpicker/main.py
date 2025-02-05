@@ -491,8 +491,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         value = bool(cmds.optionVar(query=NAMESPACE_TOOLBAR))
         self.namespace_widget.setVisible(value)
         self.update_namespaces()
-        for i in range(self.tab.count()):
-            self.set_modified_state(i, self.document(i).modified_state)
+        self.update_modified_states()
 
     def add_picker_from_file(self, filename):
         with open(filename, "r") as f:
@@ -522,6 +521,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         document.changed.connect(self.store_local_pickers_data)
         document.general_option_changed.connect(self.general_changed)
         document.data_changed.connect(self.update_names)
+        document.changed.connect(self.update_modified_states)
         picker = PickerStackedView(document, self.editable)
         picker.register_callbacks()
         return picker
@@ -673,6 +673,16 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.set_editable(state)
         for picker in self.pickers:
             picker.editable = state
+
+    def update_modified_states(self):
+        for index, picker in enumerate(self.pickers):
+            state = picker.document.modified_state
+            use_icon = cmds.optionVar(query=USE_ICON_FOR_UNSAVED_TAB)
+            icon_ = icon('save.png') if state and use_icon else QtGui.QIcon()
+            self.tab.setTabIcon(index, icon_)
+            title = self.document(index).data['general']['name']
+            title = "*" + title if state and not use_icon else title
+            self.tab.setTabText(index, title)
 
     def set_modified_state(self, index, state):
         """

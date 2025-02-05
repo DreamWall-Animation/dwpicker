@@ -49,18 +49,21 @@ class PickerDocument(QtCore.QObject):
 
     def record_undo(self):
         self.undo_manager.set_data_modified(self.data)
+        self.modified_state = True
 
     def undo(self):
         if self.undo_manager.undo():
             self.data = self.undo_manager.data
             self.generate_shapes()
             self.data_changed.emit()
+            self.modified_state = True
 
     def redo(self):
         if self.undo_manager.redo():
             self.data = self.undo_manager.data
             self.generate_shapes()
             self.data_changed.emit()
+            self.modified_state = True
 
     def panel_count(self):
         return count_panels(self.data['general']['panels'])
