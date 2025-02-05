@@ -100,6 +100,7 @@ class PickerEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+D", self.shape_canvas, self.deselect_all)
         set_shortcut("Ctrl+A", self.shape_canvas, self.select_all)
         set_shortcut("Ctrl+I", self.shape_canvas, self.invert_selection)
+        set_shortcut("U", self.shape_canvas, self.update_targets_on_selection)
         set_shortcut("F", self.shape_canvas, self.shape_canvas.focus)
         for direction in ['Left', 'Right', 'Up', 'Down']:
             method = partial(self.move_selection, direction)
@@ -322,6 +323,16 @@ class PickerEditor(QtWidgets.QWidget):
         self.shape_canvas.selection.replace(shapes)
         self.selection_changed()
         self.update_manipulator_rect()
+
+    def update_targets_on_selection(self):
+        if not self.shape_canvas.selection:
+            return
+        targets = cmds.ls(selection=True)
+        for shape in self.shape_canvas.selection:
+            shape.set_targets(targets)
+        self.shape_canvas.update()
+        self.document.shapes_changed.emit()
+        self.document.record_undo()
 
     def update_targets(self, shape):
         shape.set_targets(cmds.ls(selection=True))
