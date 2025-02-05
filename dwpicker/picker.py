@@ -154,6 +154,7 @@ class PickerStackedView(QtWidgets.QWidget):
             for i in range(self.document.panel_count())]
         for picker in self.pickers:
             picker.size_event_triggered.connect(self.picker_resized)
+        self.register_callbacks()
 
     def picker_resized(self, event):
         data = self.document.data
@@ -249,12 +250,13 @@ class PickerPanelView(QtWidgets.QWidget):
         self.drag_shapes = []
 
     def copy(self):
+        self.unregister_callbacks()
         picker = PickerPanelView(
             self.document, self.editable, self.panel, self.layers_menu)
+        picker.register_callbacks()
         picker.viewportmapper = self.viewportmapper
         picker.register_callbacks()
         picker.auto_center = self.auto_center
-        self.unregister_callbacks()
         self.deleteLater()
         return picker
 
