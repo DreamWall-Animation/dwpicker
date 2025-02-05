@@ -10,7 +10,8 @@ from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from maya import cmds
 import maya.OpenMaya as om
 
-from dwpicker.appinfos import VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE
+from dwpicker.appinfos import (
+    VERSION, RELEASE_DATE, DW_GITHUB, DW_WEBSITE, PICKER_DOCUMENTATION)
 from dwpicker.compatibility import ensure_retro_compatibility
 from dwpicker.document import PickerDocument
 from dwpicker.designer.editor import PickerEditor
@@ -169,6 +170,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.menubar.change_namespace.triggered.connect(method)
         self.menubar.add_background.triggered.connect(self.add_background)
         self.menubar.tools.triggered.connect(self.call_tools)
+        self.menubar.documentation.triggered.connect(self.call_documentation)
         self.menubar.dw.triggered.connect(self.call_dreamwall)
         self.menubar.about.triggered.connect(self.call_about)
 
@@ -705,6 +707,9 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
     def call_dreamwall(self):
         webbrowser.open(DW_WEBSITE)
 
+    def call_documentation(self):
+        webbrowser.open(PICKER_DOCUMENTATION)
+
     def call_about(self):
         QtWidgets.QMessageBox.about(self, 'About', ABOUT)
 
@@ -816,6 +821,7 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.change_namespace = QtWidgets.QAction('Change namespace', parent)
         self.add_background = QtWidgets.QAction('Add background item', parent)
 
+        self.documentation = QtWidgets.QAction('Documentation', parent)
         self.tools = QtWidgets.QAction('Other DreamWall &tools', parent)
         self.dw = QtWidgets.QAction('&About DreamWall', parent)
         self.about = QtWidgets.QAction('&About DwPicker', parent)
@@ -846,6 +852,8 @@ class DwPickerMenu(QtWidgets.QMenuBar):
         self.edit.addAction(self.add_background)
 
         self.help = QtWidgets.QMenu('&Help', parent)
+        self.help.addAction(self.documentation)
+        self.help.addSeparator()
         self.help.addAction(self.tools)
         self.help.addAction(self.dw)
         self.help.addSeparator()
