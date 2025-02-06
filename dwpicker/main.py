@@ -413,11 +413,11 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         picker = self.tab.currentWidget()
         if not picker:
             return
-        targets = list_targets(picker.shapes)
+        targets = list_targets(picker.document.shapes)
         if nodes[-1] in targets:
             return
         for i, picker in enumerate(self.pickers):
-            if nodes[-1] in list_targets(picker.shapes):
+            if nodes[-1] in list_targets(picker.document.shapes):
                 self.tab.setCurrentIndex(i)
                 return
 
