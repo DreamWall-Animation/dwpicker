@@ -1,7 +1,7 @@
 
 from maya import cmds
 try:
-    if int(cmds.about(majorVersion=True) == '2025'):
+    if int(cmds.about(majorVersion=True)) >= 2025:
         from PySide6 import QtCore, QtGui, QtWidgets
         from PySide6 import __version__
         import shiboken6 as shiboken2
