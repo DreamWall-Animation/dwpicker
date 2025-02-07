@@ -1,3 +1,8 @@
+try:
+    ModuleNotFoundError
+except NameError:
+    class ModuleNotFoundError(ImportError): # Python2 backward compatilibity
+        pass
 
 from maya import cmds
 try:

@@ -1,17 +1,5 @@
 
-import os
-import sys
 from maya import cmds
-
-
-# try:
-#     if int(cmds.about(majorVersion=True)) >= 2025:
-#         print('>> PySide6 Maya version found. dwpicker.pyside remap activated.')
-#         sys.path.append('{}/qt_remapping'.format(os.path.dirname(__file__)))
-# # About command in Maya before 2022 does not have the flag majorVersion.
-# # So we can consider it is not a PySide6 Maya
-# except TypeError:
-#     pass
 
 
 from dwpicker.main import DwPicker, WINDOW_CONTROL_NAME

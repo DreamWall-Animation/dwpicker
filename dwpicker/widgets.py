@@ -1,8 +1,7 @@
+# -*- coding: utf-8 -*-
 
-import sys
-from functools import partial, lru_cache
+from functools import partial
 from dwpicker.pyside import QtGui, QtCore, QtWidgets
-from dwpicker.compatibility import ensure_general_options_sanity
 from dwpicker.colorwheel import ColorDialog
 from dwpicker.dialog import get_image_path
 from dwpicker.geometry import grow_rect
@@ -514,8 +513,8 @@ class ZoomLockedModel(QtCore.QAbstractTableModel):
                 return str(general['panels.names'][index.row()])
 
 
-@lru_cache()
-def get_color_icon(color, size=None, as_pixmap=False):
+# @lru_cache()
+def get_color_icon(color, size=None):
     px = QtGui.QPixmap(QtCore.QSize(*(size if size else (64, 64))))
     px.fill(QtCore.Qt.transparent)
     rect = QtCore.QRectF(0, 0, px.size().width(), px.size().height())
