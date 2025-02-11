@@ -112,6 +112,11 @@ class ShapeEditCanvas(QtWidgets.QWidget):
                 if not shape.is_background()]
         return self.visible_shapes()
 
+    def leaveEvent(self, _):
+        for shape in self.list_shapes():
+            shape.hovered = False
+        self.update()
+
     def mousePressEvent(self, event):
         skip = (
             event.button() == QtCore.Qt.RightButton and
