@@ -35,10 +35,10 @@ To achieve this, create a script button and use this python command:
 import dwpicker
 
 # Show a layer
-dwpicker.set_layer_visibility("name of the layer", True)
+dwpicker.set_layer_visible("name of the layer", True)
 
 # Hide a layer
-dwpicker.set_layer_visibility("name of the layer", True)
+dwpicker.set_layer_visible("name of the layer", False)
 
 # Toggle visibility
 dwpicker.toggle_layer_visibility("name of the layer")
