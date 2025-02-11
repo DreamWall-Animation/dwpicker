@@ -7,6 +7,9 @@ from maya import cmds
 from maya import mel
 
 from dwpicker.capture import snap
+from dwpicker.optionvar import (OVERRIDE_PROD_PICKER_DIRECTORY_ENV,
+                                CUSTOM_PROD_PICKER_DIRECTORY,
+                                LAST_IMAGE_DIRECTORY_USED, save_optionvar)
 from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from dwpicker.pyside import shiboken2
 from dwpicker.qtutils import icon
@@ -250,6 +253,35 @@ class NotificationWidget(QtWidgets.QLabel):
         NotificationWidget(parent, message, duration)
 
 
+def get_custom_picker_directory():
+    dir_env_overridden = cmds.optionVar(
+        query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV)
+    if not dir_env_overridden:
+        return None
+
+    dir_path = cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY)
+    if not os.path.isdir(dir_path):
+        return None
+
+    return dir_path
+
+
+def get_filename():
+    folder_path = get_custom_picker_directory()
+    if not folder_path:
+        folder_path = QtWidgets.QFileDialog.getExistingDirectory(None,
+                                                                 "Select Directory",
+                                                                 "")
+        if folder_path:
+            save_optionvar(LAST_IMAGE_DIRECTORY_USED, folder_path)
+
+    if not folder_path:
+        folder_path = cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED)
+    filename = os.path.join(folder_path, "dwpicker-" + str(uuid.uuid4()))
+
+    return filename
+
+
 def ui_delete_callback():
     panels = cmds.getPanel(type="modelPanel")
     for panel in panels:
@@ -320,13 +352,8 @@ def capture_snapshot(cls, combo_box):
     show_ornaments: boolean (Hide Axis and camera names,... when False)
     """
     active_camera = combo_box.currentText()
-    folder_path = QtWidgets.QFileDialog.getExistingDirectory(None,
-                                                             "Select Directory",
-                                                             "")
-    if not folder_path:
-        return
 
-    filename = os.path.join(folder_path, str(uuid.uuid4()))
+    filename = get_filename()
 
     snap(active_camera,
          off_screen=True,
