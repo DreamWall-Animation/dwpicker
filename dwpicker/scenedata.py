@@ -94,10 +94,9 @@ def clean_stray_picker_holder_nodes():
     for node in list_picker_holder_nodes():
         if node == PICKER_HOLDER_NODE:
             continue
-        try:
-            cmds.delete(node)
-        except BaseException:
+        cmds.delete(node)
+        if cmds.objExists(node):
             # Node is locked or in reference and cannot be removed.
             # As we cant remove it, we reset his data to avoid double pickers.
             cmds.setAttr(
-                node + "." + PICKER_HOLDER_ATTRIBUTE, "", dataType="string")
+                node + "." + PICKER_HOLDER_ATTRIBUTE, "", type="string")
