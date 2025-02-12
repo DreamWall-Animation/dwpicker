@@ -26,6 +26,8 @@ from dwpicker.designer.canvas import ShapeEditCanvas
 from dwpicker.designer.display import DisplayOptions
 from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
+from dwpicker.designer.qsplitter import CustomSplitter
+from dwpicker.designer.viewportwidget import ViewportWidget
 
 
 DIRECTION_OFFSETS = {
@@ -39,6 +41,9 @@ class PickerEditor(QtWidgets.QWidget):
         title = "Picker editor - " + document.data['general']['name']
         self.setWindowTitle(title)
 
+        self.splitter_layout = CustomSplitter(QtCore.Qt.Horizontal)
+        self.splitter_layout.setObjectName("SplitterLayout")
+
         self.document = document
         self.document.shapes_changed.connect(self.update)
         self.document.general_option_changed.connect(self.generals_modified)
@@ -46,6 +51,8 @@ class PickerEditor(QtWidgets.QWidget):
         self.document.data_changed.connect(self.selection_changed)
 
         self.display_options = DisplayOptions()
+
+        self.viewport_widget = ViewportWidget(self)
 
         self.shape_canvas = ShapeEditCanvas(
             self.document, self.display_options)
@@ -115,13 +122,18 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.panelDoubleClicked.connect(
             self.shape_canvas.select_panel_shapes)
 
+        self.splitter_layout.addWidget(self.viewport_widget)
+        self.splitter_layout.addWidget(self.shape_canvas)
+        self.splitter_layout.setSizes([0, 1])
+
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.hlayout.setContentsMargins(0, 0, 0, 0)
-        self.hlayout.addWidget(self.shape_canvas)
+        self.hlayout.addWidget(self.splitter_layout)
         self.hlayout.addWidget(self.attribute_editor)
 
         self.vlayout = QtWidgets.QVBoxLayout(self)
+        self.vlayout.setObjectName("VerticalLayout")
         self.vlayout.setContentsMargins(0, 0, 0, 0)
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
@@ -284,13 +296,16 @@ class PickerEditor(QtWidgets.QWidget):
 
     def create_shape(
             self, template, before=False, position=None, targets=None,
-            image=False):
+            image=False,filepath=None):
 
         options = deepcopy(template)
         panel = self.shape_canvas.display_options.current_panel
         options['panel'] = max((panel, 0))
         if image:
-            filename = get_image_path(self, "Select background image.")
+            if filepath:
+                filename = filepath
+            else:
+                filename = get_image_path(self, "Select background image.")
             if filename:
                 filename = format_path(filename)
                 options['image.path'] = filename
