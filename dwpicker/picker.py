@@ -348,10 +348,11 @@ class PickerPanelView(QtWidgets.QWidget):
         self.update()
 
     def leaveEvent(self, _):
+        for shape in self.visible_shapes():
+            shape.hovered = False
         self.update()
 
     def mousePressEvent(self, event):
-
         self.setFocus(QtCore.Qt.MouseFocusReason)
         if self.drag_shapes and event.button() == QtCore.Qt.LeftButton:
             pos = self.viewportmapper.to_units_coords(event.pos())
