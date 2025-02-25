@@ -74,6 +74,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.buttonLibraryRequested.connect(self.call_library)
         self.menu.useSnapToggled.connect(self.use_snap)
+        self.menu.viewportToggled.connect(self.toggle_viewport)
         method = self.shape_canvas.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
         self.menu.undoRequested.connect(self.document.undo)
@@ -138,6 +139,10 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
         self.vlayout.addLayout(self.hlayout)
+
+    def toggle_viewport(self):
+        if self.splitter_layout.splitter_handle:
+            self.splitter_layout.splitter_handle.toggle_left_widget()
 
     def call_library(self, point):
         self.shape_library_menu.move(point)
