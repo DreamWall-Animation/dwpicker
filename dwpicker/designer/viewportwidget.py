@@ -253,35 +253,6 @@ class NotificationWidget(QtWidgets.QLabel):
         NotificationWidget(parent, message, duration)
 
 
-def get_custom_picker_directory():
-    dir_env_overridden = cmds.optionVar(
-        query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV)
-    if not dir_env_overridden:
-        return None
-
-    dir_path = cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY)
-    if not os.path.isdir(dir_path):
-        return None
-
-    return dir_path
-
-
-def get_filename():
-    folder_path = get_custom_picker_directory()
-    if not folder_path:
-        folder_path = QtWidgets.QFileDialog.getExistingDirectory(None,
-                                                                 "Select Directory",
-                                                                 "")
-        if folder_path:
-            save_optionvar(LAST_IMAGE_DIRECTORY_USED, folder_path)
-
-    if not folder_path:
-        folder_path = cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED)
-    filename = os.path.join(folder_path, "dwpicker-" + str(uuid.uuid4()))
-
-    return filename
-
-
 def ui_delete_callback():
     panels = cmds.getPanel(type="modelPanel")
     for panel in panels:
@@ -343,6 +314,35 @@ def toggle_camera_settings(panel, camera_name="persp", option="resolution"):
             cmds.camera(camera_name, edit=True, displayFieldChart=False)
             return
         cmds.camera(camera_name, edit=True, displayFieldChart=True)
+
+
+def get_custom_picker_directory():
+    dir_env_overridden = cmds.optionVar(
+        query=OVERRIDE_PROD_PICKER_DIRECTORY_ENV)
+    if not dir_env_overridden:
+        return None
+
+    dir_path = cmds.optionVar(query=CUSTOM_PROD_PICKER_DIRECTORY)
+    if not os.path.isdir(dir_path):
+        return None
+
+    return dir_path
+
+
+def get_filename():
+    folder_path = get_custom_picker_directory()
+    if not folder_path:
+        folder_path = QtWidgets.QFileDialog.getExistingDirectory(None,
+                                                                 "Select Directory",
+                                                                 "")
+        if folder_path:
+            save_optionvar(LAST_IMAGE_DIRECTORY_USED, folder_path)
+        else:
+            folder_path = cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED)
+
+    filename = os.path.join(folder_path, "dwpicker-" + str(uuid.uuid4()))
+
+    return filename
 
 
 def capture_snapshot(cls, combo_box):
