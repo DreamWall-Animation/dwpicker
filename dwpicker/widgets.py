@@ -98,35 +98,58 @@ class WidgetToggler(QtWidgets.QPushButton):
             self.setText(self.text().replace('v', '>'))
 
 
+class ColorButton(QtWidgets.QAbstractButton):
+    def __init__(self, parent=None):
+        super(ColorButton, self).__init__(parent)
+        self.color = 'grey'
+        self.setFixedSize(21, 21)
+        self.hover = False
+
+    def enterEvent(self, event):
+        self.hover = True
+        self.update()
+
+    def leaveEvent(self, event):
+        self.hover = False
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setBrush(QtGui.QColor(self.color))
+        painter.setPen(QtCore.Qt.black)
+        rect = self.rect()
+        rect.setWidth(rect.width() - 1)
+        rect.setHeight(rect.height() - 1)
+        painter.drawRect(rect)
+        if not self.hover:
+            painter.end()
+            return
+        rect = grow_rect(rect, -3).toRect()
+        pixmap = icon('picker.png').pixmap(rect.size())
+        painter.drawPixmap(rect, pixmap)
+        painter.end()
+
+
 class ColorEdit(QtWidgets.QWidget):
     valueSet = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(ColorEdit, self).__init__(parent)
 
-        self.pixmap = QtWidgets.QLabel()
-        self.pixmap.setFixedSize(21, 21)
-        color = QtWidgets.QApplication.palette().color(
-            QtGui.QPalette.Base)
-        self.pixmap.setPixmap(_color_pixmap(color, self.pixmap.size()))
+        self.color = ColorButton()
+        self.color.released.connect(self.pick_color)
         self.text = QtWidgets.QLineEdit()
         self.text.returnPressed.connect(self.apply)
         self.text.focusInEvent = self.focusInEvent
         self.text.focusOutEvent = self.focusOutEvent
-        self.button = QtWidgets.QToolButton(self)
-        self.button.setIcon(icon('picker.png'))
-        self.button.setFixedSize(21, 21)
-        self.button.released.connect(self.pick_color)
 
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        self.layout.addWidget(self.pixmap)
+        self.layout.addWidget(self.color)
         self.layout.addWidget(self.text)
-        self.layout.addWidget(self.button)
-        self.layout.setStretchFactor(self.pixmap, 1)
+        self.layout.setStretchFactor(self.color, 1)
         self.layout.setStretchFactor(self.text, 5)
-        self.layout.setStretchFactor(self.button, 1)
 
         self._value = self.value()
 
@@ -138,17 +161,13 @@ class ColorEdit(QtWidgets.QWidget):
         self.apply()
         return super(ColorEdit, self).focusOutEvent(event)
 
-    def showEvent(self, event):
-        super(ColorEdit, self).showEvent(event)
-        self.pixmap.setFixedSize(21, 21)
-
     def pick_color(self):
         color = self.text.text() or None
         dialog = ColorDialog(color)
         if dialog.exec_():
             self.text.setText(dialog.colorname())
-            self.pixmap.setPixmap(
-                _color_pixmap(dialog.colorname(), self.pixmap.size()))
+            self.color.color = dialog.colorname()
+            self.color.update()
             self.apply()
 
     def apply(self):
@@ -161,20 +180,8 @@ class ColorEdit(QtWidgets.QWidget):
         return value if value != '' else None
 
     def set_color(self, color=None):
-        self.text.setText(color)
-        color = color or QtWidgets.QApplication.palette().color(
-            QtGui.QPalette.Base)
-        self.pixmap.setPixmap(_color_pixmap(color, self.pixmap.size()))
-
-
-def _color_pixmap(colorname, qsize):
-    pixmap = QtGui.QPixmap(qsize)
-    painter = QtGui.QPainter(pixmap)
-    painter.setBrush(QtGui.QColor(colorname))
-    painter.setPen(QtCore.Qt.black)
-    painter.drawRect(0, 0, qsize.width(), qsize.height())
-    painter.end()
-    return pixmap
+        self.color.color = color or 'grey'
+        self.color.update()
 
 
 class LineEdit(QtWidgets.QLineEdit):
