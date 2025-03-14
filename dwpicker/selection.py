@@ -15,33 +15,26 @@ def select_targets(shapes, selection_mode='replace'):
     hovered = [s for s in shapes if s.hovered]
     targets = [t for s in hovered for t in s.targets() if cmds.objExists(t)]
 
-    if selection_mode in ('add', 'replace', 'invert'):
-        try:
-            return cmds.select(list(targets), add=selection_mode == 'add')
-        except ValueError:
-            raise NameclashError(targets)
-    elif selection_mode == 'remove':
-        selection = [n for n in cmds.ls(sl=True) if n not in targets]
-        try:
-            return cmds.select(selection)
-        except ValueError:
-            raise NameclashError(targets)
+    current_selection = set(cmds.ls(selection=True, long=True))
+    targets_selection = set(cmds.ls(targets, long=True))
 
-    # Invert selection
-    selected = [s for s in shapes if s.selected]
-    to_select = [s for s in shapes if s in hovered and s not in selected]
-    # List targets unaffected by selection
-    targets = {
-        t for s in selected for t in s.targets()
-        if cmds.objExists(t) and not s.hovered}
-    # List targets in reversed selection
-    invert_t = {t for s in to_select for t in s.targets() if cmds.objExists(t)}
-    targets.union(invert_t)
-    try:
-        cmds.select(targets)
-    except ValueError:
+    if len(targets_selection) != len(targets):
         raise NameclashError(targets)
-    return
+
+    if selection_mode == 'add':
+        new_selection = current_selection | targets_selection
+    elif selection_mode in ('replace', 'invert'):
+        new_selection = targets_selection
+    elif selection_mode == 'remove':
+        new_selection = current_selection - targets_selection
+    else:
+        raise NotImplementedError('Unsupported selection mode {}'.format(selection_mode))
+
+    # Only call cmds.select if it will actually change the selection.
+    # This is needed to prevent "empty undoes", where Maya will register an undo for all calls to cmds.select.
+    # SEE: https://forums.autodesk.com/t5/maya-ideas/consolidate-undo-steps-for-selection/idi-p/13331011
+    if current_selection != new_selection:
+        cmds.select(new_selection)
 
 
 def select_shapes_from_selection(shapes):
