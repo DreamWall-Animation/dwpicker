@@ -536,9 +536,6 @@ class PickerPanelView(QtWidgets.QWidget):
         self.update()
 
     def call_context_menu(self):
-        if not self.editable:
-            return
-
         screen_cursor = get_cursor(self)
         world_cursor = self.viewportmapper.to_units_coords(screen_cursor)
         shape = detect_hovered_shape(
@@ -546,7 +543,7 @@ class PickerPanelView(QtWidgets.QWidget):
             self.viewportmapper)
 
         global_commands = self.document.data['general']['menu_commands']
-        context_menu = PickerMenu(global_commands, shape)
+        context_menu = PickerMenu(global_commands, shape, self.editable)
 
         method = partial(self.add_button, world_cursor, button_type=0)
         context_menu.add_single.triggered.connect(method)
@@ -745,8 +742,14 @@ class CommandAction(QtWidgets.QAction):
 
 
 class PickerMenu(QtWidgets.QMenu):
-    def __init__(self, global_commands=None, shape=None, parent=None):
+    def __init__(
+            self,
+            global_commands=None,
+            shape=None,
+            editable=True,
+            parent=None):
         super(PickerMenu, self).__init__(parent)
+
         if shape and shape.options['action.menu_commands']:
             for command in shape.options['action.menu_commands']:
                 self.addAction(CommandAction(command, self))
@@ -765,13 +768,14 @@ class PickerMenu(QtWidgets.QMenu):
         text = 'Delete selected button(s)'
         self.delete_selected = QtWidgets.QAction(text, self)
 
-        self.addAction(self.add_single)
-        self.addAction(self.add_multiple)
-        self.addAction(self.update_button)
-        self.addSeparator()
-        self.addAction(self.add_command)
-        self.addSeparator()
-        self.addAction(self.delete_selected)
+        if editable:
+            self.addAction(self.add_single)
+            self.addAction(self.add_multiple)
+            self.addAction(self.update_button)
+            self.addSeparator()
+            self.addAction(self.add_command)
+            self.addSeparator()
+            self.addAction(self.delete_selected)
 
 
 class VisibilityLayersMenu(QtWidgets.QMenu):
