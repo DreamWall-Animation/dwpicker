@@ -343,13 +343,12 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         msg = (
             'Some picker have unsaved modification. \n'
             'Would you like to save them ?')
-
         result = QtWidgets.QMessageBox.question(
             None, 'Save ?', msg,
             buttons=(
                 QtWidgets.QMessageBox.SaveAll |
                 QtWidgets.QMessageBox.Close),
-            button=QtWidgets.QMessageBox.SaveAll)
+            defaultButton=QtWidgets.QMessageBox.SaveAll)
 
         if result == QtWidgets.QMessageBox.Close:
             return
