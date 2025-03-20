@@ -450,7 +450,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
                 QtWidgets.QMessageBox.Save |
                 QtWidgets.QMessageBox.Yes |
                 QtWidgets.QMessageBox.Cancel),
-            button=QtWidgets.QMessageBox.Cancel)
+            defaultButton=QtWidgets.QMessageBox.Cancel)
 
         if result == QtWidgets.QMessageBox.Cancel:
             return False
