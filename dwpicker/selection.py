@@ -13,7 +13,7 @@ class NameclashError(BaseException):
 def select_targets(shapes, selection_mode='replace'):
     shapes = [s for s in shapes if s.targets()]
     hovered = [s for s in shapes if s.hovered]
-    targets = [t for s in hovered for t in s.targets() if cmds.objExists(t)]
+    targets = {t for s in hovered for t in s.targets() if cmds.objExists(t)}
 
     current_selection = set(cmds.ls(selection=True, long=True))
     targets_selection = set(cmds.ls(targets, long=True))
