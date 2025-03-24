@@ -50,7 +50,7 @@ DreamWall Picker
     Authors: Lionel Brouyère, Olivier Evers
     Contributor(s):
         Herizo Ran, fabiencollet, c-morten, kalemas (Konstantin Maslyuk),
-        Markus Ng, Jerome Drese
+        Markus Ng, Jerome Drese, Renaud Lessard Larouche
 
 Features:
     Animation picker widget.
