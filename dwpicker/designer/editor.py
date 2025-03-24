@@ -301,7 +301,7 @@ class PickerEditor(QtWidgets.QWidget):
 
     def create_shape(
             self, template, before=False, position=None, targets=None,
-            image=False,filepath=None):
+            image=False, filepath=None):
 
         options = deepcopy(template)
         panel = self.shape_canvas.display_options.current_panel
