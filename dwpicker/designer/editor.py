@@ -26,7 +26,6 @@ from dwpicker.designer.canvas import ShapeEditCanvas
 from dwpicker.designer.display import DisplayOptions
 from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
-from dwpicker.designer.qsplitter import CustomSplitter
 from dwpicker.designer.viewportwidget import ViewportWidget
 
 
@@ -41,7 +40,7 @@ class PickerEditor(QtWidgets.QWidget):
         title = "Picker editor - " + document.data['general']['name']
         self.setWindowTitle(title)
 
-        self.splitter_layout = CustomSplitter(QtCore.Qt.Horizontal)
+        self.splitter_layout = QtWidgets.QSplitter()
         self.splitter_layout.setObjectName("SplitterLayout")
 
         self.document = document
@@ -142,8 +141,12 @@ class PickerEditor(QtWidgets.QWidget):
         self.vlayout.addLayout(self.hlayout)
 
     def toggle_viewport(self):
-        if self.splitter_layout.splitter_handle:
-            self.splitter_layout.splitter_handle.toggle_left_widget()
+        """Collapse or expand the left widget"""
+        sizes = self.splitter_layout.sizes()
+        if sizes[0] > 0:  # If left widget is visible
+            self.splitter_layout.setSizes([0, sizes[1]])
+        else:
+            self.splitter_layout.setSizes([sizes[1] // 2, sizes[1] // 2])
 
     def capture_snapshot(self, file=None):
         self.create_shape(BACKGROUND, before=True, image=True, filepath=file)
