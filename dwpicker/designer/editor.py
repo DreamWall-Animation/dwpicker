@@ -52,7 +52,8 @@ class PickerEditor(QtWidgets.QWidget):
 
         self.display_options = DisplayOptions()
 
-        self.viewport_widget = ViewportWidget(self)
+        self.viewport_widget = ViewportWidget()
+        self.viewport_widget.addSnapshotRequested.connect(self.capture_snapshot)
 
         self.shape_canvas = ShapeEditCanvas(
             self.document, self.display_options)
@@ -143,6 +144,9 @@ class PickerEditor(QtWidgets.QWidget):
     def toggle_viewport(self):
         if self.splitter_layout.splitter_handle:
             self.splitter_layout.splitter_handle.toggle_left_widget()
+
+    def capture_snapshot(self, file=None):
+        self.create_shape(BACKGROUND, before=True, image=True, filepath=file)
 
     def call_library(self, point):
         self.shape_library_menu.move(point)

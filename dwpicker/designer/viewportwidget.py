@@ -1,4 +1,3 @@
-import os
 import sys
 import uuid
 
@@ -12,7 +11,6 @@ from dwpicker.path import get_filename
 from dwpicker.pyside import QtWidgets, QtCore, QtGui
 from dwpicker.pyside import shiboken2
 from dwpicker.qtutils import icon
-from dwpicker.templates import BACKGROUND
 
 if sys.version_info[0] == 3:
     long = int
@@ -31,10 +29,10 @@ IMAGE_SIZE_PRESETS = {
 
 
 class ViewportWidget(QtWidgets.QWidget):
-    def __init__(self, editor, parent=None):
-        super(ViewportWidget, self).__init__(parent)
+    addSnapshotRequested = QtCore.Signal(str)
 
-        self.editor = editor
+    def __init__(self, parent=None):
+        super(ViewportWidget, self).__init__(parent)
 
         self.setObjectName("ViewportWidget")
         self.resize(320, 620)
@@ -170,11 +168,6 @@ class ViewportWidget(QtWidgets.QWidget):
         super(ViewportWidget, self).showEvent(event)
         self.model_panel_widget.update()
 
-    def add_snapshot_image(self, file=None):
-        if os.path.exists(file):
-            self.editor.create_shape(
-                BACKGROUND, before=True, image=True, filepath=file)
-
     def update_camera_viewport(self, combo_box, panel):
         """
         Update the camera in the active panel when a new camera is selected from the combo box.
@@ -220,11 +213,6 @@ class ViewportWidget(QtWidgets.QWidget):
         cmds.setAttr("defaultResolution.pixelAspect", 1)
 
     def capture_snapshot(self, combo_box):
-        """
-        snapshot args:
-        off_screen: boolean (Process in the background when True)
-        show_ornaments: boolean (Hide Axis and camera names,... when False)
-        """
         active_camera = combo_box.currentText()
 
         filename = get_filename()
@@ -240,7 +228,7 @@ class ViewportWidget(QtWidgets.QWidget):
 
         # NotificationWidget.show_notification(cls, "Snapshot done!")
 
-        self.add_snapshot_image(filename + ".0.png")
+        self.addSnapshotRequested.emit(filename + ".0.png")
 
 
 class NotificationWidget(QtWidgets.QLabel):
