@@ -34,6 +34,8 @@ class ViewportWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ViewportWidget, self).__init__(parent)
 
+        self.notification = None
+
         self.setObjectName("ViewportWidget")
         self.resize(320, 620)
 
@@ -226,15 +228,18 @@ class ViewportWidget(QtWidgets.QWidget):
              maintain_aspect_ratio=True,
              camera_options={"displayFieldChart": False})
 
-        # NotificationWidget.show_notification(cls, "Snapshot done!")
+        # Instantiating the NotificationWidget during initialization can result in
+        # an incorrect notification position, as the parent widget is not
+        # fully created yet.
+        self.notification = NotificationWidget(self)
+        self.notification.show_notification("Snapshot done!")
 
         self.addSnapshotRequested.emit(filename + ".0.png")
 
 
 class NotificationWidget(QtWidgets.QLabel):
-    def __init__(self, parent=None, message="Notification", duration=2000):
+    def __init__(self, parent=None):
         super(NotificationWidget, self).__init__(parent)
-        self.setText(message)
         self.setStyleSheet("""
             background-color: grey;
             color: white;
@@ -246,21 +251,16 @@ class NotificationWidget(QtWidgets.QLabel):
         self.setFixedSize(140, 30)
 
         parent_rect = parent.rect()
-        self.move(
-            (parent_rect.width() - self.width()) // 2,
-            140
-        )
+        self.move((parent_rect.width() - self.width()) // 2, 140)
 
         self.timer = QtCore.QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.deleteLater)
 
+    def show_notification(self, message="", duration=2000):
+        self.setText(message)
         self.show()
         self.timer.start(duration)
-
-    @staticmethod
-    def show_notification(parent, message="", duration=2000):
-        NotificationWidget(parent, message, duration)
 
 
 def ui_delete_callback():
