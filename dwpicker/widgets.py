@@ -171,6 +171,8 @@ class ColorEdit(QtWidgets.QWidget):
             self.apply()
 
     def apply(self):
+        self.color.color = self.value()
+        self.color.update()
         if self._value != self.value():
             self.valueSet.emit(self.value())
         self._value = self.value()
@@ -181,6 +183,7 @@ class ColorEdit(QtWidgets.QWidget):
 
     def set_color(self, color=None):
         self.color.color = color or 'grey'
+        self.text.setText(color)
         self.color.update()
 
 
