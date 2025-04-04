@@ -13,25 +13,36 @@ class NameclashError(BaseException):
 def select_targets(shapes, selection_mode='replace'):
     shapes = [s for s in shapes if s.targets()]
     hovered = [s for s in shapes if s.hovered]
-    targets = {t for s in hovered for t in s.targets() if cmds.objExists(t)}
+    targets = [t for s in hovered for t in s.targets() if cmds.objExists(t)]
+    targets = list(dict.fromkeys(targets))
 
-    current_selection = set(cmds.ls(selection=True, long=True))
-    targets_selection = set(cmds.ls(targets, long=True))
+    current_selection = cmds.ls(selection=True, long=True)
+    targets_selection = cmds.ls(targets, long=True)
 
-    if len(targets_selection) != len(targets):
+    if len(set(targets_selection)) != len(set(targets)):
         raise NameclashError(targets)
-
     if selection_mode == 'add':
-        new_selection = current_selection | targets_selection
-    elif selection_mode in ('replace', 'invert'):
+        new_selection = list(
+            dict.fromkeys(current_selection + targets_selection))
+    elif selection_mode == 'replace':
         new_selection = targets_selection
+    elif selection_mode == 'invert':
+        new_selection = current_selection[:]
+        for target in targets_selection:
+            if target not in new_selection:
+                new_selection.append(target)
+            else:
+                new_selection.remove(target)
     elif selection_mode == 'remove':
-        new_selection = current_selection - targets_selection
+        new_selection = [
+            s for s in current_selection if s not in targets_selection]
     else:
-        raise NotImplementedError('Unsupported selection mode {}'.format(selection_mode))
+        raise NotImplementedError(
+            'Unsupported selection mode {}'.format(selection_mode))
 
     # Only call cmds.select if it will actually change the selection.
-    # This is needed to prevent "empty undoes", where Maya will register an undo for all calls to cmds.select.
+    # This is needed to prevent "empty undoes", where Maya will register an
+    # undo for all calls to cmds.select.
     # SEE: https://forums.autodesk.com/t5/maya-ideas/consolidate-undo-steps-for-selection/idi-p/13331011
     if current_selection != new_selection:
         cmds.select(new_selection)

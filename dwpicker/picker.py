@@ -427,8 +427,8 @@ class PickerPanelView(QtWidgets.QWidget):
                 select_targets(shapes, selection_mode=selection_mode)
             except NameclashError as e:
                 warning('Selection Error', str(e), parent=self)
-                self.release(event)
-                return
+            self.release(event)
+            return
 
         if not self.clicked_shape:
             if self.interaction_manager.right_click_pressed:
