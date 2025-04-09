@@ -73,8 +73,7 @@ def dwpicker_shape_from_mgear_item(item, panel):
     r, g, b = item.get('color', [0, 0, 0])[:3]
     shape['bgcolor.normal'] = f'#{r:02X}{g:02X}{b:02X}'
     shape['bgcolor.transparency'] = 255 - item.get('color', [0, 0, 0, 255])[-1]
-    r, g, b = min((r + 20, 255)), min((b + 20, 255)), min((b + 20, 255))
-    shape['bgcolor.hovered'] = f'#{r:02X}{g:02X}{b:02X}'
+    shape['bgcolor.hovered'] = lighter(shape['bgcolor.normal'], 50)
     shape['action.targets'] = item.get('controls', [])
     shape['shape.left'] = item.get('position', [0, 0])[0]
     shape['shape.top'] = -item.get('position', [0, 0])[1]
@@ -140,12 +139,24 @@ if sets:
 
 # Here start the original script MGear picker script
 #      / \  Usage of __SELF__ variable is not supported by script conversion.
-#     / ! \
-#    /_____\
+#     / ! \\
+#    /_____\\
 
 ##############################################################################
 
 """
+
+
+def lighter(hexcolor, percent):
+    percent = max(0, min(percent, 100))
+    color = hexcolor.lstrip('#')
+    r = int(color[0:2], 16)
+    g = int(color[2:4], 16)
+    b = int(color[4:6], 16)
+    r = int(r + (255 - r) * (percent / 100))
+    g = int(g + (255 - g) * (percent / 100))
+    b = int(b + (255 - b) * (percent / 100))
+    return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
 
 def get_menu_command(caption, script):
