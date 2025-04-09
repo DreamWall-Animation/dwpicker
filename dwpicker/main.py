@@ -17,7 +17,7 @@ from dwpicker.document import PickerDocument
 from dwpicker.designer.editor import PickerEditor
 from dwpicker.dialog import (
     question, get_image_path, NamespaceDialog)
-from dwpicker.ingest import animschool
+from dwpicker.ingest import animschool, mgear
 from dwpicker.hotkeys import get_hotkeys_config
 from dwpicker.namespace import (
     switch_namespace, selected_namespace, detect_picker_namespace,
@@ -609,10 +609,14 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         return True
 
     def call_import(self):
-        sources = QtWidgets.QFileDialog.getOpenFileNames(
+        filters = {
+            "Anim School Picker (*.pkr)": animschool.convert,
+            "MGear (*.pkr)": mgear.convert
+        }
+        sources, selected_filter = QtWidgets.QFileDialog.getOpenFileNames(
             None, "Import a picker...",
             get_import_directory(),
-            filter="Anim School Picker (*.pkr)")[0]
+            filter=';;'.join(list(filters.keys())))
         if not sources:
             return
 
@@ -626,7 +630,8 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
 
         save_optionvar(LAST_IMPORT_DIRECTORY, os.path.dirname(sources[0]))
         for src in sources:
-            filename = animschool.convert(src, dst)
+            converter = filters[selected_filter]
+            filename = converter(src, dst)
             self.add_picker_from_file(filename)
 
     def call_new(self):

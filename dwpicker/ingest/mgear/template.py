@@ -1,4 +1,4 @@
-VERSION = 1, 0, 4  # Version, Feature, Hotfix.
+from dwpicker.appinfos import VERSION
 
 
 SHAPE_BUTTON = {
