@@ -125,6 +125,7 @@ def dwpicker_shape_from_mgear_item(item, panel):
 PRE_COMMAND = """ \
 # Lines added by dwpicker conversion for compatibility legacy with MGear
 # picker script system.
+from maya import cmds
 import dwpicker
 
 __INIT__ = False
