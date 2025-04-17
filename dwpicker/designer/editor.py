@@ -26,6 +26,7 @@ from dwpicker.designer.canvas import ShapeEditCanvas
 from dwpicker.designer.display import DisplayOptions
 from dwpicker.designer.menu import MenuWidget
 from dwpicker.designer.attributes import AttributeEditor
+from dwpicker.designer.viewportwidget import ViewportWidget
 
 
 DIRECTION_OFFSETS = {
@@ -39,6 +40,9 @@ class PickerEditor(QtWidgets.QWidget):
         title = "Picker editor - " + document.data['general']['name']
         self.setWindowTitle(title)
 
+        self.splitter_layout = QtWidgets.QSplitter()
+        self.splitter_layout.setObjectName("SplitterLayout")
+
         self.document = document
         self.document.shapes_changed.connect(self.update)
         self.document.general_option_changed.connect(self.generals_modified)
@@ -46,6 +50,9 @@ class PickerEditor(QtWidgets.QWidget):
         self.document.data_changed.connect(self.selection_changed)
 
         self.display_options = DisplayOptions()
+
+        self.viewport_widget = ViewportWidget()
+        self.viewport_widget.addSnapshotRequested.connect(self.capture_snapshot)
 
         self.shape_canvas = ShapeEditCanvas(
             self.document, self.display_options)
@@ -67,6 +74,7 @@ class PickerEditor(QtWidgets.QWidget):
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.buttonLibraryRequested.connect(self.call_library)
         self.menu.useSnapToggled.connect(self.use_snap)
+        self.menu.viewportToggled.connect(self.toggle_viewport)
         method = self.shape_canvas.set_lock_background_shape
         self.menu.lockBackgroundShapeToggled.connect(method)
         self.menu.undoRequested.connect(self.document.undo)
@@ -115,17 +123,33 @@ class PickerEditor(QtWidgets.QWidget):
         self.attribute_editor.panelDoubleClicked.connect(
             self.shape_canvas.select_panel_shapes)
 
+        self.splitter_layout.addWidget(self.viewport_widget)
+        self.splitter_layout.addWidget(self.shape_canvas)
+        self.splitter_layout.setSizes([0, 1])
+
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         self.hlayout.setContentsMargins(0, 0, 0, 0)
-        self.hlayout.addWidget(self.shape_canvas)
+        self.hlayout.addWidget(self.splitter_layout)
         self.hlayout.addWidget(self.attribute_editor)
 
         self.vlayout = QtWidgets.QVBoxLayout(self)
+        self.vlayout.setObjectName("VerticalLayout")
         self.vlayout.setContentsMargins(0, 0, 0, 0)
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
         self.vlayout.addLayout(self.hlayout)
+
+    def toggle_viewport(self):
+        """Collapse or expand the left widget"""
+        sizes = self.splitter_layout.sizes()
+        if sizes[0] > 0:  # If left widget is visible
+            self.splitter_layout.setSizes([0, sizes[1]])
+        else:
+            self.splitter_layout.setSizes([sizes[1] // 2, sizes[1] // 2])
+
+    def capture_snapshot(self, file=None):
+        self.create_shape(BACKGROUND, before=True, image=True, filepath=file)
 
     def call_library(self, point):
         self.shape_library_menu.move(point)
@@ -284,13 +308,16 @@ class PickerEditor(QtWidgets.QWidget):
 
     def create_shape(
             self, template, before=False, position=None, targets=None,
-            image=False):
+            image=False, filepath=None):
 
         options = deepcopy(template)
         panel = self.shape_canvas.display_options.current_panel
         options['panel'] = max((panel, 0))
         if image:
-            filename = get_image_path(self, "Select background image.")
+            if filepath:
+                filename = filepath
+            else:
+                filename = get_image_path(self, "Select background image.")
             if filename:
                 filename = format_path(filename)
                 options['image.path'] = filename
