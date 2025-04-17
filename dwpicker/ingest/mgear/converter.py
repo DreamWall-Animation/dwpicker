@@ -1,7 +1,7 @@
 import os
 import json
 import uuid
-from PySide2 import QtGui
+from dwpicker.pyside import QtGui
 from dwpicker.ingest.mgear.template import (
     BACKGROUND, PICKER, SHAPE_BUTTON, COMMAND, MENU_COMMAND)
 from dwpicker.shapepath import rotate_path
