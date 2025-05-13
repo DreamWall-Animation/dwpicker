@@ -37,7 +37,7 @@ def convert(filepath, directory=None):
         if not os.path.exists(data['snapshot']):
             print(
                 'WARNING: Impossible to import background image: '
-                f'{data["snapshot"]}, file does not exists')
+                '{snap_shot}, file does not exists'.format(snap_shot=data['snapshot']))
         else:
             for i in range(len(data['tabs'])):
                 background_shape = image_to_background_shape(data['snapshot'])
@@ -71,7 +71,7 @@ def dwpicker_shape_from_mgear_item(item, panel):
     shape['id'] = str(uuid.uuid4())
     shape['panel'] = panel
     r, g, b = item.get('color', [0, 0, 0])[:3]
-    shape['bgcolor.normal'] = f'#{r:02X}{g:02X}{b:02X}'
+    shape['bgcolor.normal'] = '#{r:02X}{g:02X}{b:02X}'.format(r=r, g=g, b=b)
     shape['bgcolor.transparency'] = 255 - item.get('color', [0, 0, 0, 255])[-1]
     shape['bgcolor.hovered'] = lighter(shape['bgcolor.normal'], 50)
     shape['action.targets'] = item.get('controls', [])
@@ -80,13 +80,13 @@ def dwpicker_shape_from_mgear_item(item, panel):
     shape['text.content'] = item.get('text', '')
     shape['text.size'] = item.get('text_size', 10)
     r, g, b = item.get('text_color', [0, 0, 0])[:3]
-    shape['text.color'] = f'#{r:02X}{g:02X}{b:02X}'
+    shape['text.color'] = '#{r:02X}{g:02X}{b:02X}'.format(r=r, g=g, b=b)
 
     path = []
     for handle in item.get('handles', []):
         path.append({
-            'point': [handle[0], -handle[1]],
-            'tangent_in': None,
+            'point'      : [handle[0], -handle[1]],
+            'tangent_in' : None,
             'tangent_out': None})
     if item.get('rotation'):
         path = rotate_path(path, item.get('rotation'), get_path_center(path))
@@ -117,7 +117,7 @@ def dwpicker_shape_from_mgear_item(item, panel):
 
     for key in item.keys():
         if key not in known_keys:
-            print(f'WARNING: Unconvertible key {key} found')
+            print('WARNING: Unconvertible key {key} found'.format(key=key))
             print(item[key])
     return shape
 
@@ -163,13 +163,13 @@ def lighter(hexcolor, percent):
 def get_menu_command(caption, script):
     command = MENU_COMMAND.copy()
     command['caption'] = caption
-    command['command'] = f'{PRE_COMMAND}{script}'
+    command['command'] = '{PRE_COMMAND}{script}'.format(PRE_COMMAND=PRE_COMMAND, script=script)
     return command
 
 
 def get_command(script):
     command = COMMAND.copy()
-    command['command'] = f'{PRE_COMMAND}{script}'
+    command['command'] = '{PRE_COMMAND}{script}'.format(PRE_COMMAND=PRE_COMMAND, script=script)
     return command
 
 
