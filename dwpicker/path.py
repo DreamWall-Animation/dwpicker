@@ -1,11 +1,15 @@
 
 
 import os
+import uuid
 from maya import cmds
+from dwpicker.pyside import QtWidgets
 from dwpicker.optionvar import (
     AUTO_COLLAPSE_IMG_PATH_FROM_ENV, CUSTOM_PROD_PICKER_DIRECTORY,
     LAST_IMPORT_DIRECTORY, LAST_IMAGE_DIRECTORY_USED, LAST_OPEN_DIRECTORY,
-    OVERRIDE_PROD_PICKER_DIRECTORY_ENV, USE_PROD_PICKER_DIR_AS_DEFAULT)
+    OVERRIDE_PROD_PICKER_DIRECTORY_ENV, USE_PROD_PICKER_DIR_AS_DEFAULT,
+    save_optionvar)
+
 
 
 def unix_path(path, isroot=False):
@@ -78,3 +82,18 @@ def get_image_directory():
         if directory:
             return directory
     return cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED)
+
+def get_filename():
+    folder_path = get_picker_project_directory()
+    if not folder_path:
+        folder_path = QtWidgets.QFileDialog.getExistingDirectory(None,
+                                                                 "Select Directory",
+                                                                 "")
+        if folder_path:
+            save_optionvar(LAST_IMAGE_DIRECTORY_USED, folder_path)
+        else:
+            folder_path = cmds.optionVar(query=LAST_IMAGE_DIRECTORY_USED)
+
+    filename = os.path.join(folder_path, "dwpicker-" + str(uuid.uuid4()))
+
+    return filename
