@@ -23,11 +23,11 @@ def unix_path(path, isroot=False):
     return path
 
 
-def format_path(path):
+def format_path(path, force=False):
     if path is None:
         return
     path = unix_path(path)
-    if not cmds.optionVar(query=AUTO_COLLAPSE_IMG_PATH_FROM_ENV):
+    if not cmds.optionVar(query=AUTO_COLLAPSE_IMG_PATH_FROM_ENV) and not force:
         return path
     root = get_picker_project_directory()
     if not root or not path.lower().startswith(root.lower()):

@@ -1,10 +1,12 @@
 import os
 import json
 import uuid
+import shutil
 from dwpicker.pyside import QtGui
 from dwpicker.ingest.mgear.template import (
     BACKGROUND, PICKER, SHAPE_BUTTON, COMMAND, MENU_COMMAND)
 from dwpicker.shapepath import rotate_path
+from dwpicker.path import format_path
 
 
 def image_to_background_shape(imagepath):
@@ -20,31 +22,53 @@ def image_to_background_shape(imagepath):
     return shape
 
 
+def copy_image(image_filepath, picker_filepath, destination_directory):
+    destination = '{0}/{1}'.format(
+        destination_directory, os.path.basename(image_filepath))
+    if not os.path.exists(image_filepath):
+        image_filepath = '{0}/{1}'.format(
+            os.path.dirname(picker_filepath),
+            os.path.basename(image_filepath))
+    if not os.path.exists(image_filepath):
+        return image_filepath
+    shutil.copy(image_filepath, destination)
+    return format_path(destination, force=True)
+
+
 def convert(filepath, directory=None):
     directory = directory or os.path.dirname(filepath)
     with open(filepath, 'r') as f:
         data = json.load(f)
 
     picker = {'general': PICKER.copy()}
-    picker['general']['name'] = data['tabs'][0]['name']
+    picker['general']['name'] = os.path.basename(os.path.splitext(filepath)[0])
     picker['general']['panels.colors'] = [None] * len(data['tabs'])
     picker['general']['panels.names'] = [tab['name'] for tab in data['tabs']]
     picker['general']['as_sub_tab'] = True
     picker['general']['panels'] = [[1.0, [1.0] * len(data['tabs'])]]
-
+    picker['general']['panels.orientation'] = 'horizontal'
     picker['shapes'] = []
-    if data['snapshot']:
-        if not os.path.exists(data['snapshot']):
-            print(
-                'WARNING: Impossible to import background image: '
-                '{snap_shot}, file does not exists'.format(snap_shot=data['snapshot']))
-        else:
-            for i in range(len(data['tabs'])):
-                background_shape = image_to_background_shape(data['snapshot'])
-                background_shape['panel'] = i
-                picker['shapes'].append(background_shape)
+    picker['general']['panels.as_sub_tab'] = True
+    picker['general']['panels.zoom_locked'] = [False] * len(data['tabs'])
+    picker['general']['panels.colors'] = [None] * len(data['tabs'])
+    picker['general']['panels.names'] = [t['name'] for t in data['tabs']]
 
     for i, tab in enumerate(data['tabs']):
+        if tab['data'].get('background'):
+            imagepath = tab['data'].get('background')
+            imagepath = copy_image(imagepath, filepath, directory)
+            if not os.path.exists(imagepath):
+                print(
+                    'WARNING: Impossible to import background image: '
+                    '{snap_shot}, file does not exists'.format(
+                        snap_shot=imagepath))
+            background_shape = image_to_background_shape(imagepath)
+            background_shape['panel'] = i
+            background_shape['shape.left'] = -tab['data']['background_size'][0] / 2
+            background_shape['shape.top'] = -tab['data']['background_size'][1] / 2
+            background_shape['shape.width'] = tab['data']['background_size'][0]
+            background_shape['shape.height'] = tab['data']['background_size'][1]
+            picker['shapes'].append(background_shape)
         for item in tab["data"]['items']:
             picker['shapes'].append(dwpicker_shape_from_mgear_item(item, i))
 
