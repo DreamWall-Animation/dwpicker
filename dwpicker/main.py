@@ -40,6 +40,7 @@ from dwpicker.scenedata import (
     load_local_picker_data, store_local_picker_data,
     clean_stray_picker_holder_nodes)
 from dwpicker.templates import PICKER, BACKGROUND
+from dwpicker.designer.viewportwidget import ui_delete_callback
 
 
 ABOUT = """\
@@ -237,6 +238,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.register_callbacks()
 
     def close_event(self):
+        ui_delete_callback()
         self.preferences_window.close()
 
     def list_scene_namespaces(self):
