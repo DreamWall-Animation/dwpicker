@@ -781,7 +781,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
                 for t in shape.targets()]
             shape.options['action.targets'] = targets
         document.record_undo()
-        document.shapes_changed.emit()
+        document.modified_state = False
 
     def add_background(self):
         filename = get_image_path(self)
