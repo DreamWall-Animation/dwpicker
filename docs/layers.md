@@ -14,7 +14,7 @@ Layers can only be created from the Advanced Editor. To create a layer:
 
 Once created, the visibility layer will be added to the Picker tab in the right panel, under the "Visibility Layers" section.
 <p style="text-align: center;">
-  <img src="../images/visibilitylayers.gif" alt="overlay">
+  <img src="../images/visibilitylayers.png" alt="overlay">
 </p>
 
 <p style="text-align: center;">
