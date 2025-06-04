@@ -9,12 +9,14 @@ The shape is stored relative to the top-left coordinates.
 
 
 ### Editor
-
-<center>![alt text](images/customshapeeditor.png)</center>
+<p style="text-align: center;">
+  <img src="images/customshapeeditor.png" alt="overlay">
+</p>
 
 The editor appears when the "Custom" option is selected in the shape dropdown menu. You can undock the canvas from the attribute editor by clicking □.
-
-<center>![alt text](images/customshapeeditor.gif)</center>
+<p style="text-align: center;">
+  <img src="images/customshapeeditor.gif" alt="overlay">
+</p>
 
 > **Pro tip**: *ctrl + click* on tangent to manipulate it separatly.
 
@@ -22,5 +24,6 @@ The editor appears when the "Custom" option is selected in the shape dropdown me
 ### Library
 
 A common shape library is available clicking on the "star +" icon of the Advanced Editor's toolbar.
-
-<center>![alt text](images/library.gif)</center>
+<p style="text-align: center;">
+  <img src="images/library.gif" alt="overlay">
+</p>
