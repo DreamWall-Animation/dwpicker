@@ -9,8 +9,10 @@ This can be problematic for several reasons:
 
 - Cluttered List: The namespace list becomes overwhelming due to unrelated entries.
 - Nested Namespaces: Sometimes, namespaces are deeply nested and have excessively long names, making the list even harder to navigate.
+<p style="text-align: center;">
+  <img src="../images/namespacecombo.png" alt="overlay">
+</p>
 
-![alt text](../images/namespacecombo.png)
 
 Since creating a universal system that handles all contexts and pipelines effectively is unrealistic, the default namespace listing method can be bypassed.
 You can pass a custom function to the `list_namespaces_function` argument of the `dwpicker.show` function. This allows you to define how namespaces are listed, tailoring the picker to better suit your specific pipeline or project needs.
