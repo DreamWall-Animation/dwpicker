@@ -14,11 +14,11 @@ Layers can only be created from the Advanced Editor. To create a layer:
 
 Once created, the visibility layer will be added to the Picker tab in the right panel, under the "Visibility Layers" section.
 <p style="text-align: center;">
-  <img src="images/visibilitylayers.gif" alt="overlay">
+  <img src="../images/visibilitylayers.gif" alt="overlay">
 </p>
 
 <p style="text-align: center;">
-  <img src="images/createlayer.gif" alt="overlay">
+  <img src="../images/createlayer.gif" alt="overlay">
 </p>
 
 
@@ -28,7 +28,7 @@ Once created, the visibility layer will be added to the Picker tab in the right 
 
 The picker contains a menu to select visible layer.
 <p style="text-align: center;">
-  <img src="images/switchlayers.gif" alt="overlay">
+  <img src="../images/switchlayers.gif" alt="overlay">
 </p>
 
 
@@ -37,7 +37,7 @@ The picker contains a menu to select visible layer.
 As it could be tidious to switch layer visibility you can add a button in the picker to toggle the visibilities.
 
 <p style="text-align: center;">
-  <img src="images/togglelayers.gif" alt="overlay">
+  <img src="../images/togglelayers.gif" alt="overlay">
 </p>
 
 
