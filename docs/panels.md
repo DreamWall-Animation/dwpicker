@@ -10,8 +10,9 @@ Once the multipanel picker is set up, you can toggle between a split **viewport*
 
 Setting up the panels must be done in the **Picker** tab within the **Advanced Editor**, under the **Picker Panels** section.
 
-
-<center>![alt text](images/createpanels.gif)</center>
+<p style="text-align: center;">
+  <img src="images/createpanels.gif" alt="overlay">
+</p>
 
 
 ### Switch Display
@@ -19,17 +20,20 @@ Setting up the panels must be done in the **Picker** tab within the **Advanced E
 To dynamically switch between split viewports and sub-tabs, go to **Edit** > **Toggle Panel Display** Mode or press **`T`**.
 
 If the **Namespace Toolbar** is visible, you can also use the toggle buttons to switch modes.
-
-<center>![alt text](images/switchdisplaymode.gif)</center>
+<p style="text-align: center;">
+  <img src="images/switchdisplaymode.gif" alt="overlay">
+</p>
 
 
 ### Isolate Shapes
 
 In the **Advanced Editor**, you can isolate a panel to keep the canvas clean.
-
-<center>![alt text](images/isolatepanel.gif)</center>
+<p style="text-align: center;">
+  <img src="images/isolatepanel.gif" alt="overlay">
+</p>
 
 
 ### Assign Shapes to Panel
-
-<center>![alt text](images/assignpanel.gif)</center>
+<p style="text-align: center;">
+  <img src="images/assignpanel.gif" alt="overlay">
+</p>
