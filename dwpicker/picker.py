@@ -85,7 +85,7 @@ def detect_hovered_shape(shapes, world_cursor, screen_cursor, viewportmapper):
         hovered = cursor_in_shape(
             shape=shape,
             world_cursor=world_cursor,
-            viewpoert_cursor=screen_cursor,
+            viewport_cursor=screen_cursor,
             force_world_space=False,
             viewportmapper=viewportmapper)
         if hovered and not shape.is_background():

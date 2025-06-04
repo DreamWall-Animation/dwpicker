@@ -24,6 +24,8 @@ def rect_intersects_shape(
         shape, unit_rect, viewport_rect=None,
         force_world_space=True,
         viewportmapper=None):
+    if not unit_rect:
+        return False
 
     if force_world_space or shape.options['shape.space'] == 'world':
         if shape.path and shape.options['shape'] == 'custom':
@@ -66,7 +68,7 @@ def to_shape_space_rect(rect, shape, force_world_space, viewportmapper):
 def cursor_in_shape(
         shape,
         world_cursor,
-        viewpoert_cursor=None,
+        viewport_cursor=None,
         force_world_space=True,
         viewportmapper=None):
 
@@ -81,14 +83,15 @@ def cursor_in_shape(
             point=(shape.options['shape.left'], shape.options['shape.top']),
             anchor=shape.options['shape.anchor'],
             viewport_size=viewportmapper.viewsize)
-        return path.contains(viewpoert_cursor)
+        result = path.contains(viewport_cursor)
+        return result
 
     rect = to_shape_space_rect(
         rect=shape.rect,
         shape=shape,
         force_world_space=False,
         viewportmapper=viewportmapper)
-    return rect.contains(viewpoert_cursor)
+    return rect.contains(viewport_cursor)
 
 
 def get_shape_rect_from_options(options):
