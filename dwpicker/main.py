@@ -254,6 +254,7 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.namespace_combo.addItem("*Root*")
         namespaces = self.list_scene_namespaces()
         self.namespace_combo.addItems(namespaces)
+        self.pick_namespace()
         self.namespace_combo.blockSignals(False)
 
         # Auto update namespace combo to namespace size.
