@@ -794,7 +794,7 @@ class VisibilityLayersMenu(QtWidgets.QMenu):
     def update_actions(self):
         self.clear()
         layers = list(self.document.shapes_by_layer)
-        action = QtWidgets.QAction('Show all')
+        action = QtWidgets.QAction('Show all', self)
         for layer in layers:
             action = QtWidgets.QAction(layer, self)
             action.setCheckable(True)
