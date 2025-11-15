@@ -53,7 +53,7 @@ def show(
     global _dwpicker
     if not _dwpicker:
         warn_if_update_available()
-        _dwpicker = DwPicker(
+        DwPicker(
             replace_namespace_function=replace_namespace_function,
             list_namespaces_function=list_namespaces_function)
     try:
