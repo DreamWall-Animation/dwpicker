@@ -84,6 +84,10 @@ class DwPicker(DockableBase, QtWidgets.QWidget):
         self.replace_namespace_custom_function = replace_namespace_function
         self.list_namespaces_function = list_namespaces_function
 
+        # Register this instance globally for callbacks
+        import dwpicker
+        dwpicker._dwpicker = self
+
         self.editable = True
         self.callbacks = []
         self.stored_focus = None
