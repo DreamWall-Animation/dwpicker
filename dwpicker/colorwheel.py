@@ -23,6 +23,7 @@ class ColorDialog(QtWidgets.QDialog):
         super(ColorDialog, self).__init__(parent)
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.orig_hexacolor = hexacolor
         self.colorwheel = ColorWheel()
         self.colorwheel.set_current_color(QtGui.QColor(hexacolor))
         self.ok = QtWidgets.QPushButton('ok')
@@ -35,7 +36,9 @@ class ColorDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.ok)
 
     def colorname(self):
-        return self.colorwheel.current_color().name()
+        if self.colorwheel.was_clicked:
+            return self.colorwheel.current_color().name()
+        return self.orig_hexacolor
 
     def exec_(self):
         point = get_cursor(self)
@@ -50,6 +53,7 @@ class ColorWheel(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(ColorWheel, self).__init__(parent)
+        self.was_clicked = False
         self._is_clicked = False
         self._rect = QtCore.QRectF(25, 25, 50, 50)
         self._current_color = QtGui.QColor(WHITE)
@@ -93,6 +97,7 @@ class ColorWheel(QtWidgets.QWidget):
         self.mouse_update(event)
 
     def mouseMoveEvent(self, event):
+        self.was_clicked = True
         self._is_clicked = True
         self.mouse_update(event)
 
@@ -203,14 +208,12 @@ class ColorWheel(QtWidgets.QWidget):
         self._angle = 360.0 - (QtGui.QColor(r, g, b).getHslF()[0] * 360.0)
         self._angle = self._angle if self._angle != 720.0 else 0
 
-        x = ((((
-            sorted([r, g, b], reverse=True)[0] -
-            sorted([r, g, b])[0]) / 255.0) * self._rect.width()) +
-            self._rect.left())
-
-        y = ((((
-            255 - (sorted([r, g, b], reverse=True)[0])) / 255.0) *
-            self._rect.height()) + self._rect.top())
+        max_val = min(255, max(r, g, b))
+        min_val = max(0, min(r, g, b))
+        x_factor = (max_val - min_val) / float(max_val) if max_val > 0 else 0.0
+        y_factor = (255.0 - max_val) / 255.0
+        x = self._rect.left() + round(self._rect.width() * x_factor)
+        y = self._rect.top() + round(self._rect.height() * y_factor)
 
         self._current_color = color
         self._color_point = QtCore.QPoint(x, y)
