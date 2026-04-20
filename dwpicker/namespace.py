@@ -22,7 +22,7 @@ def node_namespace(node):
     basename = node.split("|")[-1]
     if ":" not in node:
         return None
-    return basename.split(":")[0]
+    return basename.rsplit(":", 1)[0]
 
 
 def node_full_namespace(node):
