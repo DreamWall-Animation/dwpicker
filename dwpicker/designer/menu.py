@@ -33,6 +33,7 @@ class MenuWidget(QtWidgets.QWidget):
     symmetryRequested = QtCore.Signal(bool)
     undoRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
+    viewportToggled = QtCore.Signal()
 
     def __init__(self, display_options, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
@@ -88,6 +89,10 @@ class MenuWidget(QtWidgets.QWidget):
         state = bool(cmds.optionVar(query=DISPLAY_HIERARCHY_IN_CANVAS))
         self.hierarchy.setChecked(state)
         self.hierarchy.toggled.connect(self.toggle_hierarchy_display)
+
+        self.viewport = QtWidgets.QAction(icon('3d_axis.png'), '', self)
+        self.viewport.triggered.connect(self.viewportToggled.emit)
+        self.viewport.setToolTip('Toggle viewport')
 
         self.snap = QtWidgets.QAction(icon('snap.png'), '', self)
         self.snap.setToolTip('Snap grid enable')
@@ -202,6 +207,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.lock_bg)
         self.toolbar.addAction(self.isolate)
         self.toolbar.addAction(self.hierarchy)
+        self.toolbar.addAction(self.viewport)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.snap)
         self.toolbar.addWidget(self.snapx)
